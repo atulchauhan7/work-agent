@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import Navbar from './Navbar'
 
 const API_BASE = ''
 
@@ -78,16 +79,17 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-dvh bg-dark-bg text-white">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 sm:px-6 h-14 border-b border-white/[0.06] bg-dark-bg/80 backdrop-blur-xl shrink-0">
-        <Link to="/" className="text-lg font-heading font-bold text-white">
-          Zivon<span className="text-gold">X</span>
-        </Link>
-        <span className="text-sm text-gray-500">AI Chat</span>
-        <button onClick={clearChat} className="text-xs text-gray-500 hover:text-gold transition-colors cursor-pointer">
-          Clear
-        </button>
-      </header>
+      {/* Shared Navbar */}
+      <Navbar />
+
+      {/* Clear button bar */}
+      <div className="pt-16 shrink-0">
+        <div className="flex justify-end px-4 sm:px-6 py-2 border-b border-white/[0.06]">
+          <button onClick={clearChat} className="text-xs text-gray-500 hover:text-gold transition-colors cursor-pointer">
+            Clear chat
+          </button>
+        </div>
+      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
