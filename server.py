@@ -1,11 +1,12 @@
 """
-AtulCoder Web Server — ChatGPT-like UI for the local AI agent
-Free, unlimited, 100% offline.
+AtulCoder Web Server — ChatGPT-like UI for the AI coding agent
+Supports: Groq (free cloud) or Ollama (local).
 
-Run:  python3 server.py --workspace .
+Run:  python3 server.py --workspace . --provider groq
 Open: http://localhost:7860
 """
 
+import os
 import re
 import json
 import subprocess
@@ -13,17 +14,23 @@ import argparse
 from pathlib import Path
 from collections import Counter
 
-import ollama
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 import uvicorn
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-MODEL         = "atul-coder"
+PROVIDER      = os.getenv("ATUL_PROVIDER", "groq")   # "groq" or "ollama"
+GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL    = "llama-3.3-70b-versatile"              # free, 30 req/min
+OLLAMA_MODEL  = "atul-coder"                           # local fallback
+MODEL         = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
 HISTORY_FILE  = Path(__file__).parent / "chat_history.json"
 HISTORY_LIMIT = 20
 MAX_FILE_READ = 6000
 PORT          = 7860
+
+# ── LLM client setup ───────────────────────────────────────────────────────────
+llm_client = None  # initialized at startup
 
 SYSTEM_PROMPT = """\
 You are AtulCoder, an AI coding AGENT owned by Atul Chauhan (Bangalore, India, age 25).
@@ -583,28 +590,51 @@ async def chat(request: Request):
             loop_detected = False
 
             try:
-                for chunk in ollama.chat(
-                    model=MODEL,
-                    messages=history,
-                    stream=True,
-                    options={
-                        "temperature": 0.2,
-                        "num_ctx":     8192,
-                        "num_predict": 1024,
-                        "repeat_penalty": 1.3,
-                        "repeat_last_n":  128,
-                        "top_p": 0.9,
-                    },
-                ):
-                    token = chunk["message"]["content"]
-                    full_response += token
-                    yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+                if PROVIDER == "groq":
+                    stream = llm_client.chat.completions.create(
+                        model=MODEL,
+                        messages=history,
+                        stream=True,
+                        temperature=0.2,
+                        max_tokens=4096,
+                        top_p=0.9,
+                    )
+                    for chunk in stream:
+                        delta = chunk.choices[0].delta
+                        token = delta.content or ""
+                        if not token:
+                            continue
+                        full_response += token
+                        yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
 
-                    # Kill repetition loop mid-stream (aggressive: 200 chars, threshold 3)
-                    if len(full_response) > 200 and is_looping(full_response, threshold=3):
-                        loop_detected = True
-                        yield f"data: {json.dumps({'type': 'loop_killed'})}\n\n"
-                        break
+                        if len(full_response) > 200 and is_looping(full_response, threshold=3):
+                            loop_detected = True
+                            yield f"data: {json.dumps({'type': 'loop_killed'})}\n\n"
+                            break
+                else:
+                    import ollama
+                    for chunk in ollama.chat(
+                        model=MODEL,
+                        messages=history,
+                        stream=True,
+                        options={
+                            "temperature": 0.2,
+                            "num_ctx":     8192,
+                            "num_predict": 1024,
+                            "repeat_penalty": 1.3,
+                            "repeat_last_n":  128,
+                            "top_p": 0.9,
+                        },
+                    ):
+                        token = chunk["message"]["content"]
+                        full_response += token
+                        yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+
+                        # Kill repetition loop mid-stream
+                        if len(full_response) > 200 and is_looping(full_response, threshold=3):
+                            loop_detected = True
+                            yield f"data: {json.dumps({'type': 'loop_killed'})}\n\n"
+                            break
 
             except Exception as e:
                 yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
@@ -783,15 +813,38 @@ if __name__ == "__main__":
     parser.add_argument("--workspace", "-w", default=str(Path.cwd()),
                         help="Working directory for agent file operations")
     parser.add_argument("--port", "-p", type=int, default=PORT)
+    parser.add_argument("--provider", choices=["groq", "ollama"], default=PROVIDER,
+                        help="LLM provider: groq (free cloud) or ollama (local)")
+    parser.add_argument("--groq-key", default=GROQ_API_KEY,
+                        help="Groq API key (or set GROQ_API_KEY env var)")
     args = parser.parse_args()
+
+    PROVIDER = args.provider
+    GROQ_API_KEY = args.groq_key
+    MODEL = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
+
+    # Initialize LLM client
+    if PROVIDER == "groq":
+        if not GROQ_API_KEY:
+            print("\n  ❌ Groq API key required!")
+            print("  Get a free key at: https://console.groq.com/keys")
+            print("  Then run: python3 server.py --groq-key YOUR_KEY")
+            print("  Or set:   export GROQ_API_KEY=YOUR_KEY\n")
+            exit(1)
+        from openai import OpenAI
+        llm_client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
+    else:
+        import ollama
+        llm_client = None  # ollama uses module-level calls
 
     workspace = Path(args.workspace).resolve()
     history   = load_history()
 
+    prov_label = f"Groq ({GROQ_MODEL})" if PROVIDER == "groq" else f"Ollama ({OLLAMA_MODEL})"
     print(f"\n  ╔══════════════════════════════════════════╗")
     print(f"  ║  AtulCoder Web UI                        ║")
     print(f"  ║  Owner : Atul Chauhan · Bangalore · 25   ║")
-    print(f"  ║  Model : {MODEL:<32}║")
+    print(f"  ║  Model : {prov_label:<32}║")
     print(f"  ║  Open  : http://localhost:{args.port:<15}║")
     print(f"  ╚══════════════════════════════════════════╝")
     print(f"  Workspace: {workspace}\n")
