@@ -84,6 +84,13 @@ def load_history() -> list[dict]:
             data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
             if data and data[0].get("role") == "system":
                 data[0]["content"] = SYSTEM_PROMPT
+            # Strip stale context notes from old messages
+            for msg in data:
+                if msg.get("role") == "user":
+                    msg["content"] = re.sub(
+                        r'\n\n\[(Agent workspace|Working directory):[^\]]*\]$',
+                        '', msg["content"]
+                    )
             return data
         except Exception:
             pass
@@ -273,11 +280,11 @@ def is_dangerous_cmd(cmd: str) -> bool:
     return bool(DANGEROUS_CMD_RE.search(cmd))
 
 
-def execute_actions(text: str, ws: Path, user_msg: str = "", chat_history: list[dict] = None):
+def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history: list[dict] = None):
     """Execute all action tags in the model response.
     Falls back to extracting markdown code blocks if no action tags found.
     Blocks any write/mkdir/cmd/delete operations in the project's own directory.
-    Delete commands are always blocked.
+    If ws is None (no working directory set), all write/mkdir actions are blocked.
 
     Returns:
         result_str: combined <RESULT> string to feed back to model (or None)
@@ -288,41 +295,63 @@ def execute_actions(text: str, ws: Path, user_msg: str = "", chat_history: list[
     actions = []
     pending = []  # actions needing confirmation
     hist = chat_history or []
+    no_workdir = ws is None
 
     for tag, path_str in ATTR_RE.findall(text):
         tag  = tag.upper()
-        # Use smart_resolve for ALL path-based actions (so user-specified dirs work)
-        path = smart_resolve(path_str, ws, user_msg, hist)
 
         if tag == "READ_FILE":
-            out = do_read(path)
-            results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
-            actions.append({"type": tag, "path": str(path), "result": out})
-        elif tag == "LIST_DIR":
-            out = do_list(path)
-            results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
-            actions.append({"type": tag, "path": str(path), "result": out})
-        elif tag == "MAKE_DIR":
-            if is_in_project_dir(path):
-                out = f"BLOCKED: Cannot create directory inside project folder ({PROJECT_DIR})"
-                results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
-                actions.append({"type": tag, "path": str(path), "result": out, "blocked": True})
+            if no_workdir:
+                out = "ERROR: No working directory set. Please set a directory first."
             else:
-                pending.append({"type": tag, "path": path_str, "resolved": str(path)})
+                path = smart_resolve(path_str, ws, user_msg, hist)
+                out = do_read(path)
+            results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
+            actions.append({"type": tag, "path": path_str, "result": out})
+        elif tag == "LIST_DIR":
+            if no_workdir:
+                out = "ERROR: No working directory set. Please set a directory first."
+            else:
+                path = smart_resolve(path_str, ws, user_msg, hist)
+                out = do_list(path)
+            results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
+            actions.append({"type": tag, "path": path_str, "result": out})
+        elif tag == "MAKE_DIR":
+            if no_workdir:
+                out = "ERROR: No working directory set. Please set a directory first."
+                results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
+                actions.append({"type": tag, "path": path_str, "result": out, "blocked": True})
+            else:
+                path = smart_resolve(path_str, ws, user_msg, hist)
+                if is_in_project_dir(path):
+                    out = f"BLOCKED: Cannot create directory inside project folder ({PROJECT_DIR})"
+                    results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
+                    actions.append({"type": tag, "path": str(path), "result": out, "blocked": True})
+                else:
+                    pending.append({"type": tag, "path": path_str, "resolved": str(path)})
 
     for path_str, content in WRITE_RE.findall(text):
-        path = smart_resolve(path_str, ws, user_msg, hist)
-        if is_in_project_dir(path):
-            out = f"BLOCKED: Cannot write to project folder ({PROJECT_DIR})"
+        if no_workdir:
+            out = "ERROR: No working directory set. Please set a directory first."
             results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
-            actions.append({"type": "WRITE_FILE", "path": str(path), "result": out, "blocked": True})
+            actions.append({"type": "WRITE_FILE", "path": path_str, "result": out, "blocked": True})
         else:
-            pending.append({"type": "WRITE_FILE", "path": path_str, "content": content, "resolved": str(path)})
+            path = smart_resolve(path_str, ws, user_msg, hist)
+            if is_in_project_dir(path):
+                out = f"BLOCKED: Cannot write to project folder ({PROJECT_DIR})"
+                results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
+                actions.append({"type": "WRITE_FILE", "path": str(path), "result": out, "blocked": True})
+            else:
+                pending.append({"type": "WRITE_FILE", "path": path_str, "content": content, "resolved": str(path)})
 
     for cmd_raw in RUN_RE.findall(text):
         cmd = cmd_raw.strip()
         if is_dangerous_cmd(cmd):
             out = f"BLOCKED: Dangerous command rejected — delete/destroy operations are not allowed: {cmd}"
+            results.append(f"<RESULT action='RUN_CMD'>\n{out}\n</RESULT>")
+            actions.append({"type": "RUN_CMD", "cmd": cmd, "result": out, "blocked": True})
+        elif no_workdir:
+            out = "ERROR: No working directory set. Please set a directory first."
             results.append(f"<RESULT action='RUN_CMD'>\n{out}\n</RESULT>")
             actions.append({"type": "RUN_CMD", "cmd": cmd, "result": out, "blocked": True})
         else:
@@ -336,13 +365,18 @@ def execute_actions(text: str, ws: Path, user_msg: str = "", chat_history: list[
             if filename:
                 code = max(code_blocks, key=len).strip()
                 if len(code) > 10:
-                    path = smart_resolve(filename, ws, user_msg, hist)
-                    if is_in_project_dir(path):
-                        out = f"BLOCKED: Cannot write to project folder ({PROJECT_DIR})"
+                    if no_workdir:
+                        out = "ERROR: No working directory set. Please set a directory first."
                         results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
                         actions.append({"type": "WRITE_FILE", "path": filename, "result": out, "blocked": True})
                     else:
-                        pending.append({"type": "WRITE_FILE", "path": filename, "content": code + "\n", "resolved": str(path)})
+                        path = smart_resolve(filename, ws, user_msg, hist)
+                        if is_in_project_dir(path):
+                            out = f"BLOCKED: Cannot write to project folder ({PROJECT_DIR})"
+                            results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
+                            actions.append({"type": "WRITE_FILE", "path": filename, "result": out, "blocked": True})
+                        else:
+                            pending.append({"type": "WRITE_FILE", "path": filename, "content": code + "\n", "resolved": str(path)})
 
     return ("\n\n".join(results) if results else None), actions, pending
 
@@ -456,12 +490,12 @@ async def chat(request: Request):
 
             history.append({"role": "assistant", "content": full_response})
 
-            action_result, actions, pending = execute_actions(full_response, workdir or workspace, user_msg, history)
+            action_result, actions, pending = execute_actions(full_response, workdir, user_msg, history)
 
-            # If there are pending write/mkdir actions but no workdir is set, ask for directory
-            has_writes = any(a["type"] in ("WRITE_FILE", "MAKE_DIR") for a in pending)
+            # If there are pending/blocked write actions but no workdir, ask for directory
+            has_writes = any(a.get("type") in ("WRITE_FILE", "MAKE_DIR") for a in pending + actions)
             if has_writes and workdir is None:
-                yield f"data: {json.dumps({'type': 'ask_directory', 'message': 'Which folder should I create files in? Please provide a directory path.'})}\n\n"
+                yield f"data: {json.dumps({'type': 'ask_directory', 'message': 'Please set a working directory first. Where should I create files?'})}\n\n"
                 break
 
             # Deduplicate: skip actions we already performed this turn
@@ -524,6 +558,9 @@ async def approve_actions(request: Request):
     if not pending_actions:
         return JSONResponse({"error": "no actions"}, status_code=400)
 
+    if workdir is None:
+        return JSONResponse({"error": "No working directory set. Please set a directory first."}, status_code=400)
+
     # Re-validate: block project dir writes even if someone tampers with the request
     for act in pending_actions:
         if act.get("resolved"):
@@ -534,9 +571,9 @@ async def approve_actions(request: Request):
                     status_code=403
                 )
 
-    result_str, executed = run_pending_actions(pending_actions, workdir or workspace)
+    result_str, executed = run_pending_actions(pending_actions, workdir)
 
-    if result_str:
+    if result_str and workdir:
         history.append({"role": "user", "content": result_str + "\n\nActions approved and executed by user."})
         history = trim_history(history)
         save_history(history)
