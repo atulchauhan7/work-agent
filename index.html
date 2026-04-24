@@ -138,6 +138,34 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .dir-prompt-btns{display:flex;gap:8px;margin-top:10px}
 .dir-prompt .btn-approve{padding:8px 20px}
 
+/* folder picker modal */
+.fp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fi .15s ease}
+.fp-modal{background:#1e1e2e;border:1px solid #333;border-radius:12px;width:480px;max-width:92vw;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.fp-header{padding:14px 16px;border-bottom:1px solid #2a2a3a;display:flex;align-items:center;justify-content:space-between}
+.fp-header h3{margin:0;font-size:14px;color:var(--acc);display:flex;align-items:center;gap:6px}
+.fp-close{background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.fp-close:hover{background:#333;color:#fff}
+.fp-shortcuts{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid #2a2a3a;flex-wrap:wrap}
+.fp-shortcut{background:#2a2a3a;border:1px solid #3a3a4a;border-radius:6px;padding:5px 10px;font-size:12px;color:#ccc;cursor:pointer;transition:all .15s}
+.fp-shortcut:hover{background:var(--acc);color:#fff;border-color:var(--acc)}
+.fp-breadcrumb{padding:8px 16px;font-size:11px;color:#888;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border-bottom:1px solid #2a2a3a;font-family:var(--mono)}
+.fp-breadcrumb span{cursor:pointer;color:#aaa;padding:1px 3px;border-radius:3px}
+.fp-breadcrumb span:hover{background:#333;color:var(--acc)}
+.fp-list{flex:1;overflow-y:auto;padding:6px 0;min-height:200px}
+.fp-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:#ccc;transition:background .1s}
+.fp-item:hover{background:#2a2a3a}
+.fp-item-icon{font-size:16px;flex-shrink:0}
+.fp-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fp-empty{padding:24px 16px;text-align:center;color:#666;font-size:12px}
+.fp-footer{padding:12px 16px;border-top:1px solid #2a2a3a;display:flex;align-items:center;gap:8px}
+.fp-footer input{flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--bdr);background:var(--inp);color:var(--tx);font-size:12px;font-family:var(--mono);outline:none}
+.fp-footer input:focus{border-color:var(--acc)}
+.fp-footer .fp-select-btn{padding:7px 16px;border-radius:6px;border:none;background:var(--acc);color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s}
+.fp-footer .fp-select-btn:hover{filter:brightness(1.15)}
+.fp-footer .fp-new-btn{padding:7px 12px;border-radius:6px;border:1px solid #3d6b3d;background:transparent;color:var(--acc);font-size:12px;cursor:pointer}
+.fp-footer .fp-new-btn:hover{background:#1a2a1a}
+.fp-loading{padding:24px;text-align:center;color:#888;font-size:12px}
+
 /* workdir badge */
 .workdir-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
 .workdir-label{word-break:break-all;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -346,21 +374,136 @@ function updateWorkdirDisplay(wd) {
 }
 
 async function changeWorkdir() {
-  const path = prompt('Enter the folder path for file operations:');
-  if (!path) return;
-  try {
-    const res = await fetch('/workdir', {
+  openFolderPicker(function(selectedPath) {
+    fetch('/workdir', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path })
+      body: JSON.stringify({ path: selectedPath })
+    }).then(r => r.json()).then(d => {
+      if (d.workdir) updateWorkdirDisplay(d.workdir);
+      else if (d.error) alert(d.error);
+    }).catch(e => alert('Error: ' + e.message));
+  });
+}
+
+function openFolderPicker(onSelect) {
+  // Remove existing picker if any
+  const old = document.querySelector('.fp-overlay');
+  if (old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'fp-overlay';
+  overlay.innerHTML =
+    '<div class="fp-modal">' +
+      '<div class="fp-header"><h3>📂 Choose a folder</h3><button class="fp-close">&times;</button></div>' +
+      '<div class="fp-shortcuts" id="fp-shortcuts"></div>' +
+      '<div class="fp-breadcrumb" id="fp-breadcrumb"></div>' +
+      '<div class="fp-list" id="fp-list"><div class="fp-loading">Loading…</div></div>' +
+      '<div class="fp-footer">' +
+        '<input type="text" id="fp-path-input" placeholder="Or type a path…" />' +
+        '<button class="fp-new-btn" id="fp-new-btn" title="Create new folder">+ New</button>' +
+        '<button class="fp-select-btn" id="fp-select-btn">Select This Folder</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  let currentPath = '';
+
+  // Close on overlay click or close button
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('.fp-close').addEventListener('click', () => overlay.remove());
+
+  // Select button
+  overlay.querySelector('#fp-select-btn').addEventListener('click', () => {
+    const p = overlay.querySelector('#fp-path-input').value.trim() || currentPath;
+    if (p) { onSelect(p); overlay.remove(); }
+  });
+
+  // New folder button
+  overlay.querySelector('#fp-new-btn').addEventListener('click', () => {
+    const name = prompt('New folder name:');
+    if (!name) return;
+    const newPath = currentPath + '/' + name;
+    fetch('/workdir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: newPath })
+    }).then(r => r.json()).then(d => {
+      if (d.workdir) { loadDir(currentPath); }
+      else { loadDir(currentPath); } // refresh regardless
     });
-    const d = await res.json();
-    if (d.workdir) {
-      updateWorkdirDisplay(d.workdir);
-    } else if (d.error) {
-      alert(d.error);
+  });
+
+  // Enter on input
+  overlay.querySelector('#fp-path-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const v = e.target.value.trim();
+      if (v) loadDir(v);
     }
-  } catch(e) { alert('Error: ' + e.message); }
+  });
+
+  function renderBreadcrumb(path) {
+    const bc = overlay.querySelector('#fp-breadcrumb');
+    const parts = path.split('/').filter(Boolean);
+    let html = '<span data-path="/">/</span>';
+    let built = '';
+    parts.forEach((p) => {
+      built += '/' + p;
+      html += ' › <span data-path="' + esc(built) + '">' + esc(p) + '</span>';
+    });
+    bc.innerHTML = html;
+    bc.querySelectorAll('span').forEach(s => {
+      s.addEventListener('click', () => loadDir(s.dataset.path));
+    });
+  }
+
+  function loadDir(path) {
+    const list = overlay.querySelector('#fp-list');
+    list.innerHTML = '<div class="fp-loading">Loading…</div>';
+    const url = path ? '/browse?path=' + encodeURIComponent(path) : '/browse';
+    fetch(url).then(r => r.json()).then(data => {
+      if (data.error) {
+        list.innerHTML = '<div class="fp-empty">⚠️ ' + esc(data.error) + '</div>';
+        return;
+      }
+      currentPath = data.current;
+      overlay.querySelector('#fp-path-input').value = currentPath;
+      renderBreadcrumb(currentPath);
+
+      // Render shortcuts if available
+      if (data.shortcuts) {
+        const sc = overlay.querySelector('#fp-shortcuts');
+        sc.innerHTML = data.shortcuts.map(s =>
+          '<button class="fp-shortcut" data-path="' + esc(s.path) + '">' + esc(s.name) + '</button>'
+        ).join('');
+        sc.querySelectorAll('.fp-shortcut').forEach(b => {
+          b.addEventListener('click', () => loadDir(b.dataset.path));
+        });
+      }
+
+      // Render directory list
+      let html = '';
+      if (data.parent) {
+        html += '<div class="fp-item" data-path="' + esc(data.parent) + '"><span class="fp-item-icon">⬆️</span><span class="fp-item-name">..</span></div>';
+      }
+      if (data.dirs.length === 0 && !data.parent) {
+        html += '<div class="fp-empty">No subfolders found</div>';
+      } else {
+        data.dirs.forEach(d => {
+          html += '<div class="fp-item" data-path="' + esc(d.path) + '"><span class="fp-item-icon">📁</span><span class="fp-item-name">' + esc(d.name) + '</span></div>';
+        });
+      }
+      list.innerHTML = html;
+      list.querySelectorAll('.fp-item').forEach(item => {
+        item.addEventListener('click', () => loadDir(item.dataset.path));
+      });
+    }).catch(err => {
+      list.innerHTML = '<div class="fp-empty">Error: ' + esc(err.message) + '</div>';
+    });
+  }
+
+  // Initial load
+  loadDir('');
 }
 
 function stopGeneration() {
@@ -554,26 +697,22 @@ function showDirectoryPrompt(bbl) {
   box.className = 'dir-prompt';
   box.innerHTML =
     '<div class="dir-prompt-title">📂 Set working directory</div>' +
-    '<input class="dir-prompt-input" type="text" placeholder="/path/to/your/project" id="dir-prompt-input" />' +
     '<div class="dir-prompt-btns">' +
-      '<button class="btn-approve" data-role="set-dir">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
-        ' Set Directory' +
+      '<button class="btn-approve" data-role="browse-dir" style="padding:8px 20px">' +
+        '📁 Browse Folders' +
       '</button>' +
+      '<input class="dir-prompt-input" type="text" placeholder="Or type a path and press Enter…" id="dir-prompt-input" style="flex:1;margin-left:8px" />' +
     '</div>';
   bbl.appendChild(box);
   scrollDown();
 
   const inp = box.querySelector('#dir-prompt-input');
-  inp.focus();
 
   return new Promise((resolve) => {
-    async function submit() {
-      const path = inp.value.trim();
-      if (!path) { inp.style.borderColor = 'var(--warn)'; return; }
-      const btn = box.querySelector('[data-role="set-dir"]');
-      btn.disabled = true;
-      btn.textContent = 'Setting…';
+    async function setDir(path) {
+      if (!path) return;
+      const btns = box.querySelector('.dir-prompt-btns');
+      btns.innerHTML = '<span style="color:#888;font-size:12px">Setting…</span>';
       try {
         const res = await fetch('/workdir', {
           method: 'POST',
@@ -588,12 +727,10 @@ function showDirectoryPrompt(bbl) {
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
             ' Working directory set to: ' + esc(data.workdir) +
             '</div>';
-          // Auto-retry: resend the original user message now that workdir is set
           if (retryAfterWorkdir) {
             const retryMsg = retryAfterWorkdir;
             retryAfterWorkdir = null;
             resolve('set');
-            // Small delay so UI updates before resending
             setTimeout(() => {
               document.getElementById('userinput').value = retryMsg;
               send();
@@ -603,8 +740,6 @@ function showDirectoryPrompt(bbl) {
         } else {
           box.querySelector('.dir-prompt-btns').innerHTML =
             '<span style="color:var(--warn)">' + esc(data.error || 'Unknown error') + '</span>';
-          btn.disabled = false;
-          btn.textContent = 'Set Directory';
         }
       } catch (err) {
         box.querySelector('.dir-prompt-btns').innerHTML =
@@ -613,8 +748,18 @@ function showDirectoryPrompt(bbl) {
       resolve('set');
     }
 
-    box.querySelector('[data-role="set-dir"]').addEventListener('click', submit);
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    // Browse button opens the folder picker modal
+    box.querySelector('[data-role="browse-dir"]').addEventListener('click', () => {
+      openFolderPicker(setDir);
+    });
+
+    // Also allow typing a path and pressing Enter
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const path = inp.value.trim();
+        if (path) setDir(path);
+      }
+    });
   });
 }
 

@@ -468,6 +468,47 @@ async def download_file(filename: str):
     return FileResponse(path, filename=path.name)
 
 
+@app.get("/browse")
+async def browse_dirs(request: Request):
+    """List subdirectories at a given path for the folder picker UI."""
+    raw = request.query_params.get("path", "")
+    if not raw:
+        # Default starting points
+        home = Path.home()
+        desktop = home / "Desktop"
+        return JSONResponse({
+            "current": str(home),
+            "parent": str(home.parent),
+            "dirs": sorted([
+                {"name": d.name, "path": str(d)}
+                for d in home.iterdir()
+                if d.is_dir() and not d.name.startswith(".")
+            ], key=lambda x: x["name"].lower()),
+            "shortcuts": [
+                {"name": "🏠 Home", "path": str(home)},
+                {"name": "🖥 Desktop", "path": str(desktop)},
+            ],
+        })
+    target = Path(raw).expanduser().resolve()
+    if not target.is_dir():
+        return JSONResponse({"error": f"Not a directory: {raw}"}, status_code=400)
+    if is_in_project_dir(target):
+        return JSONResponse({"error": "Cannot browse project directory"}, status_code=403)
+    try:
+        children = sorted([
+            {"name": d.name, "path": str(d)}
+            for d in target.iterdir()
+            if d.is_dir() and not d.name.startswith(".")
+        ], key=lambda x: x["name"].lower())
+    except PermissionError:
+        return JSONResponse({"error": "Permission denied"}, status_code=403)
+    return JSONResponse({
+        "current": str(target),
+        "parent": str(target.parent) if target.parent != target else None,
+        "dirs": children,
+    })
+
+
 @app.post("/chat")
 async def chat(request: Request):
     global history, workdir
