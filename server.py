@@ -372,6 +372,20 @@ async def get_workspace():
     return JSONResponse({"workspace": str(workspace)})
 
 
+@app.post("/workspace")
+async def set_workspace(request: Request):
+    global workspace
+    body = await request.json()
+    new_ws = body.get("path", "").strip()
+    if not new_ws:
+        return JSONResponse({"error": "empty path"}, status_code=400)
+    p = Path(new_ws).expanduser().resolve()
+    if not p.is_dir():
+        return JSONResponse({"error": f"Not a directory: {p}"}, status_code=400)
+    workspace = p
+    return JSONResponse({"workspace": str(workspace)})
+
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -389,6 +403,7 @@ if __name__ == "__main__":
     print(f"  ║  Owner : Atul Chauhan · Bangalore · 25   ║")
     print(f"  ║  Model : {MODEL:<32}║")
     print(f"  ║  Open  : http://localhost:{args.port:<15}║")
-    print(f"  ╚══════════════════════════════════════════╝\n")
+    print(f"  ╚══════════════════════════════════════════╝")
+    print(f"  Workspace: {workspace}\n")
 
     uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="warning")
