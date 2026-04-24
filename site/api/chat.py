@@ -75,15 +75,42 @@ def _rate_ok(key: str) -> bool:
 
 
 class handler(BaseHTTPRequestHandler):
+    def _cors(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._cors()
+        self.end_headers()
+
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(length)) if length else {}
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+        except Exception:
+            self.send_response(400)
+            self._cors()
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Invalid request body."}).encode())
+            return
 
         ip = self.headers.get("x-forwarded-for", self.client_address[0]).split(",")[0].strip()
         key = _key(ip)
 
+        if not GROQ_KEY:
+            self.send_response(500)
+            self._cors()
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "AI service not configured. Please set GROQ_API_KEY."}).encode())
+            return
+
         if not _rate_ok(key):
             self.send_response(429)
+            self._cors()
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"error": "Too many messages. Please wait a minute."}).encode())
@@ -92,6 +119,7 @@ class handler(BaseHTTPRequestHandler):
         user_msg = (body.get("message") or "").strip()
         if not user_msg or len(user_msg) > 2000:
             self.send_response(400)
+            self._cors()
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"error": "Message empty or too long."}).encode())
@@ -106,6 +134,7 @@ class handler(BaseHTTPRequestHandler):
         messages = [{"role": "system", "content": SYSTEM_PROMPT}] + hist
 
         self.send_response(200)
+        self._cors()
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("X-Accel-Buffering", "no")
