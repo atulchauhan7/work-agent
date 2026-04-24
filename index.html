@@ -513,6 +513,64 @@ function appendPendingActions(bbl, pendingActions) {
   });
 }
 
+// ── directory prompt (inline) ───────────────────────────────────────────────
+function showDirectoryPrompt(bbl) {
+  const box = document.createElement('div');
+  box.className = 'dir-prompt';
+  box.innerHTML =
+    '<div class="dir-prompt-title">📂 Set working directory</div>' +
+    '<input class="dir-prompt-input" type="text" placeholder="/path/to/your/project" id="dir-prompt-input" />' +
+    '<div class="dir-prompt-btns">' +
+      '<button class="btn-approve" data-role="set-dir">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+        ' Set Directory' +
+      '</button>' +
+    '</div>';
+  bbl.appendChild(box);
+  scrollDown();
+
+  const inp = box.querySelector('#dir-prompt-input');
+  inp.focus();
+
+  return new Promise((resolve) => {
+    async function submit() {
+      const path = inp.value.trim();
+      if (!path) { inp.style.borderColor = 'var(--warn)'; return; }
+      const btn = box.querySelector('[data-role="set-dir"]');
+      btn.disabled = true;
+      btn.textContent = 'Setting…';
+      try {
+        const res = await fetch('/workdir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path })
+        });
+        const data = await res.json();
+        if (data.workdir) {
+          updateWorkdirDisplay(data.workdir);
+          box.innerHTML =
+            '<div style="color:var(--ok);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+            ' Working directory set to: ' + esc(data.workdir) +
+            '</div><div style="color:var(--dim);font-size:11px;margin-top:4px">Now send your request again and files will be created here.</div>';
+        } else {
+          box.querySelector('.dir-prompt-btns').innerHTML =
+            '<span style="color:var(--warn)">' + esc(data.error || 'Unknown error') + '</span>';
+          btn.disabled = false;
+          btn.textContent = 'Set Directory';
+        }
+      } catch (err) {
+        box.querySelector('.dir-prompt-btns').innerHTML =
+          '<span style="color:var(--warn)">Error: ' + esc(err.message) + '</span>';
+      }
+      resolve('set');
+    }
+
+    box.querySelector('[data-role="set-dir"]').addEventListener('click', submit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  });
+}
+
 // ── send ───────────────────────────────────────────────────────────────────────
 async function send() {
   if (busy) return;
