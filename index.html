@@ -223,6 +223,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 // ── state ──────────────────────────────────────────────────────────────────────
 let busy = false;
 let abortCtrl = null;  // for stop button
+let lastUserMessage = null;  // for auto-retry after workdir is set
+let retryAfterWorkdir = null;  // message to auto-resend after directory is set
 
 // ── init ───────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -237,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       removeEmpty();
       for (const m of d.history) {
         const role = m.role === 'user' ? 'user' : 'agent';
-        const text = m.content.replace(/\n\n\[Agent workspace:[^\]]*\]$/,'').trim();
+        const text = m.content.replace(/\n\n\[(Agent workspace|Working directory):[^\]]*\]$/,'').trim();
         if (role === 'agent') {
           const { txt } = appendMsg(role, '', false);
           txt.innerHTML = renderMarkdown(stripActionTags(text));
@@ -552,7 +554,19 @@ function showDirectoryPrompt(bbl) {
             '<div style="color:var(--ok);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
             ' Working directory set to: ' + esc(data.workdir) +
-            '</div><div style="color:var(--dim);font-size:11px;margin-top:4px">Now send your request again and files will be created here.</div>';
+            '</div>';
+          // Auto-retry: resend the original user message now that workdir is set
+          if (retryAfterWorkdir) {
+            const retryMsg = retryAfterWorkdir;
+            retryAfterWorkdir = null;
+            resolve('set');
+            // Small delay so UI updates before resending
+            setTimeout(() => {
+              document.getElementById('userinput').value = retryMsg;
+              send();
+            }, 300);
+            return;
+          }
         } else {
           box.querySelector('.dir-prompt-btns').innerHTML =
             '<span style="color:var(--warn)">' + esc(data.error || 'Unknown error') + '</span>';
@@ -585,6 +599,7 @@ async function send() {
   document.getElementById('stopbtn').classList.add('visible');
   abortCtrl = new AbortController();
 
+  lastUserMessage = text;
   appendMsg('user', text);
   const { bbl: agentBbl, txt: agentTxt } = appendMsg('agent', '', true);
   let raw = '';
@@ -642,6 +657,7 @@ async function send() {
         } else if (ev.type === 'ask_directory') {
           // Remove thinking indicator and show directory prompt
           agentTxt.innerHTML = renderMarkdown(ev.message || 'Which folder should I create files in?');
+          retryAfterWorkdir = lastUserMessage;  // save for auto-retry
           pendingPromise = showDirectoryPrompt(agentBbl);
 
         } else if (ev.type === 'loop_killed') {

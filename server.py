@@ -217,15 +217,18 @@ def extract_filename_from_context(text: str, user_msg: str) -> str | None:
     return None
 
 
-# Regex to detect absolute paths in user messages
-ABS_PATH_RE = re.compile(r'(?:^|[\s:])(/(?:Users|home|tmp|var|opt)/[^\s,;]+)', re.IGNORECASE)
-
-
 def extract_user_target_dir(user_msg: str) -> Path | None:
-    """Extract an absolute directory path from the user's message, if any."""
-    m = ABS_PATH_RE.search(user_msg)
+    """Extract an absolute directory path from the user's message.
+    Handles paths with spaces like '/Users/atul/Desktop/My Projects/results'.
+    """
+    # Strategy: find a path start, then greedily consume valid path characters
+    # including spaces (as long as they're followed by valid path continuations)
+    m = re.search(
+        r'(/(?:Users|home|tmp|var|opt)/[\w._ -]+(?:/[\w._ -]+)*)',
+        user_msg, re.IGNORECASE
+    )
     if m:
-        p = Path(m.group(1).rstrip('/'))
+        p = Path(m.group(1).rstrip('/ '))
         # If the path has a file extension, use its parent
         if '.' in p.name and len(p.suffix) <= 6:
             p = p.parent
@@ -249,21 +252,17 @@ def find_user_target_dir(user_msg: str, chat_history: list[dict]) -> Path | None
 
 
 def smart_resolve(raw: str, ws: Path, user_msg: str, chat_history: list[dict] = None) -> Path:
-    """Resolve a path from the model, preferring the user's target directory if given."""
+    """Resolve a path from the model against the working directory."""
     p = Path(raw.strip())
     # If model used an absolute path, respect it
     if p.is_absolute():
         return p.resolve()
-    # If user specified a directory (in current or recent messages), resolve relative to that
-    user_dir = find_user_target_dir(user_msg, chat_history or [])
-    if user_dir:
-        parts = p.parts
-        if len(parts) > 1 and parts[0] == user_dir.name:
-            # Model duplicated the dir name (e.g. user said ".../results", model wrote "results/file.js")
-            return (user_dir / Path(*parts[1:])).resolve()
-        else:
-            return (user_dir / p).resolve()
-    # Default: resolve relative to workspace
+    # Resolve relative paths against the working directory (ws)
+    # Handle case where model duplicates the workdir name
+    # e.g. workdir=/Users/.../results, model writes "results/file.js"
+    parts = p.parts
+    if len(parts) > 1 and parts[0] == ws.name:
+        return (ws / Path(*parts[1:])).resolve()
     return (ws / p).resolve()
 
 
