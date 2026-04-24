@@ -580,6 +580,16 @@ async def chat_clear(request: Request):
     return JSONResponse({"status": "cleared"})
 
 
+# Aliases for /api/* (used by React frontend via Vite proxy)
+@app.post("/api/chat")
+async def api_chat(request: Request):
+    return await chat_send(request)
+
+@app.post("/api/clear")
+async def api_clear(request: Request):
+    return await chat_clear(request)
+
+
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
