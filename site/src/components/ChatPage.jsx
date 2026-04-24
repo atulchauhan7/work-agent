@@ -17,6 +17,23 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const endRef = useRef(null)
   const inputRef = useRef(null)
+  const containerRef = useRef(null)
+
+  // Prevent mobile keyboard from causing layout shift
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv || !containerRef.current) return
+    const onResize = () => {
+      // Adjust container height to visual viewport (excludes keyboard)
+      containerRef.current.style.height = `${vv.height}px`
+    }
+    vv.addEventListener('resize', onResize)
+    vv.addEventListener('scroll', onResize)
+    return () => {
+      vv.removeEventListener('resize', onResize)
+      vv.removeEventListener('scroll', onResize)
+    }
+  }, [])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -79,7 +96,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-dvh bg-dark-bg text-white noise">
+    <div ref={containerRef} className="flex flex-col h-[100svh] bg-dark-bg text-white overflow-hidden">
       <Navbar />
 
       {/* Sub-header */}
@@ -98,7 +115,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
           <AnimatePresence mode="wait">
             {messages.length === 0 && (
@@ -112,11 +129,10 @@ export default function ChatPage() {
               >
                 {/* Animated logo */}
                 <div className="relative inline-block mb-6">
-                  <div className="text-5xl sm:text-6xl font-heading font-bold">
-                    Zivon<span className="text-gradient">X</span>
+                  <div className="text-5xl sm:text-6xl font-display font-bold">
+                    Zivon<span className="text-gold">X</span>
                   </div>
                   <div className="text-sm text-gray-600 mt-1 tracking-widest uppercase">AI Assistant</div>
-                  <div className="hero-orb w-[200px] h-[200px] bg-gold/20 top-[-50px] left-1/2 -translate-x-1/2" />
                 </div>
 
                 <p className="text-gray-400 text-sm sm:text-base max-w-sm mx-auto mb-10 leading-relaxed">
@@ -131,7 +147,7 @@ export default function ChatPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
                       onClick={() => send(c.msg)}
-                      className="px-4 py-3 card-glow rounded-xl text-[13px] text-gray-300 text-left hover:text-gold cursor-pointer transition-colors duration-300"
+                      className="px-4 py-3 bg-dark-card border border-white/5 hover:border-white/20 rounded-sm text-[13px] text-gray-300 text-left hover:text-gold cursor-pointer transition-all duration-300"
                     >
                       <span className="text-gold/40 mr-2">→</span>
                       {c.label}
@@ -145,14 +161,14 @@ export default function ChatPage() {
           {messages.map((m, i) => (
             <div key={i} className={`chat-bubble mb-5 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
-                <div className="w-7 h-7 rounded-lg bg-gold/10 border border-gold/10 flex items-center justify-center shrink-0 mr-3 mt-1">
+                <div className="w-7 h-7 rounded-sm bg-gold/10 border border-gold/10 flex items-center justify-center shrink-0 mr-3 mt-1">
                   <span className="text-[11px] font-bold text-gold">Z</span>
                 </div>
               )}
-              <div className={`max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl text-[14px] leading-relaxed ${
+              <div className={`max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-sm text-[14px] leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-gradient-to-br from-gold/15 to-gold/5 text-gold-light border border-gold/15 rounded-br-md'
-                  : 'bg-dark-elevated border border-white/[0.04] text-gray-200 rounded-bl-md'
+                  ? 'bg-gradient-to-br from-gold/15 to-gold/5 text-gold-light border border-gold/15'
+                  : 'bg-dark-card border border-white/[0.04] text-gray-200'
               }`}>
                 {m.content ? (
                   <span className="whitespace-pre-wrap">{m.content}</span>
@@ -184,14 +200,14 @@ export default function ChatPage() {
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="Ask about Zivonx..."
-              className="w-full px-4 py-3 sm:py-3.5 bg-dark-elevated border border-white/[0.06] rounded-xl text-white text-[14px] placeholder-gray-600 focus-gold transition-all pr-12"
+              className="w-full px-4 py-3 sm:py-3.5 bg-dark-card border border-white/[0.06] rounded-sm text-white text-[14px] placeholder-gray-600 transition-[border-color,box-shadow] focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/25 pr-12"
               disabled={loading}
             />
           </div>
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-4 sm:px-6 py-3 sm:py-3.5 bg-gradient-to-r from-gold to-gold-light text-black font-semibold rounded-xl hover:shadow-lg hover:shadow-gold/20 disabled:opacity-20 disabled:hover:shadow-none transition-all duration-300 cursor-pointer text-sm shrink-0"
+            className="px-4 sm:px-6 py-3 sm:py-3.5 bg-gold text-black font-semibold rounded-sm hover:bg-gold-light disabled:opacity-20 transition-colors duration-300 cursor-pointer text-sm shrink-0 border border-gold-dark/20"
           >
             <span className="hidden sm:inline">Send</span>
             <svg className="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
