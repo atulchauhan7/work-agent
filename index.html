@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AtulCoder</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#212121;--sb:#171717;--inp:#2f2f2f;--bdr:#3a3a3a;
+  --tx:#ececec;--dim:#8e8ea0;--acc:#10a37f;--acc2:#0d8a6c;
+  --ubg:#2f2f2f;--abg:#1a2a1a;--abdr:#2d4a2d;
+  --font:'Segoe UI',system-ui,sans-serif;
+  --mono:'Fira Code',Consolas,monospace;
+  --warn:#e87e7e;--info:#a0a0ff;--ok:#4caf50;
+}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font)}
+.layout{display:flex;height:100vh;overflow:hidden}
+
+/* sidebar */
+.sidebar{width:260px;min-width:260px;background:var(--sb);display:flex;flex-direction:column;border-right:1px solid var(--bdr);padding:14px}
+.logo{display:flex;align-items:center;gap:10px;padding:10px 4px 14px;border-bottom:1px solid var(--bdr);margin-bottom:12px}
+.logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--acc),#0d6efd);display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-name{font-weight:700;font-size:15px}
+.logo-sub{font-size:11px;color:var(--dim)}
+.btn-new{width:100%;padding:10px 14px;border-radius:8px;background:var(--inp);border:1px solid var(--bdr);color:var(--tx);font-size:13px;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.btn-new:hover{background:#3a3a3a;border-color:var(--acc)}
+.btn-new svg{opacity:.7}
+.sb-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--bdr);font-size:11px;color:var(--dim);line-height:1.7}
+.online{color:#7ec87e}
+.ws-path{word-break:break-all;margin-bottom:4px;cursor:pointer;padding:4px 6px;border-radius:4px;transition:background .15s}
+.ws-path:hover{background:var(--inp)}
+
+/* main */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.hdr{padding:12px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(8px);background:rgba(33,33,33,.85)}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-title{font-weight:600;font-size:15px}
+.hdr-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--acc);color:#fff;font-weight:600}
+.btn-clr{padding:6px 14px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-size:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.btn-clr:hover{background:var(--inp);color:var(--tx);border-color:#555}
+
+/* messages */
+.msgs{flex:1;overflow-y:auto;padding:20px 0;scroll-behavior:smooth}
+.msgs::-webkit-scrollbar{width:5px}
+.msgs::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+.msg{max-width:780px;margin:0 auto;padding:8px 20px;display:flex;gap:12px;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-top:3px}
+.av.user{background:#5865f2;color:#fff}
+.av.agent{background:var(--acc);color:#fff}
+.bbl{flex:1;min-width:0;padding-top:3px}
+.bbl .lbl{font-size:12px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.bbl .txt{font-size:14px;line-height:1.75;color:var(--tx);word-break:break-word;white-space:pre-wrap}
+.bbl.user .txt{background:var(--ubg);border-radius:12px;padding:10px 14px;display:inline-block;white-space:pre-wrap}
+
+/* markdown in responses */
+.bbl .txt code{background:#1a1a1a;padding:2px 5px;border-radius:4px;font-family:var(--mono);font-size:12.5px;color:#e0e0e0}
+.bbl .txt pre{background:#111;border:1px solid var(--bdr);border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre}
+.bbl .txt pre code{background:none;padding:0;font-size:inherit}
+.bbl .txt strong{color:#fff;font-weight:600}
+.bbl .txt h3{font-size:15px;margin:12px 0 6px;color:#fff}
+.bbl .txt a{color:var(--acc);text-decoration:none}
+.bbl .txt a:hover{text-decoration:underline}
+
+/* thinking indicator */
+.thinking{display:flex;align-items:center;gap:8px;padding:6px 0;color:var(--dim);font-size:13px;animation:fi .2s ease}
+.thinking-dots{display:flex;gap:3px}
+.thinking-dots span{width:6px;height:6px;border-radius:50%;background:var(--acc);opacity:.4;animation:pulse 1.2s ease-in-out infinite}
+.thinking-dots span:nth-child(2){animation-delay:.2s}
+.thinking-dots span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.4;transform:scale(1)}40%{opacity:1;transform:scale(1.2)}}
+
+/* action cards */
+.act-card{background:var(--abg);border:1px solid var(--abdr);border-radius:8px;padding:10px 14px;margin:6px 0;font-family:var(--mono);font-size:12px;animation:fi .2s ease}
+.act-hdr{font-weight:700;color:#7ec87e;margin-bottom:3px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.act-hdr .act-chevron{font-size:10px;transition:transform .2s;color:var(--dim)}
+.act-hdr .act-chevron.open{transform:rotate(90deg)}
+.act-res{background:#0d0d0d;border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;font-size:11px;color:#aaa;max-height:200px;overflow-y:auto;border:1px solid #1a1a1a}
+.act-res.collapsed{display:none}
+.act-card.blocked{background:#2a1a1a;border-color:#4a2d2d}
+.act-card.blocked .act-hdr{color:var(--warn)}
+
+/* pending actions */
+.pending-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #3d3d6b;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
+.pending-title{font-size:13px;font-weight:600;color:var(--info);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.pending-item{font-family:var(--mono);font-size:12px;color:var(--dim);padding:6px 10px;margin:4px 0;background:rgba(0,0,0,.2);border-radius:6px;display:flex;align-items:flex-start;gap:8px}
+.pending-item-icon{flex-shrink:0;margin-top:1px}
+.pending-item-detail{flex:1;min-width:0}
+.pending-item-path{color:#ccc;font-weight:500}
+.pending-item-preview{margin-top:4px;max-height:120px;overflow-y:auto;background:#0a0a0a;border-radius:4px;padding:6px 8px;font-size:11px;color:#888;white-space:pre;border:1px solid #222}
+.pending-btns{display:flex;gap:10px;margin-top:12px;align-items:center}
+.btn-approve{padding:8px 20px;border-radius:8px;border:none;background:var(--acc);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn-approve:hover{background:var(--acc2);transform:translateY(-1px)}
+.btn-approve:disabled{background:#333;cursor:wait;transform:none}
+.btn-deny{padding:8px 20px;border-radius:8px;border:1px solid #4a2d2d;background:transparent;color:var(--warn);font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn-deny:hover{background:#2a1a1a}
+.pending-hint{font-size:11px;color:var(--dim);margin-left:auto}
+
+/* stop button */
+.stop-bar{max-width:780px;margin:0 auto;padding:0 20px}
+.stop-btn{display:none;width:100%;padding:8px;border-radius:8px;border:1px solid #555;background:var(--inp);color:var(--tx);font-size:13px;cursor:pointer;transition:all .15s;margin-bottom:6px}
+.stop-btn:hover{background:#444;border-color:var(--warn)}
+.stop-btn.visible{display:block}
+
+/* cursor */
+.cur{display:inline-block;width:7px;height:14px;background:var(--acc);border-radius:2px;animation:bl .7s steps(1) infinite;vertical-align:text-bottom}
+@keyframes bl{50%{opacity:0}}
+
+/* empty */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;text-align:center}
+.empty-icon{font-size:48px;filter:drop-shadow(0 0 20px rgba(16,163,127,.3))}
+.empty-h{font-size:22px;font-weight:700}
+.empty-s{color:var(--dim);font-size:13px;max-width:380px;line-height:1.6}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
+.chip{padding:8px 16px;border:1px solid var(--bdr);border-radius:20px;font-size:12px;color:var(--dim);cursor:pointer;transition:all .18s;background:var(--inp)}
+.chip:hover{border-color:var(--acc);color:var(--tx);background:#1a2a1a;transform:translateY(-1px)}
+
+/* input */
+.inp-area{padding:10px 20px 18px;flex-shrink:0;background:var(--bg);border-top:1px solid var(--bdr)}
+.inp-box{max-width:780px;margin:0 auto;background:var(--inp);border:1px solid var(--bdr);border-radius:14px;display:flex;align-items:flex-end;gap:6px;padding:10px 10px 10px 16px;transition:border-color .15s,box-shadow .15s}
+.inp-box:focus-within{border-color:var(--acc);box-shadow:0 0 0 2px rgba(16,163,127,.15)}
+#userinput{flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-size:14px;font-family:var(--font);resize:none;max-height:180px;line-height:1.6;padding:4px 0}
+#userinput::placeholder{color:var(--dim)}
+.sbtn{width:36px;height:36px;border-radius:8px;flex-shrink:0;background:var(--acc);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sbtn:hover:not(:disabled){background:var(--acc2);transform:scale(1.05)}
+.sbtn:disabled{background:#333;cursor:not-allowed;transform:none}
+.inp-hint{text-align:center;font-size:11px;color:var(--dim);margin-top:7px;max-width:780px;margin-left:auto;margin-right:auto}
+.inp-hint kbd{background:#333;padding:1px 5px;border-radius:3px;font-size:10px;font-family:var(--mono);border:1px solid #444}
+
+/* directory prompt */
+.dir-prompt{background:linear-gradient(135deg,#1a2a1a,#16213e);border:1px solid #3d6b3d;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
+.dir-prompt-title{font-size:13px;font-weight:600;color:var(--acc);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.dir-prompt-input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:var(--tx);font-size:13px;font-family:var(--mono);outline:none}
+.dir-prompt-input:focus{border-color:var(--acc)}
+.dir-prompt-btns{display:flex;gap:8px;margin-top:10px}
+.dir-prompt .btn-approve{padding:8px 20px}
+
+/* workdir badge */
+.workdir-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.workdir-label{word-break:break-all;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.workdir-btn{padding:2px 8px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-size:10px;cursor:pointer;flex-shrink:0;transition:all .15s}
+.workdir-btn:hover{background:var(--inp);color:var(--tx)}
+.workdir-not-set{color:var(--warn);font-size:11px}
+
+/* responsive */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .msg{padding:6px 12px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-name">AtulCoder</div>
+        <div class="logo-sub">AI Coding Agent</div>
+      </div>
+    </div>
+    <button class="btn-new" onclick="newChat()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New chat
+    </button>
+    <div class="sb-foot">
+      <div class="workdir-row">
+        <div id="workdir-display" class="workdir-label workdir-not-set">📂 No folder set</div>
+        <button class="workdir-btn" onclick="changeWorkdir()">Change</button>
+      </div>
+      <div class="online">● Free · Unlimited · Offline</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="hdr">
+      <div class="hdr-left">
+        <div class="hdr-title">AtulCoder</div>
+        <span class="hdr-badge">AGENT</span>
+      </div>
+      <button class="btn-clr" onclick="newChat()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        Clear
+      </button>
+    </header>
+
+    <div class="msgs" id="msgs">
+      <div class="empty" id="empty">
+        <div class="empty-icon">⚡</div>
+        <div class="empty-h">AtulCoder</div>
+        <div class="empty-s">Your personal AI coding agent by Atul Chauhan.<br>I can create files, run commands, and build projects — all locally.</div>
+        <div class="chips">
+          <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
+          <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
+          <div class="chip" onclick="suggest('List the files in the current workspace')">📁 List workspace</div>
+          <div class="chip" onclick="suggest('Who is your owner?')">👤 Who owns you?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inp-area">
+      <div class="stop-bar">
+        <button class="stop-btn" id="stopbtn" onclick="stopGeneration()">■ Stop generating</button>
+      </div>
+      <div class="inp-box">
+        <textarea id="userinput" rows="1" placeholder="Ask AtulCoder anything… (Enter to send, Shift+Enter for new line)"></textarea>
+        <button class="sbtn" id="sbtn" title="Send (Enter)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="inp-hint">AtulCoder runs 100% locally. Actions require your approval. <kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line</div>
+    </div>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+// ── state ──────────────────────────────────────────────────────────────────────
+let busy = false;
+let abortCtrl = null;  // for stop button
+
+// ── init ───────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const d = await (await fetch('/workspace')).json();
+    updateWorkdirDisplay(d.workdir);
+  } catch(_) {}
+
+  try {
+    const d = await (await fetch('/history')).json();
+    if (d.history && d.history.length > 0) {
+      removeEmpty();
+      for (const m of d.history) {
+        const role = m.role === 'user' ? 'user' : 'agent';
+        const text = m.content.replace(/\n\n\[Agent workspace:[^\]]*\]$/,'').trim();
+        if (role === 'agent') {
+          const { txt } = appendMsg(role, '', false);
+          txt.innerHTML = renderMarkdown(stripActionTags(text));
+        } else {
+          appendMsg(role, text);
+        }
+      }
+      scrollDown();
+    }
+  } catch(_) {}
+
+  document.getElementById('sbtn').addEventListener('click', send);
+  document.getElementById('userinput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  document.getElementById('userinput').addEventListener('input', autoResize);
+  document.getElementById('userinput').focus();
+});
+
+// ── helpers ────────────────────────────────────────────────────────────────────
+function scrollDown() {
+  const el = document.getElementById('msgs');
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
+function autoResize() {
+  const ta = document.getElementById('userinput');
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
+}
+
+function removeEmpty() {
+  const e = document.getElementById('empty');
+  if (e) e.remove();
+}
+
+function suggest(text) {
+  document.getElementById('userinput').value = text;
+  send();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function stripActionTags(s) {
+  return s
+    .replace(/<(READ_FILE|LIST_DIR|MAKE_DIR)[^>]*\/?>/gi, '')
+    .replace(/<WRITE_FILE[^>]*>[\s\S]*?<\/WRITE_FILE>/gi, '')
+    .replace(/<RUN_CMD>[\s\S]*?<\/RUN_CMD>/gi, '')
+    .trim();
+}
+
+function renderMarkdown(text) {
+  // Simple markdown: code blocks, inline code, bold, headers, links
+  let html = esc(text);
+  // code blocks: ```lang\n...\n```
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    return '<pre><code>' + code + '</code></pre>';
+  });
+  // inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  return html;
+}
+
+const EMPTY_HTML = `
+  <div class="empty" id="empty">
+    <div class="empty-icon">⚡</div>
+    <div class="empty-h">AtulCoder</div>
+    <div class="empty-s">Your personal AI coding agent by Atul Chauhan.<br>I can create files, run commands, and build projects — all locally.</div>
+    <div class="chips">
+      <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
+      <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
+      <div class="chip" onclick="suggest('List the files in the current workspace')">📁 List workspace</div>
+      <div class="chip" onclick="suggest('Who is your owner?')">👤 Who owns you?</div>
+    </div>
+  </div>`;
+
+function newChat() {
+  fetch('/clear', { method:'POST' });
+  document.getElementById('msgs').innerHTML = EMPTY_HTML;
+  busy = false;
+  document.getElementById('sbtn').disabled = false;
+  document.getElementById('stopbtn').classList.remove('visible');
+}
+
+function updateWorkdirDisplay(wd) {
+  const el = document.getElementById('workdir-display');
+  if (wd) {
+    el.textContent = '📂 ' + wd;
+    el.className = 'workdir-label';
+    el.title = wd;
+  } else {
+    el.textContent = '📂 No folder set';
+    el.className = 'workdir-label workdir-not-set';
+    el.title = 'Click Change to set a working directory';
+  }
+}
+
+async function changeWorkdir() {
+  const path = prompt('Enter the folder path for file operations:');
+  if (!path) return;
+  try {
+    const res = await fetch('/workdir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path })
+    });
+    const d = await res.json();
+    if (d.workdir) {
+      updateWorkdirDisplay(d.workdir);
+    } else if (d.error) {
+      alert(d.error);
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function stopGeneration() {
+  if (abortCtrl) {
+    abortCtrl.abort();
+    abortCtrl = null;
+  }
+}
+
+// ── append a message bubble ────────────────────────────────────────────────────
+function appendMsg(role, text, streaming) {
+  removeEmpty();
+  const wrap = document.createElement('div');
+  wrap.className = 'msg';
+
+  const av = document.createElement('div');
+  av.className = 'av ' + role;
+  av.textContent = role === 'user' ? 'U' : 'A';
+
+  const bbl = document.createElement('div');
+  bbl.className = 'bbl ' + role;
+
+  const lbl = document.createElement('div');
+  lbl.className = 'lbl';
+  lbl.textContent = role === 'user' ? 'You' : 'AtulCoder';
+
+  const txt = document.createElement('div');
+  txt.className = 'txt';
+  if (streaming) {
+    // show thinking indicator
+    txt.innerHTML = '<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div> Thinking…</div>';
+  } else {
+    txt.textContent = text;
+  }
+
+  bbl.appendChild(lbl);
+  bbl.appendChild(txt);
+  wrap.appendChild(av);
+  wrap.appendChild(bbl);
+  document.getElementById('msgs').appendChild(wrap);
+  scrollDown();
+  return { wrap, bbl, txt };
+}
+
+// ── action card (collapsible) ──────────────────────────────────────────────────
+function appendActionCard(bbl, action) {
+  const icons = { READ_FILE:'📖', WRITE_FILE:'✏️', RUN_CMD:'⚡', LIST_DIR:'📁', MAKE_DIR:'📂' };
+  const card = document.createElement('div');
+  card.className = 'act-card' + (action.blocked ? ' blocked' : '');
+  const label = action.path ? action.path : (action.cmd || '');
+  const hasResult = action.result && action.result.length > 0;
+  const resId = 'res-' + Math.random().toString(36).slice(2, 8);
+
+  card.innerHTML =
+    '<div class="act-hdr" onclick="toggleResult(\'' + resId + '\', this)">' +
+    (action.blocked ? '🚫 ' : '') + (icons[action.type]||'⚙️') + ' ' + action.type +
+    ' <span style="font-weight:400;color:#888;font-size:11px">' + esc(label) + '</span>' +
+    (hasResult ? ' <span class="act-chevron">▶</span>' : '') +
+    '</div>' +
+    (hasResult ? '<div class="act-res collapsed" id="' + resId + '">' + esc(action.result) + '</div>' : '');
+  bbl.appendChild(card);
+  scrollDown();
+}
+
+function toggleResult(id, hdr) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const chevron = hdr.querySelector('.act-chevron');
+  el.classList.toggle('collapsed');
+  if (chevron) chevron.classList.toggle('open');
+}
+
+// ── pending actions (approval UI) ──────────────────────────────────────────────
+function appendPendingActions(bbl, pendingActions) {
+  const icons = { WRITE_FILE:'✏️', RUN_CMD:'⚡', MAKE_DIR:'📂' };
+  const box = document.createElement('div');
+  box.className = 'pending-box';
+
+  let itemsHtml = '<div class="pending-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Actions require your approval</div>';
+
+  pendingActions.forEach((act) => {
+    const label = act.resolved || act.path || act.cmd || '';
+    const icon = icons[act.type] || '⚙️';
+    let preview = '';
+    if (act.content) {
+      const lines = act.content.split('\n');
+      const previewText = lines.slice(0, 15).join('\n');
+      const more = lines.length > 15 ? '\n… (' + (lines.length - 15) + ' more lines)' : '';
+      preview = '<div class="pending-item-preview">' + esc(previewText + more) + '</div>';
+    }
+    itemsHtml +=
+      '<div class="pending-item">' +
+        '<span class="pending-item-icon">' + icon + '</span>' +
+        '<div class="pending-item-detail">' +
+          '<span class="pending-item-path">' + act.type + ' — ' + esc(label) + '</span>' +
+          preview +
+        '</div>' +
+      '</div>';
+  });
+
+  itemsHtml +=
+    '<div class="pending-btns">' +
+      '<button class="btn-approve" data-role="approve">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+        ' Approve (' + pendingActions.length + ')' +
+      '</button>' +
+      '<button class="btn-deny" data-role="deny">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        ' Deny' +
+      '</button>' +
+      '<span class="pending-hint">Review the changes above before approving</span>' +
+    '</div>';
+
+  box.innerHTML = itemsHtml;
+  bbl.appendChild(box);
+  scrollDown();
+
+  return new Promise((resolve) => {
+    const approveBtn = box.querySelector('[data-role="approve"]');
+    const denyBtn = box.querySelector('[data-role="deny"]');
+
+    approveBtn.addEventListener('click', async () => {
+      approveBtn.disabled = true;
+      approveBtn.innerHTML = '<div class="thinking-dots" style="display:inline-flex;gap:3px"><span></span><span></span><span></span></div> Executing…';
+      denyBtn.style.display = 'none';
+      try {
+        const res = await fetch('/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actions: pendingActions })
+        });
+        const data = await res.json();
+        box.querySelector('.pending-btns').innerHTML =
+          '<div style="color:var(--ok);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+          ' Actions executed successfully</div>';
+        if (data.actions) {
+          data.actions.forEach(act => appendActionCard(bbl, act));
+        }
+      } catch (err) {
+        box.querySelector('.pending-btns').innerHTML =
+          '<span style="color:var(--warn)">Error: ' + esc(err.message) + '</span>';
+      }
+      resolve('approved');
+    });
+
+    denyBtn.addEventListener('click', () => {
+      box.querySelector('.pending-btns').innerHTML =
+        '<div style="color:var(--warn);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        ' Actions denied</div>';
+      resolve('denied');
+    });
+  });
+}
+
+// ── send ───────────────────────────────────────────────────────────────────────
+async function send() {
+  if (busy) return;
+  const ta   = document.getElementById('userinput');
+  const text = ta.value.trim();
+  if (!text) return;
+
+  ta.value = '';
+  ta.style.height = 'auto';
+  busy = true;
+  document.getElementById('sbtn').disabled = true;
+  document.getElementById('stopbtn').classList.add('visible');
+  abortCtrl = new AbortController();
+
+  appendMsg('user', text);
+  const { bbl: agentBbl, txt: agentTxt } = appendMsg('agent', '', true);
+  let raw = '';
+  let pendingPromise = null;
+  let firstToken = true;
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+      signal: abortCtrl.signal
+    });
+
+    if (!res.ok) {
+      agentTxt.textContent = 'Server error: ' + res.status;
+      return;
+    }
+
+    const reader  = res.body.getReader();
+    const dec     = new TextDecoder();
+    let   buf     = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let ev;
+        try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (ev.type === 'token') {
+          if (firstToken) {
+            agentTxt.innerHTML = '';  // remove thinking indicator
+            firstToken = false;
+          }
+          raw += ev.content;
+          const display = stripActionTags(raw);
+          agentTxt.innerHTML = renderMarkdown(display) + '<span class="cur"></span>';
+          scrollDown();
+
+        } else if (ev.type === 'action') {
+          appendActionCard(agentBbl, ev.action);
+
+        } else if (ev.type === 'pending') {
+          // Replace model's premature "Created..." text with proper proposal header
+          agentTxt.innerHTML = renderMarkdown('I\'d like to make the following changes:');
+          pendingPromise = appendPendingActions(agentBbl, ev.actions);
+
+        } else if (ev.type === 'ask_directory') {
+          // Remove thinking indicator and show directory prompt
+          agentTxt.innerHTML = renderMarkdown(ev.message || 'Which folder should I create files in?');
+          pendingPromise = showDirectoryPrompt(agentBbl);
+
+        } else if (ev.type === 'loop_killed') {
+          const w = document.createElement('div');
+          w.style.cssText = 'color:var(--warn);font-size:12px;margin-top:6px;display:flex;align-items:center;gap:5px';
+          w.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Repetition detected — stopped early';
+          agentBbl.appendChild(w);
+
+        } else if (ev.type === 'agent_continue') {
+          // show brief "thinking again" indicator
+          const cont = document.createElement('div');
+          cont.className = 'thinking';
+          cont.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> Processing results…';
+          agentBbl.appendChild(cont);
+          raw = '';
+          firstToken = true;
+          scrollDown();
+
+        } else if (ev.type === 'error') {
+          agentTxt.innerHTML = '<span style="color:var(--warn)">Error: ' + esc(ev.content) + '</span>';
+
+        } else if (ev.type === 'done') {
+          // Remove any leftover thinking indicators
+          agentBbl.querySelectorAll('.thinking').forEach(el => el.remove());
+          const final = stripActionTags(raw);
+          // If pending actions were shown, don't override with model's premature text
+          if (pendingPromise) {
+            // keep the "I'd like to make..." text already set
+          } else if (final) {
+            agentTxt.innerHTML = renderMarkdown(final);
+          } else if (!agentTxt.textContent.trim()) {
+            agentTxt.innerHTML = '<span style="color:var(--dim)">Done.</span>';
+          }
+          scrollDown();
+        }
+      }
+    }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      agentBbl.querySelectorAll('.thinking').forEach(el => el.remove());
+      const final = stripActionTags(raw);
+      agentTxt.innerHTML = (final ? renderMarkdown(final) : '') +
+        '<div style="color:var(--dim);font-size:12px;margin-top:6px">■ Generation stopped</div>';
+    } else {
+      agentTxt.textContent = 'Error: ' + err.message;
+    }
+  }
+
+  // Wait for user to approve/deny pending actions before unlocking UI
+  if (pendingPromise) {
+    await pendingPromise;
+  }
+
+  busy = false;
+  abortCtrl = null;
+  document.getElementById('sbtn').disabled = false;
+  document.getElementById('stopbtn').classList.remove('visible');
+  document.getElementById('userinput').focus();
+}
+</script>
+</body>
+</html>

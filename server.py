@@ -47,7 +47,7 @@ function sortArray(arr) {
 }
 console.log(sortArray([5, 3, 8, 1, 2]));
 </WRITE_FILE>
-Created sort.js with a sorting function.
+I'll create sort.js with a sorting function.
 
 EXAMPLE — User: "read package.json"
 Correct response:
@@ -59,13 +59,20 @@ Correct response:
 
 RULES:
 - ALWAYS use action tags to create/read/modify files. NEVER put code in markdown blocks as instructions.
-- After each action you get a RESULT — use it to continue.
+- After each action you get a RESULT — use it to continue or summarize.
 - For pure knowledge questions (no file changes), answer directly.
 - Be concise. No step-by-step explanations.
+- Files are created in the WORKING DIRECTORY shown in each message. NEVER say files are created somewhere else.
+- If the working directory says "NOT SET", ask the user: "Which folder should I create the files in?"
+- Do NOT claim an action was completed until you see a RESULT confirming it. Say "I'll create" not "Created".
+- Use relative paths (e.g., "sort.js") — they resolve to the working directory automatically.
+- You CANNOT delete files. Never attempt rm, del, unlink, or any destructive command.
+- When user specifies a directory path, use that exact path for file operations.
 """
 
 app       = FastAPI()
 workspace = Path.cwd()
+workdir: Path | None = None   # The confirmed working directory for file operations
 history: list[dict] = []
 
 
@@ -110,6 +117,19 @@ def is_looping(text: str, threshold: int = 4) -> bool:
 
 
 # ── Agent actions ──────────────────────────────────────────────────────────────
+
+# The project's own directory — never allow writes here
+PROJECT_DIR = Path(__file__).parent.resolve()
+
+
+def is_in_project_dir(path: Path) -> bool:
+    """Return True if path is inside (or is) the project's own directory."""
+    try:
+        path.resolve().relative_to(PROJECT_DIR)
+        return True
+    except ValueError:
+        return False
+
 
 def resolve(raw: str, ws: Path) -> Path:
     p = Path(raw.strip())
@@ -190,57 +210,164 @@ def extract_filename_from_context(text: str, user_msg: str) -> str | None:
     return None
 
 
-def execute_actions(text: str, ws: Path, user_msg: str = ""):
+# Regex to detect absolute paths in user messages
+ABS_PATH_RE = re.compile(r'(?:^|[\s:])(/(?:Users|home|tmp|var|opt)/[^\s,;]+)', re.IGNORECASE)
+
+
+def extract_user_target_dir(user_msg: str) -> Path | None:
+    """Extract an absolute directory path from the user's message, if any."""
+    m = ABS_PATH_RE.search(user_msg)
+    if m:
+        p = Path(m.group(1).rstrip('/'))
+        # If the path has a file extension, use its parent
+        if '.' in p.name and len(p.suffix) <= 6:
+            p = p.parent
+        return p
+    return None
+
+
+def find_user_target_dir(user_msg: str, chat_history: list[dict]) -> Path | None:
+    """Find the most recent user-specified directory from current or previous messages."""
+    # Check current message first
+    d = extract_user_target_dir(user_msg)
+    if d:
+        return d
+    # Scan history in reverse for the most recent user message with a path
+    for msg in reversed(chat_history):
+        if msg.get("role") == "user":
+            d = extract_user_target_dir(msg.get("content", ""))
+            if d:
+                return d
+    return None
+
+
+def smart_resolve(raw: str, ws: Path, user_msg: str, chat_history: list[dict] = None) -> Path:
+    """Resolve a path from the model, preferring the user's target directory if given."""
+    p = Path(raw.strip())
+    # If model used an absolute path, respect it
+    if p.is_absolute():
+        return p.resolve()
+    # If user specified a directory (in current or recent messages), resolve relative to that
+    user_dir = find_user_target_dir(user_msg, chat_history or [])
+    if user_dir:
+        parts = p.parts
+        if len(parts) > 1 and parts[0] == user_dir.name:
+            # Model duplicated the dir name (e.g. user said ".../results", model wrote "results/file.js")
+            return (user_dir / Path(*parts[1:])).resolve()
+        else:
+            return (user_dir / p).resolve()
+    # Default: resolve relative to workspace
+    return (ws / p).resolve()
+
+
+# Commands that are NEVER allowed
+DANGEROUS_CMD_RE = re.compile(
+    r'\b(rm\s|rm$|rmdir|del\s|unlink|shred|truncate\s.*>|>\s*/dev/|chmod\s+000|mkfs)'
+    r'|\brm\b',
+    re.IGNORECASE
+)
+
+
+def is_dangerous_cmd(cmd: str) -> bool:
+    """Return True if the command could delete or destroy files."""
+    return bool(DANGEROUS_CMD_RE.search(cmd))
+
+
+def execute_actions(text: str, ws: Path, user_msg: str = "", chat_history: list[dict] = None):
     """Execute all action tags in the model response.
     Falls back to extracting markdown code blocks if no action tags found.
+    Blocks any write/mkdir/cmd/delete operations in the project's own directory.
+    Delete commands are always blocked.
 
     Returns:
         result_str: combined <RESULT> string to feed back to model (or None)
         actions:    list of dicts describing each action (for UI display)
+        pending:    list of actions that need user confirmation before executing
     """
     results = []
     actions = []
+    pending = []  # actions needing confirmation
+    hist = chat_history or []
 
     for tag, path_str in ATTR_RE.findall(text):
-        path = resolve(path_str, ws)
         tag  = tag.upper()
+        # Use smart_resolve for ALL path-based actions (so user-specified dirs work)
+        path = smart_resolve(path_str, ws, user_msg, hist)
+
         if tag == "READ_FILE":
             out = do_read(path)
+            results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
+            actions.append({"type": tag, "path": str(path), "result": out})
         elif tag == "LIST_DIR":
             out = do_list(path)
+            results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
+            actions.append({"type": tag, "path": str(path), "result": out})
         elif tag == "MAKE_DIR":
-            out = do_mkdir(path)
-        else:
-            out = "Unknown action."
-        results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
-        actions.append({"type": tag, "path": path_str, "result": out})
+            if is_in_project_dir(path):
+                out = f"BLOCKED: Cannot create directory inside project folder ({PROJECT_DIR})"
+                results.append(f"<RESULT action='{tag}'>\n{out}\n</RESULT>")
+                actions.append({"type": tag, "path": str(path), "result": out, "blocked": True})
+            else:
+                pending.append({"type": tag, "path": path_str, "resolved": str(path)})
 
     for path_str, content in WRITE_RE.findall(text):
-        path = resolve(path_str, ws)
-        out  = do_write(path, content)
-        results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
-        actions.append({"type": "WRITE_FILE", "path": path_str, "result": out})
+        path = smart_resolve(path_str, ws, user_msg, hist)
+        if is_in_project_dir(path):
+            out = f"BLOCKED: Cannot write to project folder ({PROJECT_DIR})"
+            results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
+            actions.append({"type": "WRITE_FILE", "path": str(path), "result": out, "blocked": True})
+        else:
+            pending.append({"type": "WRITE_FILE", "path": path_str, "content": content, "resolved": str(path)})
 
     for cmd_raw in RUN_RE.findall(text):
         cmd = cmd_raw.strip()
-        out = do_cmd(cmd, ws)
-        results.append(f"<RESULT action='RUN_CMD'>\n{out}\n</RESULT>")
-        actions.append({"type": "RUN_CMD", "cmd": cmd, "result": out})
+        if is_dangerous_cmd(cmd):
+            out = f"BLOCKED: Dangerous command rejected — delete/destroy operations are not allowed: {cmd}"
+            results.append(f"<RESULT action='RUN_CMD'>\n{out}\n</RESULT>")
+            actions.append({"type": "RUN_CMD", "cmd": cmd, "result": out, "blocked": True})
+        else:
+            pending.append({"type": "RUN_CMD", "cmd": cmd})
 
-    # ── Fallback: if no XML tags found, detect markdown code blocks ────────
-    if not results:
+    # ── Fallback: if no XML tags and no pending, detect markdown code blocks ──
+    if not results and not pending:
         code_blocks = CODE_BLOCK_RE.findall(text)
         if code_blocks:
             filename = extract_filename_from_context(text, user_msg)
             if filename:
-                # Use the largest code block (most likely the main code)
                 code = max(code_blocks, key=len).strip()
-                if len(code) > 10:  # skip tiny snippets
-                    path = resolve(filename, ws)
-                    out = do_write(path, code + "\n")
-                    results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
-                    actions.append({"type": "WRITE_FILE", "path": filename, "result": out})
+                if len(code) > 10:
+                    path = smart_resolve(filename, ws, user_msg, hist)
+                    if is_in_project_dir(path):
+                        out = f"BLOCKED: Cannot write to project folder ({PROJECT_DIR})"
+                        results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
+                        actions.append({"type": "WRITE_FILE", "path": filename, "result": out, "blocked": True})
+                    else:
+                        pending.append({"type": "WRITE_FILE", "path": filename, "content": code + "\n", "resolved": str(path)})
 
+    return ("\n\n".join(results) if results else None), actions, pending
+
+
+def run_pending_actions(pending_actions: list[dict], ws: Path):
+    """Execute a list of previously-pending (now approved) actions."""
+    results = []
+    actions = []
+    for act in pending_actions:
+        t = act["type"]
+        if t == "WRITE_FILE":
+            path = Path(act["resolved"])
+            out = do_write(path, act["content"])
+            results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
+            actions.append({"type": t, "path": act["path"], "result": out})
+        elif t == "MAKE_DIR":
+            path = Path(act["resolved"])
+            out = do_mkdir(path)
+            results.append(f"<RESULT action='MAKE_DIR'>\n{out}\n</RESULT>")
+            actions.append({"type": t, "path": act["path"], "result": out})
+        elif t == "RUN_CMD":
+            cmd = act["cmd"]
+            out = do_cmd(cmd, ws)
+            results.append(f"<RESULT action='RUN_CMD'>\n{out}\n</RESULT>")
+            actions.append({"type": t, "cmd": cmd, "result": out})
     return ("\n\n".join(results) if results else None), actions
 
 
@@ -249,7 +376,7 @@ def execute_actions(text: str, ws: Path, user_msg: str = ""):
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    ui = Path(__file__).parent / "ui.html"
+    ui = Path(__file__).parent / "index.html"
     return HTMLResponse(
         ui.read_text(encoding="utf-8"),
         headers={
@@ -261,13 +388,20 @@ async def index():
 
 @app.post("/chat")
 async def chat(request: Request):
-    global history
+    global history, workdir
     body     = await request.json()
     user_msg = body.get("message", "").strip()
     if not user_msg:
         return JSONResponse({"error": "empty message"}, status_code=400)
 
-    context_note = f"\n\n[Agent workspace: {workspace}]"
+    # Check if user specified an absolute path → auto-set workdir
+    user_dir = extract_user_target_dir(user_msg)
+    if user_dir and user_dir.is_dir():
+        workdir = user_dir
+
+    # Build context note so model knows where files go
+    wd_label = str(workdir) if workdir else "NOT SET — ask user for directory"
+    context_note = f"\n\n[Working directory: {wd_label}]"
     history.append({"role": "user", "content": user_msg + context_note})
     history = trim_history(history)
 
@@ -322,7 +456,13 @@ async def chat(request: Request):
 
             history.append({"role": "assistant", "content": full_response})
 
-            action_result, actions = execute_actions(full_response, workspace, user_msg)
+            action_result, actions, pending = execute_actions(full_response, workdir or workspace, user_msg, history)
+
+            # If there are pending write/mkdir actions but no workdir is set, ask for directory
+            has_writes = any(a["type"] in ("WRITE_FILE", "MAKE_DIR") for a in pending)
+            if has_writes and workdir is None:
+                yield f"data: {json.dumps({'type': 'ask_directory', 'message': 'Which folder should I create files in? Please provide a directory path.'})}\n\n"
+                break
 
             # Deduplicate: skip actions we already performed this turn
             new_actions = []
@@ -333,9 +473,22 @@ async def chat(request: Request):
                 seen_actions.add(key)
                 new_actions.append(act)
 
-            # Send only new action info to UI
+            # Send already-executed (read-only) actions to UI
             for act in new_actions:
                 yield f"data: {json.dumps({'type': 'action', 'action': act})}\n\n"
+
+            # If there are pending actions, send them for user confirmation and stop
+            if pending:
+                # Dedup pending too
+                new_pending = []
+                for act in pending:
+                    key = (act.get("type", ""), act.get("path", act.get("cmd", "")))
+                    if key not in seen_actions:
+                        seen_actions.add(key)
+                        new_pending.append(act)
+                if new_pending:
+                    yield f"data: {json.dumps({'type': 'pending', 'actions': new_pending})}\n\n"
+                break
 
             # Stop if: no actions, loop detected, or no NEW actions (all duplicates)
             if action_result is None or loop_detected or not new_actions:
@@ -362,6 +515,35 @@ async def clear_history():
     return JSONResponse({"status": "cleared"})
 
 
+@app.post("/approve")
+async def approve_actions(request: Request):
+    """Execute user-approved pending actions."""
+    global history
+    body = await request.json()
+    pending_actions = body.get("actions", [])
+    if not pending_actions:
+        return JSONResponse({"error": "no actions"}, status_code=400)
+
+    # Re-validate: block project dir writes even if someone tampers with the request
+    for act in pending_actions:
+        if act.get("resolved"):
+            p = Path(act["resolved"])
+            if is_in_project_dir(p):
+                return JSONResponse(
+                    {"error": f"Blocked: cannot modify project directory ({PROJECT_DIR})"},
+                    status_code=403
+                )
+
+    result_str, executed = run_pending_actions(pending_actions, workdir or workspace)
+
+    if result_str:
+        history.append({"role": "user", "content": result_str + "\n\nActions approved and executed by user."})
+        history = trim_history(history)
+        save_history(history)
+
+    return JSONResponse({"actions": executed})
+
+
 @app.get("/history")
 async def get_history():
     return JSONResponse({"history": history[1:]})  # omit system prompt
@@ -369,12 +551,15 @@ async def get_history():
 
 @app.get("/workspace")
 async def get_workspace():
-    return JSONResponse({"workspace": str(workspace)})
+    return JSONResponse({
+        "workspace": str(workspace),
+        "workdir": str(workdir) if workdir else None
+    })
 
 
 @app.post("/workspace")
 async def set_workspace(request: Request):
-    global workspace
+    global workspace, workdir
     body = await request.json()
     new_ws = body.get("path", "").strip()
     if not new_ws:
@@ -383,7 +568,29 @@ async def set_workspace(request: Request):
     if not p.is_dir():
         return JSONResponse({"error": f"Not a directory: {p}"}, status_code=400)
     workspace = p
-    return JSONResponse({"workspace": str(workspace)})
+    workdir = p  # Also set workdir when workspace changes
+    return JSONResponse({"workspace": str(workspace), "workdir": str(workdir)})
+
+
+@app.post("/workdir")
+async def set_workdir(request: Request):
+    """Set the working directory for file operations."""
+    global workdir
+    body = await request.json()
+    new_wd = body.get("path", "").strip()
+    if not new_wd:
+        return JSONResponse({"error": "empty path"}, status_code=400)
+    p = Path(new_wd).expanduser().resolve()
+    if not p.is_dir():
+        # Try to create it
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            return JSONResponse({"error": f"Cannot create directory: {e}"}, status_code=400)
+    if is_in_project_dir(p):
+        return JSONResponse({"error": f"Cannot use project directory ({PROJECT_DIR})"}, status_code=403)
+    workdir = p
+    return JSONResponse({"workdir": str(workdir)})
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
