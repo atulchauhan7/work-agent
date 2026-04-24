@@ -91,6 +91,9 @@ RULES:
 - When generating files like .xlsx, .pdf, .csv — ALWAYS write a script, run it, and confirm the output file was created.
 - NEVER respond with only MAKE_DIR when the user asks to create a file. Create the actual file.
 - When user says "create an excel" — you MUST install xlsx, write a .js script, and run it. All in one response.
+- When asked to scrape websites or get website details, use REAL popular website URLs (e.g., amazon.com, flipkart.com, wikipedia.org). NEVER use example.com or fake URLs.
+- For web scraping: install axios and cheerio, write a script that fetches real pages, extracts title/description/meta data, then writes results to xlsx. Handle errors gracefully.
+- If scraping fails due to 403/blocked, try adding a User-Agent header. If still blocked, note which sites blocked and include whatever data was retrieved.
 """
 
 app       = FastAPI()
@@ -628,6 +631,15 @@ async def chat(request: Request):
             if has_writes and workdir is None:
                 yield f"data: {json.dumps({'type': 'ask_directory', 'message': 'Please set a working directory first. Where should I create files?'})}\n\n"
                 break
+
+            # If workdir is None and model just asked "which folder" in text, send ask_directory
+            if workdir is None and not actions and not pending:
+                resp_lower = full_response.lower()
+                if ("which folder" in resp_lower or "what folder" in resp_lower
+                    or "specify" in resp_lower and "folder" in resp_lower
+                    or "where should" in resp_lower and ("create" in resp_lower or "file" in resp_lower)):
+                    yield f"data: {json.dumps({'type': 'ask_directory', 'message': full_response.strip()})}\n\n"
+                    break
 
             # Deduplicate: skip actions we already performed this turn
             new_actions = []
