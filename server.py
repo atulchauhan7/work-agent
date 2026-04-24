@@ -431,13 +431,55 @@ async def chat(request: Request):
 
     # Check if user specified an absolute path → auto-set workdir
     user_dir = extract_user_target_dir(user_msg)
-    if user_dir and user_dir.is_dir():
-        workdir = user_dir
+    if user_dir:
+        if not user_dir.is_dir():
+            try:
+                user_dir.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+        if user_dir.is_dir() and not is_in_project_dir(user_dir):
+            workdir = user_dir
+
+    # If user just sent a directory path as an answer to "which folder?",
+    # find the original request that triggered the directory question and re-inject it.
+    original_request = None
+    if workdir and user_dir:
+        # Check if the message is primarily just a path (user answering the directory question)
+        path_only = user_msg.strip().rstrip('/')
+        extracted = str(user_dir)
+        if path_only == extracted or path_only.startswith(extracted):
+            # Look back: find the last assistant msg that asked for directory,
+            # then find the user request before that
+            for i in range(len(history) - 1, -1, -1):
+                msg = history[i]
+                if msg.get("role") == "assistant":
+                    content_lower = msg["content"].lower()
+                    if "which folder" in content_lower or "specify" in content_lower and "folder" in content_lower:
+                        # Found the "which folder?" response — now find the user request before it
+                        for j in range(i - 1, -1, -1):
+                            if history[j].get("role") == "user":
+                                raw = history[j]["content"]
+                                # Strip the context note
+                                raw = re.sub(r'\n\n\[(Agent workspace|Working directory):[^\]]*\]$', '', raw)
+                                if raw.strip() and not extract_user_target_dir(raw):
+                                    # This is not a path — it's the actual request
+                                    original_request = raw.strip()
+                                else:
+                                    # The user msg before the "which folder" was itself a path,
+                                    # keep looking further back
+                                    continue
+                                break
+                        break
 
     # Build context note so model knows where files go
     wd_label = str(workdir) if workdir else "NOT SET — ask user for directory"
     context_note = f"\n\n[Working directory: {wd_label}]"
-    history.append({"role": "user", "content": user_msg + context_note})
+
+    if original_request:
+        # Replace the bare path message with the original request + path context
+        history.append({"role": "user", "content": original_request + context_note})
+    else:
+        history.append({"role": "user", "content": user_msg + context_note})
     history = trim_history(history)
 
     async def event_stream():
