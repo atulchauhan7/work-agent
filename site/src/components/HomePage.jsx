@@ -37,12 +37,16 @@ const RESULTS = [
 ]
 
 const TEAM = [
-  { initial: 'D', color: 'from-amber-500/20 to-orange-500/20', name: 'Dinesh Yelle', role: 'Strategy & Growth', desc: 'Leads strategy and client relationships. The D2C growth marketing brain behind every campaign.' },
+  { initial: 'D', color: 'from-amber-500/20 to-orange-500/20', name: 'Dinesh Yelle', role: 'CEO', desc: 'Leads strategy and client relationships. The D2C growth marketing brain behind every campaign.' },
+  { initial: 'A', color: 'from-gold/20 to-yellow-500/20', name: 'Atul Chauhan', role: 'CTO', desc: 'Leads tech Websites, AI, landing pages — conversion-focused development that drives revenue.' },
   { initial: 'R', color: 'from-blue-500/20 to-cyan-500/20', name: 'Ritesh Y.', role: 'Performance & Dev', desc: 'Performance marketing meets engineering. The all-rounder who bridges ads and tech.' },
-  { initial: 'A', color: 'from-gold/20 to-yellow-500/20', name: 'Atul Chauhan', role: 'Founder & CTO', desc: 'Websites, AI, landing pages — conversion-focused development that drives revenue.' },
 ]
 
-const BRANDS = ['Gulaab Gali', 'Dhirai', 'Sakhiyaan']
+const BRANDS = [
+  { name: 'Gulaab Gali', logo: '/gulaab-gali.png' },
+  { name: 'Dhirai', logo: '/dhirai.avif' },
+  { name: 'Sakhiyaan', logo: '/sakhiyaan.webp' },
+]
 
 function Section({ children, className = '', id }) {
   return (
@@ -113,10 +117,13 @@ export default function HomePage() {
           </motion.div>
 
           {/* Brand marquee */}
-          <div className="mt-20 overflow-hidden opacity-40">
-            <div className="flex animate-marquee whitespace-nowrap">
-              {[...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS].map((b, i) => (
-                <span key={i} className="mx-10 text-[13px] font-semibold uppercase tracking-[0.25em]">{b}</span>
+          <div className="mt-20 overflow-hidden opacity-50">
+            <div className="flex animate-marquee-fast whitespace-nowrap items-center">
+              {[...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS].map((b, i) => (
+                <div key={i} className="mx-10 sm:mx-14 shrink-0 flex items-center gap-3">
+                  <img src={b.logo} alt={b.name} className="h-8 sm:h-10 w-auto object-contain brightness-0 invert opacity-60" loading="lazy" />
+                  <span className="text-[12px] font-semibold uppercase tracking-[0.2em] text-gray-400">{b.name}</span>
+                </div>
               ))}
             </div>
           </div>
@@ -238,10 +245,13 @@ export default function HomePage() {
 
         {/* Brands */}
         <div className="mt-14 text-center">
-          <p className="text-[10px] font-bold tracking-[0.25em] text-gray-600 uppercase mb-6">Brands We've Worked With</p>
-          <div className="flex flex-wrap justify-center gap-8 sm:gap-12">
+          <p className="text-[10px] font-bold tracking-[0.25em] text-gray-600 uppercase mb-8">Brands We've Worked With</p>
+          <div className="flex flex-wrap justify-center items-center gap-10 sm:gap-16">
             {BRANDS.map(b => (
-              <span key={b} className="text-gray-500/60 font-semibold text-sm uppercase tracking-wider">{b}</span>
+              <div key={b.name} className="flex flex-col items-center gap-2 group">
+                <img src={b.logo} alt={b.name} className="h-10 sm:h-14 w-auto object-contain brightness-0 invert opacity-40 group-hover:opacity-70 transition-opacity duration-300" loading="lazy" />
+                <span className="text-[10px] text-gray-600 uppercase tracking-wider">{b.name}</span>
+              </div>
             ))}
           </div>
         </div>
