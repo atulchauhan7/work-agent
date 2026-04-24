@@ -83,44 +83,44 @@ export default function HomePage() {
         <div className="hero-orb w-[300px] h-[300px] bg-blue-500/10 top-[30%] right-[20%]" />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 text-center px-5 sm:px-6 max-w-5xl mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex flex-wrap justify-center gap-3 mb-8">
-            <span className="px-3.5 py-1.5 text-[11px] font-bold tracking-wider border border-gold/30 text-gold rounded-full bg-gold/5 glow-gold">
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+            <span className="px-3 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-bold tracking-wider border border-gold/30 text-gold rounded-full bg-gold/5 glow-gold">
               2 SPOTS OPEN FOR Q3
             </span>
-            <span className="px-3.5 py-1.5 text-[11px] font-bold tracking-wider border border-white/10 text-gray-500 rounded-full">
+            <span className="px-3 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-bold tracking-wider border border-white/10 text-gray-500 rounded-full">
               META & GOOGLE CERTIFIED
             </span>
-            <span className="px-3.5 py-1.5 text-[11px] font-bold tracking-wider border border-white/10 text-gray-500 rounded-full">
+            <span className="px-3 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-bold tracking-wider border border-white/10 text-gray-500 rounded-full">
               BANGALORE
             </span>
           </motion.div>
 
           <motion.h1
             variants={fadeUp} initial="hidden" animate="visible" custom={1}
-            className="text-[clamp(2.2rem,8vw,5rem)] font-heading font-bold leading-[1.05] mb-6"
+            className="text-[clamp(1.8rem,7vw,5rem)] font-heading font-bold leading-[1.08] mb-5 sm:mb-6"
           >
             We Build Brands That<br />
             <span className="text-gradient">Print Revenue.</span>
           </motion.h1>
 
-          <motion.p variants={fadeUp} initial="hidden" animate="visible" custom={2} className="text-gray-400 text-base sm:text-lg max-w-xl mx-auto mb-10 leading-relaxed">
+          <motion.p variants={fadeUp} initial="hidden" animate="visible" custom={2} className="text-gray-400 text-sm sm:text-lg max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2 sm:px-0">
             ₹50L+ in client revenue managed monthly. Two partnerships. Zero wasted spend. We don't do average.
           </motion.p>
 
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="#work" className="px-8 py-3.5 bg-gradient-to-r from-gold to-gold-light text-black font-semibold rounded-xl hover:shadow-xl hover:shadow-gold/20 hover:scale-[1.02] transition-all duration-300">
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0">
+            <a href="#work" className="w-full sm:w-auto text-center px-8 py-3.5 bg-gradient-to-r from-gold to-gold-light text-black font-semibold rounded-xl hover:shadow-xl hover:shadow-gold/20 hover:scale-[1.02] transition-all duration-300 text-sm sm:text-base">
               See our work
             </a>
-            <a href="#contact" className="px-8 py-3.5 border border-white/15 text-white rounded-xl hover:border-gold/30 hover:bg-white/[0.02] transition-all duration-300">
+            <a href="#contact" className="w-full sm:w-auto text-center px-8 py-3.5 border border-white/15 text-white rounded-xl hover:border-gold/30 hover:bg-white/[0.02] transition-all duration-300 text-sm sm:text-base">
               Check availability
             </a>
           </motion.div>
 
           {/* Brand marquee */}
-          <div className="mt-20 overflow-hidden opacity-50">
+          <div className="mt-12 sm:mt-20 overflow-hidden opacity-50">
             <div className="flex animate-marquee-fast whitespace-nowrap items-center">
               {[...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS].map((b, i) => (
-                <div key={i} className="mx-10 sm:mx-14 shrink-0 flex items-center gap-3">
+                <div key={i} className="mx-6 sm:mx-14 shrink-0 flex items-center gap-2 sm:gap-3">
                   <img src={b.logo} alt={b.name} className="h-8 sm:h-10 w-auto object-contain brightness-0 invert opacity-60" loading="lazy" />
                   <span className="text-[12px] font-semibold uppercase tracking-[0.2em] text-gray-400">{b.name}</span>
                 </div>
