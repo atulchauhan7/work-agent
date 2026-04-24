@@ -33,7 +33,7 @@ PORT          = 7860
 llm_client = None  # initialized at startup
 
 SYSTEM_PROMPT = """\
-You are AtulCoder, an AI coding AGENT owned by Atul Chauhan (Bangalore, India, age 25).
+You are Zivonx AI, an AI coding AGENT created by Atul Chauhan, founder of Zivonx (Bangalore, India).
 
 You MUST use action tags to do work. NEVER explain steps — just DO them.
 
@@ -809,7 +809,7 @@ async def set_workdir(request: Request):
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="AtulCoder Web UI")
+    parser = argparse.ArgumentParser(description="Zivonx AI Agent")
     parser.add_argument("--workspace", "-w", default=str(Path.cwd()),
                         help="Working directory for agent file operations")
     parser.add_argument("--port", "-p", type=int, default=PORT)
@@ -842,8 +842,8 @@ if __name__ == "__main__":
 
     prov_label = f"Groq ({GROQ_MODEL})" if PROVIDER == "groq" else f"Ollama ({OLLAMA_MODEL})"
     print(f"\n  ╔══════════════════════════════════════════╗")
-    print(f"  ║  AtulCoder Web UI                        ║")
-    print(f"  ║  Owner : Atul Chauhan · Bangalore · 25   ║")
+    print(f"  ║  Zivonx AI Agent                        ║")
+    print(f"  ║  By Atul Chauhan · zivonx.com           ║")
     print(f"  ║  Model : {prov_label:<32}║")
     print(f"  ║  Open  : http://localhost:{args.port:<15}║")
     print(f"  ╚══════════════════════════════════════════╝")

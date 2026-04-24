@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AtulCoder</title>
+<title>Zivonx AI</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -187,7 +187,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
     <div class="logo">
       <div class="logo-icon">⚡</div>
       <div>
-        <div class="logo-name">AtulCoder</div>
+        <div class="logo-name">Zivonx AI</div>
         <div class="logo-sub">AI Coding Agent</div>
       </div>
     </div>
@@ -207,7 +207,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   <main class="main">
     <header class="hdr">
       <div class="hdr-left">
-        <div class="hdr-title">AtulCoder</div>
+        <div class="hdr-title">Zivonx AI</div>
         <span class="hdr-badge">AGENT</span>
       </div>
       <button class="btn-clr" onclick="newChat()">
@@ -219,13 +219,13 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
     <div class="msgs" id="msgs">
       <div class="empty" id="empty">
         <div class="empty-icon">⚡</div>
-        <div class="empty-h">AtulCoder</div>
-        <div class="empty-s">Your personal AI coding agent by Atul Chauhan.<br>I can create files, run commands, and build projects — all locally.</div>
+        <div class="empty-h">Zivonx AI</div>
+        <div class="empty-s">AI-powered coding agent by Zivonx.<br>Create files, run commands, and build projects — all in one place.</div>
         <div class="chips">
-          <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
-          <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
-          <div class="chip" onclick="suggest('List the files in the current workspace')">📁 List workspace</div>
-          <div class="chip" onclick="suggest('Who is your owner?')">👤 Who owns you?</div>
+          <div class="chip" onclick="suggest('Create an Excel file with sample product data')">📊 Generate Excel</div>
+          <div class="chip" onclick="suggest('Build a landing page with a hero section and contact form')">🌐 Landing page</div>
+          <div class="chip" onclick="suggest('Write a Node.js script to scrape website meta data')">🔍 Web scraper</div>
+          <div class="chip" onclick="suggest('Create a Python REST API with Flask')">🐍 REST API</div>
         </div>
       </div>
     </div>
@@ -235,14 +235,14 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
         <button class="stop-btn" id="stopbtn" onclick="stopGeneration()">■ Stop generating</button>
       </div>
       <div class="inp-box">
-        <textarea id="userinput" rows="1" placeholder="Ask AtulCoder anything… (Enter to send, Shift+Enter for new line)"></textarea>
+        <textarea id="userinput" rows="1" placeholder="Ask Zivonx AI anything… (Enter to send, Shift+Enter for new line)"></textarea>
         <button class="sbtn" id="sbtn" title="Send (Enter)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
             <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
           </svg>
         </button>
       </div>
-      <div class="inp-hint">AtulCoder runs 100% locally. Actions require your approval. <kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line</div>
+      <div class="inp-hint">Zivonx AI — Actions require your approval. <kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line</div>
     </div>
   </main>
 </div>
@@ -342,13 +342,13 @@ function renderMarkdown(text) {
 const EMPTY_HTML = `
   <div class="empty" id="empty">
     <div class="empty-icon">⚡</div>
-    <div class="empty-h">AtulCoder</div>
-    <div class="empty-s">Your personal AI coding agent by Atul Chauhan.<br>I can create files, run commands, and build projects — all locally.</div>
+    <div class="empty-h">Zivonx AI</div>
+    <div class="empty-s">AI-powered coding agent by Zivonx.<br>Create files, run commands, and build projects — all in one place.</div>
     <div class="chips">
-      <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
-      <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
-      <div class="chip" onclick="suggest('List the files in the current workspace')">📁 List workspace</div>
-      <div class="chip" onclick="suggest('Who is your owner?')">👤 Who owns you?</div>
+      <div class="chip" onclick="suggest('Create an Excel file with sample product data')">📊 Generate Excel</div>
+      <div class="chip" onclick="suggest('Build a landing page with a hero section and contact form')">🌐 Landing page</div>
+      <div class="chip" onclick="suggest('Write a Node.js script to scrape website meta data')">🔍 Web scraper</div>
+      <div class="chip" onclick="suggest('Create a Python REST API with Flask')">🐍 REST API</div>
     </div>
   </div>`;
 
@@ -528,7 +528,7 @@ function appendMsg(role, text, streaming) {
 
   const lbl = document.createElement('div');
   lbl.className = 'lbl';
-  lbl.textContent = role === 'user' ? 'You' : 'AtulCoder';
+  lbl.textContent = role === 'user' ? 'You' : 'Zivonx AI';
 
   const txt = document.createElement('div');
   txt.className = 'txt';
