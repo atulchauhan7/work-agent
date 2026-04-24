@@ -255,10 +255,10 @@ export default function HomePage() {
         <section className="py-12 sm:py-16 bg-dark-bg/50 overflow-x-clip overflow-y-visible relative w-full max-w-full min-w-0">
           <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, var(--color-dark-bg), transparent)' }} />
           <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, var(--color-dark-bg), transparent)' }} />
-          <p className="text-center text-[10px] tracking-[0.4em] text-gray-600 uppercase font-semibold mb-8 sm:mb-10">Brands We've Scaled</p>
+          <p className="text-center text-[10px] tracking-[0.4em] text-gray-600 uppercase font-semibold font-body mb-8 sm:mb-10">Brands We've Scaled</p>
           <div
             className="flex marquee-track"
-            style={{ animation: 'marquee 35s linear infinite', animationPlayState: marqueePaused ? 'paused' : 'running' }}
+            style={{ animation: 'marquee 22s linear infinite', animationPlayState: marqueePaused ? 'paused' : 'running' }}
             onMouseEnter={() => setMarqueePaused(true)}
             onMouseLeave={() => setMarqueePaused(false)}
           >
@@ -268,7 +268,7 @@ export default function HomePage() {
                   <div className="w-22 sm:w-30 h-14 sm:h-18 flex items-center justify-center rounded-sm bg-white/[0.02] border border-white/[0.05] group-hover:border-gold/20 transition-all duration-500 group-hover:bg-gold/[0.03]">
                     <img src={client.logo} alt={client.name} className="max-w-[75px] sm:max-w-[95px] max-h-10 sm:max-h-13 object-contain transition-all duration-500 group-hover:scale-105" style={{ filter: 'brightness(0) invert(1)', opacity: marqueePaused ? 0.7 : 0.4 }} />
                   </div>
-                  <span className="text-[9px] sm:text-[10px] tracking-[0.2em] text-gray-600 uppercase font-semibold group-hover:text-gold transition-colors duration-500">{client.name}</span>
+                  <span className="text-[9px] sm:text-[10px] tracking-[0.2em] text-gray-600 uppercase font-semibold font-body group-hover:text-gold transition-colors duration-500">{client.name}</span>
                 </div>
               </div>
             ))}
