@@ -7,12 +7,12 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#212121;--sb:#171717;--inp:#2f2f2f;--bdr:#3a3a3a;
-  --tx:#ececec;--dim:#8e8ea0;--acc:#10a37f;--acc2:#0d8a6c;
-  --ubg:#2f2f2f;--abg:#1a2a1a;--abdr:#2d4a2d;
-  --font:'Segoe UI',system-ui,sans-serif;
+  --bg:#0F0F0F;--sb:#0a0a0a;--inp:#1A1A1A;--bdr:#222;
+  --tx:#ebebeb;--dim:#888;--acc:#F59E0B;--acc2:#D97706;
+  --ubg:#1A1A1A;--abg:#1a1708;--abdr:#3d3520;
+  --font:'DM Sans','Segoe UI',system-ui,sans-serif;
   --mono:'Fira Code',Consolas,monospace;
-  --warn:#e87e7e;--info:#a0a0ff;--ok:#4caf50;
+  --warn:#e87e7e;--info:#FCD34D;--ok:#F59E0B;
 }
 html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font)}
 .layout{display:flex;height:100vh;overflow:hidden}
@@ -20,14 +20,14 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 /* sidebar */
 .sidebar{width:260px;min-width:260px;background:var(--sb);display:flex;flex-direction:column;border-right:1px solid var(--bdr);padding:14px}
 .logo{display:flex;align-items:center;gap:10px;padding:10px 4px 14px;border-bottom:1px solid var(--bdr);margin-bottom:12px}
-.logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--acc),#0d6efd);display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-icon{width:34px;height:34px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:16px;color:#0a0a0a;font-weight:800}
 .logo-name{font-weight:700;font-size:15px}
 .logo-sub{font-size:11px;color:var(--dim)}
 .btn-new{width:100%;padding:10px 14px;border-radius:8px;background:var(--inp);border:1px solid var(--bdr);color:var(--tx);font-size:13px;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .btn-new:hover{background:#3a3a3a;border-color:var(--acc)}
 .btn-new svg{opacity:.7}
 .sb-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--bdr);font-size:11px;color:var(--dim);line-height:1.7}
-.online{color:#7ec87e}
+.online{color:var(--acc)}
 .ws-path{word-break:break-all;margin-bottom:4px;cursor:pointer;padding:4px 6px;border-radius:4px;transition:background .15s}
 .ws-path:hover{background:var(--inp)}
 
@@ -36,7 +36,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .hdr{padding:12px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(8px);background:rgba(33,33,33,.85)}
 .hdr-left{display:flex;align-items:center;gap:10px}
 .hdr-title{font-weight:600;font-size:15px}
-.hdr-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--acc);color:#fff;font-weight:600}
+.hdr-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--acc);color:#0a0a0a;font-weight:600}
 .btn-clr{padding:6px 14px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-size:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
 .btn-clr:hover{background:var(--inp);color:var(--tx);border-color:#555}
 
@@ -47,8 +47,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .msg{max-width:780px;margin:0 auto;padding:8px 20px;display:flex;gap:12px;animation:fi .2s ease}
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
 .av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-top:3px}
-.av.user{background:#5865f2;color:#fff}
-.av.agent{background:var(--acc);color:#fff}
+.av.user{background:#1A1A1A;color:var(--dim);border:1px solid var(--bdr)}
+.av.agent{background:var(--acc);color:#0a0a0a}
 .bbl{flex:1;min-width:0;padding-top:3px}
 .bbl .lbl{font-size:12px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:8px}
 .bbl .txt{font-size:14px;line-height:1.75;color:var(--tx);word-break:break-word;white-space:pre-wrap}
@@ -73,26 +73,26 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 
 /* action cards */
 .act-card{background:var(--abg);border:1px solid var(--abdr);border-radius:8px;padding:10px 14px;margin:6px 0;font-family:var(--mono);font-size:12px;animation:fi .2s ease}
-.act-hdr{font-weight:700;color:#7ec87e;margin-bottom:3px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.act-hdr{font-weight:700;color:var(--acc);margin-bottom:3px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
 .act-hdr .act-chevron{font-size:10px;transition:transform .2s;color:var(--dim)}
 .act-hdr .act-chevron.open{transform:rotate(90deg)}
 .act-res{background:#0d0d0d;border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;font-size:11px;color:#aaa;max-height:200px;overflow-y:auto;border:1px solid #1a1a1a}
 .act-res.collapsed{display:none}
-.download-link{display:inline-block;margin-top:6px;padding:5px 12px;background:#1a6b3c;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:background .2s}
-.download-link:hover{background:#22884d}
+.download-link{display:inline-block;margin-top:6px;padding:5px 12px;background:var(--acc2);color:#0a0a0a;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:background .2s}
+.download-link:hover{background:var(--acc)}
 .act-card.blocked{background:#2a1a1a;border-color:#4a2d2d}
 .act-card.blocked .act-hdr{color:var(--warn)}
 
 /* pending actions */
-.pending-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #3d3d6b;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
-.pending-title{font-size:13px;font-weight:600;color:var(--info);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.pending-box{background:linear-gradient(135deg,#1a1708,#1a1400);border:1px solid #3d3520;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
+.pending-title{font-size:13px;font-weight:600;color:var(--acc);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .pending-item{font-family:var(--mono);font-size:12px;color:var(--dim);padding:6px 10px;margin:4px 0;background:rgba(0,0,0,.2);border-radius:6px;display:flex;align-items:flex-start;gap:8px}
 .pending-item-icon{flex-shrink:0;margin-top:1px}
 .pending-item-detail{flex:1;min-width:0}
 .pending-item-path{color:#ccc;font-weight:500}
 .pending-item-preview{margin-top:4px;max-height:120px;overflow-y:auto;background:#0a0a0a;border-radius:4px;padding:6px 8px;font-size:11px;color:#888;white-space:pre;border:1px solid #222}
 .pending-btns{display:flex;gap:10px;margin-top:12px;align-items:center}
-.btn-approve{padding:8px 20px;border-radius:8px;border:none;background:var(--acc);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn-approve{padding:8px 20px;border-radius:8px;border:none;background:var(--acc);color:#0a0a0a;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
 .btn-approve:hover{background:var(--acc2);transform:translateY(-1px)}
 .btn-approve:disabled{background:#333;cursor:wait;transform:none}
 .btn-deny{padding:8px 20px;border-radius:8px;border:1px solid #4a2d2d;background:transparent;color:var(--warn);font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
@@ -116,7 +116,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .empty-s{color:var(--dim);font-size:13px;max-width:380px;line-height:1.6}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
 .chip{padding:8px 16px;border:1px solid var(--bdr);border-radius:20px;font-size:12px;color:var(--dim);cursor:pointer;transition:all .18s;background:var(--inp)}
-.chip:hover{border-color:var(--acc);color:var(--tx);background:#1a2a1a;transform:translateY(-1px)}
+.chip:hover{border-color:var(--acc);color:var(--tx);background:rgba(245,158,11,.08);transform:translateY(-1px)}
 
 /* input */
 .inp-area{padding:10px 20px 18px;flex-shrink:0;background:var(--bg);border-top:1px solid var(--bdr)}
@@ -131,7 +131,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .inp-hint kbd{background:#333;padding:1px 5px;border-radius:3px;font-size:10px;font-family:var(--mono);border:1px solid #444}
 
 /* directory prompt */
-.dir-prompt{background:linear-gradient(135deg,#1a2a1a,#16213e);border:1px solid #3d6b3d;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
+.dir-prompt{background:linear-gradient(135deg,#1a1708,#1a1400);border:1px solid #3d3520;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
 .dir-prompt-title{font-size:13px;font-weight:600;color:var(--acc);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .dir-prompt-input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:var(--tx);font-size:13px;font-family:var(--mono);outline:none}
 .dir-prompt-input:focus{border-color:var(--acc)}
@@ -185,9 +185,9 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 
   <aside class="sidebar">
     <div class="logo">
-      <div class="logo-icon">⚡</div>
+      <div class="logo-icon">Z</div>
       <div>
-        <div class="logo-name">Zivonx AI</div>
+        <div class="logo-name" style="font-weight:700;letter-spacing:-.3px">Zivon<span style="color:var(--acc);font-weight:800;font-size:17px;text-shadow:0 0 12px rgba(245,158,11,.5)">X</span><span style="color:var(--acc)">.</span></div>
         <div class="logo-sub">AI Coding Agent</div>
       </div>
     </div>
@@ -196,11 +196,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
       New chat
     </button>
     <div class="sb-foot">
-      <div class="workdir-row">
-        <div id="workdir-display" class="workdir-label workdir-not-set">📂 No folder set</div>
-        <button class="workdir-btn" onclick="changeWorkdir()">Change</button>
-      </div>
-      <div class="online">● Free · Unlimited · Offline</div>
+      <div class="online">● Powered by ZivonX</div>
     </div>
   </aside>
 
@@ -218,14 +214,14 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 
     <div class="msgs" id="msgs">
       <div class="empty" id="empty">
-        <div class="empty-icon">⚡</div>
-        <div class="empty-h">Zivonx AI</div>
-        <div class="empty-s">AI-powered coding agent by Zivonx.<br>Create files, run commands, and build projects — all in one place.</div>
+        <div class="empty-icon" style="font-size:42px;font-weight:800;color:var(--acc);text-shadow:0 0 20px rgba(245,158,11,.4);filter:none">Z<span style="font-size:28px">X</span></div>
+        <div class="empty-h" style="letter-spacing:-.5px">Zivon<span style="color:var(--acc)">X</span> AI</div>
+        <div class="empty-s">Built by Zivonx — your D2C growth partner.<br>Build tools, automate workflows, and ship faster.</div>
         <div class="chips">
-          <div class="chip" onclick="suggest('Create an Excel file with sample product data')">📊 Generate Excel</div>
-          <div class="chip" onclick="suggest('Build a landing page with a hero section and contact form')">🌐 Landing page</div>
-          <div class="chip" onclick="suggest('Write a Node.js script to scrape website meta data')">🔍 Web scraper</div>
-          <div class="chip" onclick="suggest('Create a Python REST API with Flask')">🐍 REST API</div>
+          <div class="chip" onclick="suggest('Create a product catalog Excel with columns for SKU, name, price, stock')">📊 Product Catalog</div>
+          <div class="chip" onclick="suggest('Build a high-converting D2C landing page with hero, features, and CTA')">🌐 D2C Landing Page</div>
+          <div class="chip" onclick="suggest('Write a script to scrape competitor product prices')">🔍 Competitor Scraper</div>
+          <div class="chip" onclick="suggest('Create a FastAPI backend for handling customer orders')">⚡ Order API</div>
         </div>
       </div>
     </div>
@@ -341,14 +337,14 @@ function renderMarkdown(text) {
 
 const EMPTY_HTML = `
   <div class="empty" id="empty">
-    <div class="empty-icon">⚡</div>
-    <div class="empty-h">Zivonx AI</div>
-    <div class="empty-s">AI-powered coding agent by Zivonx.<br>Create files, run commands, and build projects — all in one place.</div>
+    <div class="empty-icon" style="font-size:42px;font-weight:800;color:var(--acc);text-shadow:0 0 20px rgba(245,158,11,.4);filter:none">Z<span style="font-size:28px">X</span></div>
+    <div class="empty-h" style="letter-spacing:-.5px">Zivon<span style="color:var(--acc)">X</span> AI</div>
+    <div class="empty-s">Built by Zivonx — your D2C growth partner.<br>Build tools, automate workflows, and ship faster.</div>
     <div class="chips">
-      <div class="chip" onclick="suggest('Create an Excel file with sample product data')">📊 Generate Excel</div>
-      <div class="chip" onclick="suggest('Build a landing page with a hero section and contact form')">🌐 Landing page</div>
-      <div class="chip" onclick="suggest('Write a Node.js script to scrape website meta data')">🔍 Web scraper</div>
-      <div class="chip" onclick="suggest('Create a Python REST API with Flask')">🐍 REST API</div>
+      <div class="chip" onclick="suggest('Create a product catalog Excel with columns for SKU, name, price, stock')">📊 Product Catalog</div>
+      <div class="chip" onclick="suggest('Build a high-converting D2C landing page with hero, features, and CTA')">🌐 D2C Landing Page</div>
+      <div class="chip" onclick="suggest('Write a script to scrape competitor product prices')">🔍 Competitor Scraper</div>
+      <div class="chip" onclick="suggest('Create a FastAPI backend for handling customer orders')">⚡ Order API</div>
     </div>
   </div>`;
 
