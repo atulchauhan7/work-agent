@@ -101,7 +101,7 @@ export default function ChatPage() {
 
       {/* Sub-header */}
       <div className="pt-20 shrink-0">
-        <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-white/[0.03] bg-dark-bg/50 backdrop-blur-xl">
+      <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-white/[0.03] bg-dark-bg/50 backdrop-blur-xl">
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 bg-green-400 rounded-full pulse-ring text-green-400" />
             <span className="text-xs text-gray-500 tracking-[0.1em] font-medium">Zivonx AI</span>
@@ -128,7 +128,7 @@ export default function ChatPage() {
                 className="text-center pt-12 sm:pt-20"
               >
                 {/* Animated logo */}
-                <div className="relative inline-block mb-8">
+                    <div className="pt-14 shrink-0">
                   <div className="text-5xl sm:text-6xl font-display font-bold">
                     Zivon<span className="gold-shimmer">X</span>
                   </div>
