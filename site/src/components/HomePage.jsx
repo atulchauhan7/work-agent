@@ -389,13 +389,13 @@ export default function HomePage() {
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-gold/30 font-display text-3xl font-bold">0{index + 1}</span>
                   </div>
-                  <p className="text-gold text-[10px] sm:text-xs tracking-[0.25em] font-bold uppercase mb-2">{reason.title}</p>
-                  <h3 className="text-xl sm:text-2xl font-display mb-4 sm:mb-5 font-medium group-hover:text-gold/90 transition-colors duration-500">{reason.subtitle}</h3>
-                  <p className="text-gray-400 font-light leading-relaxed text-sm mb-6">{reason.desc}</p>
+                  <p className="text-gold/85 text-[11px] sm:text-xs tracking-[0.14em] font-semibold font-body uppercase mb-2.5">{reason.title}</p>
+                  <h3 className="text-lg sm:text-[22px] font-body mb-4 sm:mb-5 font-semibold leading-tight text-white group-hover:text-gold/90 transition-colors duration-500">{reason.subtitle}</h3>
+                  <p className="text-gray-300 font-normal leading-7 text-sm sm:text-[15px] mb-6 font-body">{reason.desc}</p>
                   <div className="mt-auto pt-5 border-t border-white/[0.04]">
                     <ul className="space-y-2.5 sm:space-y-3">
                       {reason.bullets.map((bullet, idx) => (
-                        <li key={idx} className="flex items-start text-xs sm:text-[14px] text-gray-300 font-light">
+                        <li key={idx} className="flex items-start text-sm sm:text-[15px] text-gray-200 font-normal leading-relaxed font-body">
                           <span className="text-gold mr-2 sm:mr-3 mt-0.5 opacity-50 flex-shrink-0">✦</span>
                           <span>{bullet}</span>
                         </li>

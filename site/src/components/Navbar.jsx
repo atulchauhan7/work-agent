@@ -102,7 +102,7 @@ export default function Navbar() {
                     key={n.label}
                     href={n.href}
                     onClick={() => handleNav(n.href)}
-                    className={`text-[13px] tracking-[0.15em] hover:text-white transition-all duration-300 relative py-1 ${isActive ? 'text-white' : 'text-gray-400'}`}
+                    className={`text-[13px] tracking-[0.15em] hover:text-white transition-all duration-300 relative py-1 font-body ${isActive ? 'text-white' : 'text-gray-400'}`}
                   >
                     {n.label}
                     <motion.span
@@ -116,7 +116,7 @@ export default function Navbar() {
               })}
               <Link
                 to="/chat"
-                className="text-[13px] tracking-[0.15em] text-gold hover:text-gold-light transition-colors relative py-1"
+                className="text-[13px] tracking-[0.15em] text-gold hover:text-gold-light transition-colors relative py-1 font-body"
               >
                 AI CHAT
                 <span className="absolute -top-0.5 -right-2.5 w-1.5 h-1.5 bg-green-400 rounded-full pulse-ring text-green-400" />
@@ -125,7 +125,7 @@ export default function Navbar() {
             <a
               href="/#contact"
               onClick={() => handleNav('/#contact')}
-              className="bg-gold text-black px-6 py-2.5 text-[13px] font-semibold hover:bg-gold-light transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] rounded-sm"
+              className="bg-gold text-black px-6 py-2.5 text-[13px] font-semibold hover:bg-gold-light transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] rounded-sm font-body"
             >
               Apply to Work With Us
             </a>
@@ -168,7 +168,7 @@ export default function Navbar() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: i * 0.06 }}
-                    className="text-[13px] tracking-[0.15em] text-gray-300 hover:text-gold transition-colors py-2.5 border-b border-white/[0.03] last:border-0"
+                    className="text-[13px] tracking-[0.15em] text-gray-300 hover:text-gold transition-colors py-2.5 border-b border-white/[0.03] last:border-0 font-body"
                   >
                     {n.label}
                   </motion.a>
@@ -176,14 +176,14 @@ export default function Navbar() {
                 <Link
                   to="/chat"
                   onClick={() => setOpen(false)}
-                  className="text-[13px] tracking-[0.15em] text-gold font-semibold py-2.5"
+                  className="text-[13px] tracking-[0.15em] text-gold font-semibold py-2.5 font-body"
                 >
                   AI CHAT
                 </Link>
                 <a
                   href="/#contact"
                   onClick={() => handleNav('/#contact')}
-                  className="w-full min-h-12 inline-flex items-center justify-center rounded-sm bg-gold text-black px-4 py-3.5 text-base font-semibold hover:bg-gold-light active:scale-[0.99] transition-all duration-300 text-center mt-3 border border-gold-dark/20 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+                  className="w-full min-h-12 inline-flex items-center justify-center rounded-sm bg-gold text-black px-4 py-3.5 text-base font-semibold hover:bg-gold-light active:scale-[0.99] transition-all duration-300 text-center mt-3 border border-gold-dark/20 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] font-body"
                 >
                   Apply to work with us
                 </a>

@@ -10,12 +10,12 @@ export default function Footer() {
             <a href="#home" className="inline-block font-display text-3xl sm:text-4xl font-semibold tracking-wide mb-5">
               Zivonx<span className="text-gold">.</span>
             </a>
-            <p className="text-gray-400 font-light text-sm max-w-xs mb-7 sm:mb-9 leading-relaxed">
+            <p className="text-gray-400 font-light text-sm max-w-xs mb-7 sm:mb-9 leading-relaxed font-body">
               A performance-driven growth partner for D2C brands scaling through ads, creatives, and strategy.
             </p>
             <div className="space-y-2 mb-7 sm:mb-9">
-              <p className="text-white text-sm tracking-[0.12em] font-medium">Bangalore, India</p>
-              <a href="mailto:brandteam@zivonx.com" className="text-gold hover:text-gold-light transition-colors text-sm tracking-wide break-all">brandteam@zivonx.com</a>
+              <p className="text-white text-sm tracking-[0.12em] font-medium font-body">Bangalore, India</p>
+              <a href="mailto:brandteam@zivonx.com" className="text-gold hover:text-gold-light transition-colors text-sm tracking-wide break-all font-body">brandteam@zivonx.com</a>
             </div>
             <div className="flex gap-3">
               {[
@@ -32,7 +32,7 @@ export default function Footer() {
 
           {/* Navigation */}
           <div className="lg:col-span-3 lg:justify-self-center">
-            <h4 className="text-white font-display text-base sm:text-lg mb-5 sm:mb-6 font-medium">Navigation</h4>
+            <h4 className="text-white font-body text-base sm:text-lg mb-5 sm:mb-6 font-semibold">Navigation</h4>
             <ul className="space-y-2.5 sm:space-y-3">
               {[
                 { label: 'Home', href: '#home' },
@@ -43,7 +43,7 @@ export default function Footer() {
                 { label: 'AI Chat', href: '/chat' },
               ].map(({ label, href }) => (
                 <li key={label}>
-                  <a href={href} className="text-gray-400 hover:text-gold transition-all duration-300 font-light text-sm hover:pl-1">{label}</a>
+                  <a href={href} className="text-gray-400 hover:text-gold transition-all duration-300 font-light text-sm hover:pl-1 font-body">{label}</a>
                 </li>
               ))}
             </ul>
@@ -51,16 +51,16 @@ export default function Footer() {
 
           {/* CTA */}
           <div className="lg:col-span-4 lg:justify-self-end flex flex-col items-start lg:items-end text-left lg:text-right">
-            <h4 className="text-white font-display text-lg sm:text-xl mb-3 font-medium">Ready to scale?</h4>
-            <p className="text-gray-400 font-light text-sm mb-6 sm:mb-7 leading-relaxed max-w-xs">
+            <h4 className="text-white font-body text-lg sm:text-xl mb-3 font-semibold">Ready to scale?</h4>
+            <p className="text-gray-400 font-light text-sm mb-6 sm:mb-7 leading-relaxed max-w-xs font-body">
               We only take on 2–3 clients at a time. Limited spots available this quarter.
             </p>
-            <a href="#contact" className="w-full sm:w-auto min-h-12 sm:min-h-0 inline-flex items-center justify-center gap-2 rounded-sm bg-gold text-black px-5 sm:px-6 py-3.5 sm:py-2.5 text-base sm:text-sm font-semibold hover:bg-gold-light active:scale-[0.99] transition-all duration-300 mb-7 sm:mb-9 border border-gold-dark/20 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+            <a href="#contact" className="w-full sm:w-auto min-h-12 sm:min-h-0 inline-flex items-center justify-center gap-2 rounded-sm bg-gold text-black px-5 sm:px-6 py-3.5 sm:py-2.5 text-base sm:text-sm font-semibold hover:bg-gold-light active:scale-[0.99] transition-all duration-300 mb-7 sm:mb-9 border border-gold-dark/20 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] font-body">
               Apply to work with us
             </a>
             <div>
-              <p className="text-white text-xs font-semibold tracking-[0.2em] uppercase mb-2.5 sm:mb-3">Response time</p>
-              <p className="text-gray-500 text-sm font-light flex items-center gap-2.5">
+              <p className="text-white text-xs font-semibold tracking-[0.2em] uppercase mb-2.5 sm:mb-3 font-body">Response time</p>
+              <p className="text-gray-500 text-sm font-light flex items-center gap-2.5 font-body">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block pulse-ring text-green-400" />
                 Within 24 hours
               </p>
@@ -71,9 +71,9 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="section-divider mb-6 sm:mb-8" />
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-4 relative z-10 text-center sm:text-left">
-          <p className="text-gray-500 text-xs font-light order-2 sm:order-1">© {currentYear} Zivonx. All rights reserved.</p>
-          <p className="text-gray-600 text-xs italic font-light tracking-wide order-1 sm:order-2">Scaling D2C brands — revenue over vanity.</p>
-          <div className="flex gap-4 text-xs text-gray-500 font-light order-3">
+          <p className="text-gray-500 text-xs font-light order-2 sm:order-1 font-body">© {currentYear} Zivonx. All rights reserved.</p>
+          <p className="text-gray-600 text-xs italic font-light tracking-wide order-1 sm:order-2 font-body">Scaling D2C brands — revenue over vanity.</p>
+          <div className="flex gap-4 text-xs text-gray-500 font-light order-3 font-body">
             <a href="#" className="hover:text-gold transition-colors">Privacy Policy</a>
             <span className="text-white/10">·</span>
             <a href="#" className="hover:text-gold transition-colors">Terms</a>
