@@ -68,11 +68,11 @@ export default function Navbar() {
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-        className={`fixed top-[2px] w-full z-50 motion-safe:transition-[padding,background-color,box-shadow,border-color] motion-safe:duration-300 motion-safe:ease-out ${
+        transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+        className={`fixed top-[2px] w-full z-50 motion-safe:transition-[padding,background-color,box-shadow,border-color,backdrop-filter] motion-safe:duration-500 motion-safe:ease-out ${
           scrolled || open
-            ? 'bg-[#111111]/95 backdrop-blur-xl py-3 shadow-lg shadow-black/30 border-b border-white/[0.06]'
-            : 'bg-[#0a0a0a]/60 backdrop-blur-sm py-6'
+            ? 'bg-[#0a0a0a]/90 backdrop-blur-2xl py-3 shadow-[0_4px_30px_rgba(0,0,0,0.5)] border-b border-white/[0.04]'
+            : 'bg-transparent backdrop-blur-none py-6 border-b border-transparent'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex justify-between items-center gap-3 min-w-0">
@@ -84,8 +84,8 @@ export default function Navbar() {
               initial={{ opacity: 0, scale: 0, rotate: -180 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ duration: 0.8, delay: 0.6, type: 'spring', stiffness: 200 }}
-              className="text-gold text-2xl sm:text-3xl font-bold inline-block group-hover:scale-110 transition-transform duration-300"
-              style={{ textShadow: '0 0 12px rgba(201,168,76,0.6), 0 0 24px rgba(201,168,76,0.3)' }}
+              className="text-gold text-2xl sm:text-3xl font-bold inline-block group-hover:scale-110 transition-transform duration-500"
+              style={{ textShadow: '0 0 16px rgba(245,158,11,0.4), 0 0 32px rgba(245,158,11,0.15)' }}
             >
               X
             </motion.span>
@@ -102,11 +102,11 @@ export default function Navbar() {
                     key={n.label}
                     href={n.href}
                     onClick={() => handleNav(n.href)}
-                    className="text-sm tracking-widest text-gray-300 hover:text-white transition-colors relative py-1"
+                    className={`text-[13px] tracking-[0.15em] hover:text-white transition-all duration-300 relative py-1 ${isActive ? 'text-white' : 'text-gray-400'}`}
                   >
                     {n.label}
                     <motion.span
-                      className="absolute bottom-0 left-0 h-[1px] bg-gold"
+                      className="absolute bottom-0 left-0 h-[1px] bg-gradient-to-r from-gold to-gold/30"
                       initial={false}
                       animate={{ width: isActive ? '100%' : '0%' }}
                       transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
@@ -116,16 +116,16 @@ export default function Navbar() {
               })}
               <Link
                 to="/chat"
-                className="text-sm tracking-widest text-gold hover:text-gold-light transition-colors relative py-1"
+                className="text-[13px] tracking-[0.15em] text-gold hover:text-gold-light transition-colors relative py-1"
               >
                 AI CHAT
-                <span className="absolute -top-0.5 -right-2.5 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                <span className="absolute -top-0.5 -right-2.5 w-1.5 h-1.5 bg-green-400 rounded-full pulse-ring text-green-400" />
               </Link>
             </div>
             <a
               href="/#contact"
               onClick={() => handleNav('/#contact')}
-              className="bg-gold text-black px-6 py-2.5 text-sm font-medium hover:bg-gold-light transition-colors duration-300"
+              className="bg-gold text-black px-6 py-2.5 text-[13px] font-semibold hover:bg-gold-light transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] rounded-sm"
             >
               Apply to Work With Us
             </a>
@@ -159,7 +159,7 @@ export default function Navbar() {
               transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
               className="md:hidden overflow-hidden"
             >
-              <div className="px-4 sm:px-6 pt-6 pb-8 flex flex-col gap-3 border-t border-white/[0.06] mt-4">
+              <div className="px-4 sm:px-6 pt-6 pb-8 flex flex-col gap-3 border-t border-white/[0.04] mt-4">
                 {NAV.map((n, i) => (
                   <motion.a
                     key={n.label}
@@ -167,8 +167,8 @@ export default function Navbar() {
                     onClick={() => handleNav(n.href)}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.05 }}
-                    className="text-sm tracking-widest text-gray-300 hover:text-gold transition-colors py-2"
+                    transition={{ duration: 0.3, delay: i * 0.06 }}
+                    className="text-[13px] tracking-[0.15em] text-gray-300 hover:text-gold transition-colors py-2.5 border-b border-white/[0.03] last:border-0"
                   >
                     {n.label}
                   </motion.a>
@@ -176,14 +176,14 @@ export default function Navbar() {
                 <Link
                   to="/chat"
                   onClick={() => setOpen(false)}
-                  className="text-sm tracking-widest text-gold font-semibold py-2"
+                  className="text-[13px] tracking-[0.15em] text-gold font-semibold py-2.5"
                 >
                   AI CHAT
                 </Link>
                 <a
                   href="/#contact"
                   onClick={() => handleNav('/#contact')}
-                  className="w-full min-h-12 inline-flex items-center justify-center rounded-sm bg-gold text-black px-4 py-3.5 text-base font-semibold hover:bg-gold-light active:scale-[0.99] transition-colors duration-300 text-center mt-2 border border-gold-dark/20"
+                  className="w-full min-h-12 inline-flex items-center justify-center rounded-sm bg-gold text-black px-4 py-3.5 text-base font-semibold hover:bg-gold-light active:scale-[0.99] transition-all duration-300 text-center mt-3 border border-gold-dark/20 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]"
                 >
                   Apply to work with us
                 </a>

@@ -4,8 +4,9 @@
   --color-gold-light: #FCD34D;
   --color-gold: #F59E0B;
   --color-gold-dark: #D97706;
-  --color-dark-bg: #0F0F0F;
-  --color-dark-card: #1A1A1A;
+  --color-dark-bg: #0A0A0A;
+  --color-dark-card: #111111;
+  --color-dark-elevated: #161616;
   --font-display: "Cormorant Garamond", "Playfair Display", serif;
   --font-body: "DM Sans", "Syne", sans-serif;
 }
@@ -20,6 +21,8 @@
     @apply bg-dark-bg text-white font-body;
     overflow-x: clip;
     max-width: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
@@ -28,12 +31,17 @@
   }
 
   ::selection {
-    @apply bg-gold-light/30 text-gold-light;
+    @apply bg-gold/25 text-gold-light;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight text-white;
+    text-wrap: balance;
   }
+
+  /* Smooth transitions for all interactive elements */
+  a, button { @apply transition-colors duration-300; }
+  img { @apply select-none; }
 }
 
 html {
@@ -42,42 +50,97 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-    scroll-padding-top: 5rem;
-  }
+  html { scroll-behavior: auto; scroll-padding-top: 5rem; }
 }
 
-::-webkit-scrollbar { width: 5px; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #444; }
+::-webkit-scrollbar-thumb { background: rgba(245,158,11,0.15); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(245,158,11,0.3); }
+
+/* Noise grain overlay */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
 
 /* GPU-friendly ambient blobs */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes ambient-drift-a {
-    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.3; }
-    50% { transform: translate3d(20px, -30px, 0) scale(1.1); opacity: 0.4; }
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.2; }
+    50% { transform: translate3d(20px, -30px, 0) scale(1.1); opacity: 0.3; }
   }
   @keyframes ambient-drift-b {
-    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.2; }
-    50% { transform: translate3d(-30px, 40px, 0) scale(1.2); opacity: 0.3; }
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.15; }
+    50% { transform: translate3d(-30px, 40px, 0) scale(1.2); opacity: 0.25; }
   }
   @keyframes ambient-drift-c {
-    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.25; }
-    50% { transform: translate3d(40px, -25px, 0) scale(1.15); opacity: 0.35; }
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.18; }
+    50% { transform: translate3d(40px, -25px, 0) scale(1.15); opacity: 0.28; }
   }
   .ambient-blob {
     will-change: transform, opacity;
     backface-visibility: hidden;
   }
-  .ambient-blob--a { animation: ambient-drift-a 15s ease-in-out infinite; }
-  .ambient-blob--b { animation: ambient-drift-b 18s ease-in-out infinite; animation-delay: 2s; }
-  .ambient-blob--c { animation: ambient-drift-c 20s ease-in-out infinite; animation-delay: 5s; }
+  .ambient-blob--a { animation: ambient-drift-a 18s ease-in-out infinite; }
+  .ambient-blob--b { animation: ambient-drift-b 22s ease-in-out infinite; animation-delay: 3s; }
+  .ambient-blob--c { animation: ambient-drift-c 26s ease-in-out infinite; animation-delay: 7s; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ambient-blob { animation: none !important; opacity: 0.22; }
+  .ambient-blob { animation: none !important; opacity: 0.15; }
+}
+
+/* Gold shimmer sweep */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.gold-shimmer {
+  background: linear-gradient(90deg, #F59E0B 0%, #FCD34D 40%, #F59E0B 60%, #D97706 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gold-shimmer-animate {
+  animation: shimmer 4s ease-in-out infinite;
+}
+
+/* Gradient border utility */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.3), transparent 40%, transparent 60%, rgba(245,158,11,0.15));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/* Card hover glow */
+.card-glow {
+  transition: box-shadow 0.5s ease, border-color 0.5s ease;
+}
+.card-glow:hover {
+  box-shadow: 0 0 40px rgba(245,158,11,0.06), 0 0 80px rgba(245,158,11,0.03);
+}
+
+/* Section divider with gradient */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245,158,11,0.15) 20%, rgba(245,158,11,0.15) 80%, transparent);
 }
 
 /* Marquee */
@@ -88,6 +151,23 @@ html {
 .marquee-track {
   will-change: transform;
   backface-visibility: hidden;
+}
+
+/* Pulse ring for status dots */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 1px solid currentColor;
+  animation: pulse-ring 2s ease-out infinite;
 }
 
 /* Chat bubble entrance */
@@ -105,3 +185,8 @@ html {
 .typing-dot { animation: typing-dot 1.4s ease-in-out infinite; }
 .typing-dot:nth-child(2) { animation-delay: 0.15s; }
 .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* Smooth focus for form inputs */
+input:focus, select:focus, textarea:focus {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}

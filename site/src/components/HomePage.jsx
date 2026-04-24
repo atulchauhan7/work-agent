@@ -10,9 +10,9 @@ const WordReveal = ({ words, delay = 0 }) => (
     {words.map((word, i) => (
       <motion.span
         key={i}
-        initial={{ opacity: 0, y: 22, rotateX: -12 }}
-        animate={{ opacity: 1, y: 0, rotateX: 0 }}
-        transition={{ duration: 0.58, delay: delay + i * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+        initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        transition={{ duration: 0.7, delay: delay + i * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
         className="inline-block"
         style={{ transformOrigin: 'bottom center' }}
       >
@@ -22,21 +22,21 @@ const WordReveal = ({ words, delay = 0 }) => (
   </span>
 )
 
-/* ─── Char-by-char section label (matches original) ─── */
+/* ─── Char-by-char section label ─── */
 const CharReveal = ({ text, delay = 0, center = false, withLine = false }) => (
   <motion.p
     initial="hidden"
     whileInView="visible"
     viewport={{ once: true, margin: '-60px' }}
-    className={`text-gold text-[10px] sm:text-xs tracking-[0.18em] sm:tracking-[0.3em] font-medium uppercase mb-4 sm:mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 max-w-full ${center ? 'justify-center' : ''}`}
+    className={`text-gold text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.35em] font-semibold uppercase mb-4 sm:mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 max-w-full ${center ? 'justify-center' : ''}`}
   >
-    {withLine && <span className="w-6 sm:w-8 h-[1px] bg-gold flex-shrink-0" />}
+    {withLine && <motion.span variants={{ hidden: { width: 0 }, visible: { width: 32, transition: { duration: 0.6, delay } } }} className="h-[1px] bg-gradient-to-r from-gold to-transparent flex-shrink-0" />}
     {text.split('').map((char, i) => (
       <motion.span
         key={i}
         variants={{
-          hidden: { opacity: 0, y: 6 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.3, delay: delay + i * 0.03 } },
+          hidden: { opacity: 0, y: 8 },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.35, delay: delay + i * 0.03 } },
         }}
         className="inline-block"
       >
@@ -46,7 +46,20 @@ const CharReveal = ({ text, delay = 0, center = false, withLine = false }) => (
   </motion.p>
 )
 
-/* ─── Animated counter (matches original SocialProof) ─── */
+/* ─── Section Number ─── */
+const SectionNumber = ({ number }) => (
+  <motion.span
+    initial={{ opacity: 0, scale: 0.5 }}
+    whileInView={{ opacity: 1, scale: 1 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.5, type: 'spring' }}
+    className="text-[120px] sm:text-[180px] font-display font-bold text-white/[0.02] absolute -top-8 sm:-top-12 -left-2 sm:left-0 select-none pointer-events-none leading-none"
+  >
+    {number}
+  </motion.span>
+)
+
+/* ─── Animated counter ─── */
 const Counter = ({ target, prefix, suffix, isStatic, staticVal, duration = 1800 }) => {
   const [count, setCount] = useState(0)
   const ref = useRef(null)
@@ -69,7 +82,7 @@ const Counter = ({ target, prefix, suffix, isStatic, staticVal, duration = 1800 
   const display = isStatic ? staticVal : `${prefix}${Math.floor(count)}${suffix}`
 
   return (
-    <span ref={ref} className="text-3xl sm:text-4xl md:text-5xl font-display text-gold mb-1 font-medium block tabular-nums">
+    <span ref={ref} className="text-3xl sm:text-4xl md:text-5xl font-display gold-shimmer mb-1 font-semibold block tabular-nums">
       {display}
     </span>
   )
@@ -123,55 +136,66 @@ export default function HomePage() {
   const [marqueePaused, setMarqueePaused] = useState(false)
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white font-body selection:bg-gold-light/30 selection:text-gold-light relative overflow-x-hidden">
+    <div className="min-h-screen bg-dark-bg text-white font-body selection:bg-gold/25 selection:text-gold-light relative overflow-x-hidden grain">
 
-      {/* Ambient shapes: CSS animations */}
+      {/* Ambient shapes */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden>
-        <div className="ambient-blob ambient-blob--a absolute -top-[20%] -right-[10%] w-[50vw] h-[50vw] bg-gold/5 rounded-full blur-[120px]" />
-        <div className="ambient-blob ambient-blob--b absolute top-[40%] -left-[15%] w-[40vw] h-[40vw] bg-amber-600/5 rounded-full blur-[100px]" />
-        <div className="ambient-blob ambient-blob--c absolute -bottom-[10%] right-[10%] w-[60vw] h-[60vw] bg-gold/5 rounded-full blur-[150px]" />
+        <div className="ambient-blob ambient-blob--a absolute -top-[20%] -right-[10%] w-[50vw] h-[50vw] bg-gold/4 rounded-full blur-[140px]" />
+        <div className="ambient-blob ambient-blob--b absolute top-[40%] -left-[15%] w-[40vw] h-[40vw] bg-amber-600/4 rounded-full blur-[120px]" />
+        <div className="ambient-blob ambient-blob--c absolute -bottom-[10%] right-[10%] w-[60vw] h-[60vw] bg-gold/3 rounded-full blur-[160px]" />
       </div>
 
       <div className="relative z-10 font-body min-w-0 max-w-full">
         <Navbar />
 
         {/* ─── HERO ─── */}
-        <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-x-clip overflow-y-visible border-b border-white/10 min-w-0 scroll-mt-24">
-          <div className="absolute top-1/4 right-[10%] w-32 h-32 md:w-64 md:h-64 border border-white/5 rotate-45 pointer-events-none" />
-          <div className="absolute top-1/3 left-[-5%] w-48 h-48 md:w-96 md:h-96 border border-white/5 rounded-full blur-3xl opacity-20 pointer-events-none" />
+        <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-x-clip overflow-y-visible min-w-0 scroll-mt-24">
+          {/* Geometric decorations */}
+          <div className="absolute top-1/4 right-[8%] w-32 h-32 md:w-72 md:h-72 border border-white/[0.03] rotate-45 pointer-events-none" />
+          <div className="absolute top-[60%] right-[15%] w-16 h-16 md:w-32 md:h-32 border border-gold/[0.06] rotate-12 pointer-events-none" />
+          <div className="absolute bottom-1/4 left-[-3%] w-48 h-48 md:w-80 md:h-80 border border-white/[0.02] rounded-full pointer-events-none" />
+          <div className="absolute top-1/3 right-[5%] w-2 h-2 bg-gold/30 rounded-full pointer-events-none hidden md:block" />
+          <div className="absolute top-[45%] right-[20%] w-1 h-1 bg-gold/20 rounded-full pointer-events-none hidden md:block" />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 w-full min-w-0 relative z-10 py-16 md:pb-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 w-full min-w-0 relative z-10 py-16 md:pb-28">
             <div className="max-w-4xl min-w-0">
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 48 }}
+                transition={{ duration: 0.8, delay: 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+                className="h-[1px] bg-gradient-to-r from-gold to-transparent mb-6 sm:mb-8"
+              />
+
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.48, delay: 0.08, ease: [0.25, 0.1, 0.25, 1] }}
-                className="text-gold text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] font-medium uppercase mb-4 sm:mb-6"
+                transition={{ duration: 0.5, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+                className="text-gold text-[10px] sm:text-xs tracking-[0.3em] sm:tracking-[0.4em] font-semibold uppercase mb-5 sm:mb-7"
               >
                 Performance-Driven Growth Partner
               </motion.p>
 
-              <h1 className="font-display text-[clamp(1.85rem,6vw,2.25rem)] sm:text-5xl md:text-7xl lg:text-8xl leading-[1.12] sm:leading-[1.15] mb-6 sm:mb-8 text-white overflow-x-clip break-words">
-                <div><WordReveal words={['We', 'Build', 'Brands']} delay={0.2} /></div>
+              <h1 className="font-display text-[clamp(2rem,6.5vw,2.5rem)] sm:text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.08] sm:leading-[1.1] mb-7 sm:mb-9 text-white overflow-x-clip break-words">
+                <div><WordReveal words={['We', 'Build', 'Brands']} delay={0.25} /></div>
                 <div>
-                  <WordReveal words={['That']} delay={0.5} />{' '}
+                  <WordReveal words={['That']} delay={0.55} />{' '}
                   <motion.span
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.58, delay: 0.58, ease: [0.25, 0.1, 0.25, 1] }}
-                    className="italic text-gold font-light inline-block"
+                    initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    transition={{ duration: 0.7, delay: 0.65, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="italic gold-shimmer font-light inline-block"
                   >
                     Print
                   </motion.span>
                 </div>
-                <div><WordReveal words={['Revenue.']} delay={0.75} /></div>
+                <div><WordReveal words={['Revenue.']} delay={0.8} /></div>
               </h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.95, ease: [0.25, 0.1, 0.25, 1] }}
-                className="text-gray-400 text-base sm:text-lg md:text-xl font-light max-w-xl mb-4 leading-relaxed"
+                transition={{ duration: 0.6, delay: 1.0, ease: [0.25, 0.1, 0.25, 1] }}
+                className="text-gray-400 text-base sm:text-lg md:text-xl font-light max-w-xl mb-5 leading-relaxed"
               >
                 ₹50L+ in client revenue managed monthly. Two partnerships. Zero wasted spend. We don't do average.
               </motion.p>
@@ -179,29 +203,29 @@ export default function HomePage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 1.12, ease: [0.25, 0.1, 0.25, 1] }}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-8 sm:mb-12 text-[10px] sm:text-xs text-gray-500 font-medium tracking-widest uppercase"
+                transition={{ duration: 0.5, delay: 1.15, ease: [0.25, 0.1, 0.25, 1] }}
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-9 sm:mb-12 text-[10px] sm:text-xs text-gray-500 font-medium tracking-widest uppercase"
               >
                 <span className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block pulse-ring text-green-400" />
                   2 spots open for Q3
                 </span>
-                <span className="text-gray-700">·</span>
+                <span className="text-white/10">·</span>
                 <span>Meta &amp; Google Certified</span>
-                <span className="text-gray-700 hidden sm:inline">·</span>
+                <span className="text-white/10 hidden sm:inline">·</span>
                 <span className="hidden sm:inline">Bangalore-based</span>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 1.22, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={{ duration: 0.55, delay: 1.25, ease: [0.25, 0.1, 0.25, 1] }}
                 className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto max-w-full"
               >
-                <a href="#work" className="w-full sm:w-auto min-h-12 sm:min-h-0 inline-flex items-center justify-center rounded-sm bg-gold hover:bg-gold-light text-black px-6 sm:px-8 py-3.5 text-center font-semibold transition-colors duration-300 text-base border border-gold-dark/20">
+                <a href="#work" className="w-full sm:w-auto min-h-12 sm:min-h-0 inline-flex items-center justify-center rounded-sm bg-gold hover:bg-gold-light text-black px-7 sm:px-9 py-3.5 text-center font-semibold transition-all duration-300 text-base border border-gold-dark/20 hover:shadow-[0_0_30px_rgba(245,158,11,0.25)]">
                   See our work
                 </a>
-                <a href="#contact" className="w-full sm:w-auto min-h-12 sm:min-h-0 inline-flex items-center justify-center rounded-sm border border-gold text-gold hover:bg-gold/10 px-6 sm:px-8 py-3.5 text-center font-semibold transition-colors duration-300 text-base">
+                <a href="#contact" className="w-full sm:w-auto min-h-12 sm:min-h-0 inline-flex items-center justify-center rounded-sm border border-white/15 text-white hover:border-gold hover:text-gold px-7 sm:px-9 py-3.5 text-center font-semibold transition-all duration-300 text-base hover:bg-gold/5">
                   Check availability
                 </a>
               </motion.div>
@@ -212,57 +236,62 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.8, duration: 0.8 }}
+            transition={{ delay: 2, duration: 0.8 }}
             className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           >
-            <span className="text-[10px] tracking-[0.3em] text-gray-600 uppercase">Scroll</span>
+            <span className="text-[9px] tracking-[0.4em] text-gray-600 uppercase font-medium">Scroll</span>
             <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-              className="w-px h-6 sm:h-8 bg-gradient-to-b from-gray-600 to-transparent"
+              animate={{ y: [0, 8, 0] }}
+              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+              className="w-px h-7 sm:h-10 bg-gradient-to-b from-gold/40 to-transparent"
             />
           </motion.div>
         </section>
 
+        {/* Section divider */}
+        <div className="section-divider" />
+
         {/* ─── CLIENT MARQUEE ─── */}
-        <section className="py-10 sm:py-14 bg-[#0a0a0a] border-b border-white/10 overflow-x-clip overflow-y-visible relative w-full max-w-full min-w-0">
-          <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, #0a0a0a, transparent)' }} />
-          <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, #0a0a0a, transparent)' }} />
-          <p className="text-center text-[10px] tracking-[0.35em] text-gray-600 uppercase font-medium mb-6 sm:mb-8">Brands We've Scaled</p>
+        <section className="py-12 sm:py-16 bg-dark-bg/50 overflow-x-clip overflow-y-visible relative w-full max-w-full min-w-0">
+          <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, var(--color-dark-bg), transparent)' }} />
+          <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, var(--color-dark-bg), transparent)' }} />
+          <p className="text-center text-[10px] tracking-[0.4em] text-gray-600 uppercase font-semibold mb-8 sm:mb-10">Brands We've Scaled</p>
           <div
             className="flex marquee-track"
-            style={{ animation: 'marquee 32s linear infinite', animationPlayState: marqueePaused ? 'paused' : 'running' }}
+            style={{ animation: 'marquee 35s linear infinite', animationPlayState: marqueePaused ? 'paused' : 'running' }}
             onMouseEnter={() => setMarqueePaused(true)}
             onMouseLeave={() => setMarqueePaused(false)}
           >
             {allMarqueeClients.map((client, i) => (
-              <div key={i} className="flex items-center justify-center mx-6 sm:mx-10 flex-shrink-0" style={{ minWidth: '110px' }}>
-                <div className="flex flex-col items-center gap-2 sm:gap-3 group cursor-pointer">
-                  <div className="w-20 sm:w-28 h-12 sm:h-16 flex items-center justify-center rounded" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <img src={client.logo} alt={client.name} className="max-w-[70px] sm:max-w-[90px] max-h-9 sm:max-h-12 object-contain transition-all duration-300" style={{ filter: 'brightness(0) invert(1)', opacity: marqueePaused ? 0.7 : 0.45 }} />
+              <div key={i} className="flex items-center justify-center mx-8 sm:mx-12 flex-shrink-0" style={{ minWidth: '120px' }}>
+                <div className="flex flex-col items-center gap-2.5 sm:gap-3 group cursor-pointer">
+                  <div className="w-22 sm:w-30 h-14 sm:h-18 flex items-center justify-center rounded-sm bg-white/[0.02] border border-white/[0.05] group-hover:border-gold/20 transition-all duration-500 group-hover:bg-gold/[0.03]">
+                    <img src={client.logo} alt={client.name} className="max-w-[75px] sm:max-w-[95px] max-h-10 sm:max-h-13 object-contain transition-all duration-500 group-hover:scale-105" style={{ filter: 'brightness(0) invert(1)', opacity: marqueePaused ? 0.7 : 0.4 }} />
                   </div>
-                  <span className="text-[9px] sm:text-[10px] tracking-widest text-gray-600 uppercase font-medium group-hover:text-gold transition-colors duration-300">{client.name}</span>
+                  <span className="text-[9px] sm:text-[10px] tracking-[0.2em] text-gray-600 uppercase font-semibold group-hover:text-gold transition-colors duration-500">{client.name}</span>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* ─── SOCIAL PROOF / STATS ─── */}
-        <section className="py-12 sm:py-20 bg-dark-bg border-b border-white/10">
+        <section className="py-14 sm:py-24 bg-dark-bg">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 min-w-0">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/5 min-w-0">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] min-w-0 rounded-sm overflow-hidden">
               {STATS.map((stat, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="flex flex-col items-start justify-center p-4 sm:p-8 bg-dark-bg min-w-0 overflow-hidden"
+                  transition={{ duration: 0.6, delay: index * 0.12 }}
+                  className="flex flex-col items-start justify-center p-5 sm:p-10 bg-dark-bg hover:bg-dark-card/50 transition-colors duration-500 min-w-0 overflow-hidden group"
                 >
                   <Counter target={stat.value} prefix={stat.prefix} suffix={stat.suffix} isStatic={!!stat.static} staticVal={stat.static} />
-                  <p className="text-white text-[10px] sm:text-xs tracking-[0.08em] sm:tracking-[0.15em] uppercase font-bold mb-1 leading-tight break-words hyphens-auto">
+                  <p className="text-white text-[10px] sm:text-xs tracking-[0.1em] sm:tracking-[0.18em] uppercase font-bold mb-1 leading-tight break-words hyphens-auto group-hover:text-gold/90 transition-colors duration-500">
                     {stat.label}
                   </p>
                   <p className="text-gray-600 text-[10px] sm:text-[11px] font-light italic leading-snug break-words">
@@ -274,21 +303,24 @@ export default function HomePage() {
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* ─── SERVICES ─── */}
-        <section id="services" className="scroll-mt-24 py-16 sm:py-24 md:py-32 bg-dark-bg relative border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 min-w-0">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-12 sm:mb-20">
+        <section id="services" className="scroll-mt-24 py-20 sm:py-28 md:py-36 bg-dark-bg relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 min-w-0 relative">
+            <SectionNumber number="01" />
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-14 sm:mb-24 relative z-10">
               <CharReveal text="What We Do" />
-              <h2 className="text-4xl sm:text-5xl md:text-6xl font-display">Services</h2>
+              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-medium">Services</h2>
             </motion.div>
 
             {/* First 4 services: 2x2 grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-4 sm:mb-5">
               {SERVICES.slice(0, 2).map((s, i) => (
                 <ServiceCard key={i} service={s} index={i} />
               ))}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-4 sm:mb-5">
               {SERVICES.slice(2, 4).map((s, i) => (
                 <ServiceCard key={i + 2} service={s} index={i + 2} />
               ))}
@@ -300,28 +332,28 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.5 }}
-              className="bg-dark-card border border-gold/20 p-6 sm:p-8 lg:p-10 hover:shadow-[0_0_40px_rgba(245,158,11,0.08)] hover:border-gold/40 transition-all duration-500 group relative overflow-hidden"
+              className="bg-dark-card border border-gold/15 p-6 sm:p-8 lg:p-12 card-glow hover:border-gold/35 transition-all duration-500 group relative overflow-hidden rounded-sm"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gold/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center relative z-10">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gold/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10 items-center relative z-10">
                 <div>
-                  <div className="flex items-center gap-3 mb-5 sm:mb-6">
+                  <div className="flex items-center gap-3 mb-6 sm:mb-7">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                    <span className="text-[10px] tracking-[0.2em] font-bold uppercase bg-gold/15 text-gold px-2 py-0.5 border border-gold/30">{SERVICES[4].tag}</span>
+                    <span className="text-[10px] tracking-[0.25em] font-bold uppercase bg-gold/10 text-gold px-2.5 py-1 border border-gold/25 rounded-sm">{SERVICES[4].tag}</span>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-display mb-3 sm:mb-4 font-medium group-hover:text-gold transition-colors duration-300">{SERVICES[4].title}</h3>
+                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-display mb-3 sm:mb-4 font-medium group-hover:text-gold transition-colors duration-300">{SERVICES[4].title}</h3>
                   <p className="text-gray-400 font-light leading-relaxed text-sm sm:text-base">{SERVICES[4].desc}</p>
                 </div>
                 <div>
-                  <ul className="space-y-3">
+                  <ul className="space-y-3.5">
                     {SERVICES[4].features.map((f, idx) => (
-                      <li key={idx} className="flex items-start text-sm sm:text-[14px] text-gray-300 font-light">
-                        <span className="text-gold mr-3 mt-0.5 opacity-70 flex-shrink-0">✦</span>
+                      <li key={idx} className="flex items-start text-sm sm:text-[15px] text-gray-300 font-light">
+                        <span className="text-gold mr-3 mt-0.5 opacity-60 flex-shrink-0">✦</span>
                         <span>{f}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-white/5">
+                  <div className="mt-6 sm:mt-7 pt-6 sm:pt-7 border-t border-white/[0.04]">
                     <p className="text-xs text-gray-500 font-light italic">Faster sites convert more. A 1-second delay costs up to 7% in conversions.</p>
                   </div>
                 </div>
@@ -330,35 +362,41 @@ export default function HomePage() {
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* ─── WHY US ─── */}
-        <section id="about" className="scroll-mt-24 py-16 sm:py-24 md:py-32 bg-[#0a0a0a] relative border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 min-w-0">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-12 sm:mb-20 text-center max-w-3xl mx-auto">
+        <section id="about" className="scroll-mt-24 py-20 sm:py-28 md:py-36 bg-dark-bg/50 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 min-w-0 relative">
+            <SectionNumber number="02" />
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-14 sm:mb-24 text-center max-w-3xl mx-auto relative z-10">
               <CharReveal text="Why Us" center />
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-display mb-4 sm:mb-6 leading-tight break-words px-1">Not Another Agency. A Revenue Partner.</h2>
-              <p className="text-gray-400 font-light leading-relaxed text-base sm:text-lg">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display mb-5 sm:mb-7 leading-tight break-words px-1 font-medium">Not Another Agency.<br className="hidden sm:block" /> A Revenue Partner.</h2>
+              <p className="text-gray-400 font-light leading-relaxed text-base sm:text-lg max-w-2xl mx-auto">
                 We work with a small number of D2C brands to scale revenue profitably through ads, creatives, and strategy.
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-10 sm:mb-20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 mb-12 sm:mb-24">
               {WHY_US.map((reason, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 32, rotate: 2 }}
-                  whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+                  initial={{ opacity: 0, y: 36 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  className="bg-dark-bg p-6 sm:p-8 lg:p-10 border border-white/5 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(255,255,255,0.07)] hover:border-white/20 transition-all duration-500 flex flex-col"
+                  transition={{ duration: 0.65, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                  className="bg-dark-card p-6 sm:p-8 lg:p-10 border border-white/[0.04] rounded-sm card-glow hover:-translate-y-1.5 hover:border-white/10 transition-all duration-500 flex flex-col group"
                 >
-                  <p className="text-gold text-[10px] sm:text-xs tracking-[0.2em] font-bold uppercase mb-2">{reason.title}</p>
-                  <h3 className="text-xl sm:text-2xl font-display mb-4 sm:mb-5 font-medium">{reason.subtitle}</h3>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-gold/30 font-display text-3xl font-bold">0{index + 1}</span>
+                  </div>
+                  <p className="text-gold text-[10px] sm:text-xs tracking-[0.25em] font-bold uppercase mb-2">{reason.title}</p>
+                  <h3 className="text-xl sm:text-2xl font-display mb-4 sm:mb-5 font-medium group-hover:text-gold/90 transition-colors duration-500">{reason.subtitle}</h3>
                   <p className="text-gray-400 font-light leading-relaxed text-sm mb-6">{reason.desc}</p>
-                  <div className="mt-auto">
-                    <ul className="space-y-2 sm:space-y-3">
+                  <div className="mt-auto pt-5 border-t border-white/[0.04]">
+                    <ul className="space-y-2.5 sm:space-y-3">
                       {reason.bullets.map((bullet, idx) => (
                         <li key={idx} className="flex items-start text-xs sm:text-[14px] text-gray-300 font-light">
-                          <span className="text-gold mr-2 sm:mr-3 mt-0.5 opacity-70 flex-shrink-0">✦</span>
+                          <span className="text-gold mr-2 sm:mr-3 mt-0.5 opacity-50 flex-shrink-0">✦</span>
                           <span>{bullet}</span>
                         </li>
                       ))}
@@ -374,31 +412,35 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="max-w-4xl mx-auto text-center p-6 sm:p-8 lg:p-12 border border-white/5 bg-dark-bg hover:border-gold/30 hover:shadow-[0_0_40px_rgba(245,158,11,0.05)] transition-all duration-500 group relative overflow-hidden"
+              className="max-w-4xl mx-auto text-center p-8 sm:p-10 lg:p-14 border border-white/[0.04] bg-dark-card rounded-sm card-glow hover:border-gold/20 transition-all duration-500 group relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gold/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gold/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               <h3 className="text-xl sm:text-2xl md:text-3xl font-display text-white relative z-10 font-medium leading-snug">
-                We've already helped brands scale to <span className="text-gold italic font-light">₹3Cr+</span> in revenue with consistent <span className="text-gold italic font-light">100+ daily orders</span> — and we're just getting started.
+                We've already helped brands scale to <span className="gold-shimmer italic font-light">₹3Cr+</span> in revenue with consistent <span className="gold-shimmer italic font-light">100+ daily orders</span> — and we're just getting started.
               </h3>
             </motion.div>
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* ─── CASE STUDY ─── */}
-        <section id="work" className="scroll-mt-24 py-16 sm:py-24 md:py-32 bg-dark-bg relative overflow-hidden border-b border-white/10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] border border-gold/5 rounded-full blur-3xl opacity-20 pointer-events-none" />
+        <section id="work" className="scroll-mt-24 py-20 sm:py-28 md:py-36 bg-dark-bg relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[700px] h-[400px] sm:h-[700px] border border-gold/[0.03] rounded-full pointer-events-none" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 relative z-10 min-w-0">
+            <SectionNumber number="03" />
+
             {/* Client logos */}
-            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-10 sm:mb-16">
-              <p className="text-[10px] tracking-[0.35em] text-gray-600 uppercase font-medium mb-4 sm:mb-6">Brands We've Worked With</p>
+            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-12 sm:mb-20 relative z-10">
+              <p className="text-[10px] tracking-[0.4em] text-gray-600 uppercase font-semibold mb-5 sm:mb-7">Brands We've Worked With</p>
               <div className="flex flex-wrap gap-3 sm:gap-4">
                 {BRANDS.map((client, i) => (
                   <motion.div key={i} initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.1 }}
-                    className="flex items-center gap-2 sm:gap-3 border border-white/8 px-3 sm:px-5 py-2 sm:py-3 hover:border-gold/25 transition-colors duration-300 group"
+                    className="flex items-center gap-2 sm:gap-3 border border-white/[0.06] rounded-sm px-4 sm:px-6 py-2.5 sm:py-3 hover:border-gold/20 hover:bg-gold/[0.02] transition-all duration-500 group"
                   >
-                    <img src={client.logo} alt={client.name} className="h-5 sm:h-7 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)', opacity: 0.5 }} />
-                    <span className="text-[10px] sm:text-xs text-gray-500 tracking-widest uppercase group-hover:text-gray-300 transition-colors duration-300">{client.name}</span>
+                    <img src={client.logo} alt={client.name} className="h-5 sm:h-7 w-auto object-contain transition-all duration-500" style={{ filter: 'brightness(0) invert(1)', opacity: 0.45 }} />
+                    <span className="text-[10px] sm:text-xs text-gray-500 tracking-[0.2em] uppercase group-hover:text-gray-300 transition-colors duration-500">{client.name}</span>
                   </motion.div>
                 ))}
               </div>
@@ -410,29 +452,29 @@ export default function HomePage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: '-80px' }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="bg-dark-card border border-white/10 p-5 sm:p-8 md:p-12 lg:p-20 relative overflow-hidden group"
+              className="bg-dark-card border border-white/[0.06] rounded-sm p-6 sm:p-10 md:p-14 lg:p-20 relative overflow-hidden group card-glow"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-br from-gold/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 items-start">
                 <div>
                   <CharReveal text="Featured Case Study" delay={0.1} withLine />
-                  <h2 className="text-2xl sm:text-3xl lg:text-5xl font-display font-medium leading-[1.15] mb-3 break-words">
+                  <h2 className="text-2xl sm:text-3xl lg:text-5xl font-display font-medium leading-[1.12] mb-3 break-words">
                     Scaling a Premium D2C Brand to Profitable Growth
                   </h2>
-                  <p className="text-gray-500 text-sm font-light mb-6 sm:mb-8 italic">Dhirai · D2C Fashion &amp; Lifestyle · Bangalore · 2024</p>
-                  <p className="text-gray-400 leading-relaxed font-light mb-6 sm:mb-8 text-sm sm:text-base">
+                  <p className="text-gray-500 text-sm font-light mb-7 sm:mb-9 italic">Dhirai · D2C Fashion &amp; Lifestyle · Bangalore · 2024</p>
+                  <p className="text-gray-400 leading-relaxed font-light mb-7 sm:mb-9 text-sm sm:text-base">
                     We partnered with Deepak Meena, founder of Dhirai, when the brand was struggling with inconsistent sales and high CAC. By rebuilding their funnel and focusing on performance-driven creatives, we turned it into a predictable revenue engine.
                   </p>
 
                   {/* Quote */}
-                  <div className="bg-white/3 border border-white/8 p-4 sm:p-6 mb-6 sm:mb-8">
-                    <div className="text-gold text-2xl sm:text-3xl font-display leading-none mb-2 sm:mb-3 opacity-50">"</div>
-                    <p className="text-gray-300 italic font-light leading-relaxed text-sm mb-3 sm:mb-4">
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-sm p-5 sm:p-7 mb-7 sm:mb-9 relative">
+                    <div className="absolute top-3 left-5 text-gold text-4xl sm:text-5xl font-display leading-none opacity-20">"</div>
+                    <p className="text-gray-300 italic font-light leading-relaxed text-sm mb-3 sm:mb-4 relative z-10 pl-4 sm:pl-0">
                       The ZivonX team didn't just manage our ads — they rebuilt our entire growth engine. CAC dropped 42% in the first 60 days and we've maintained profitability every month since.
                     </p>
-                    <div className="flex items-center gap-3">
-                      <img src="/dhirai.avif" alt="Dhirai" className="h-6 sm:h-8 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)', opacity: 0.6 }} />
+                    <div className="flex items-center gap-3 relative z-10">
+                      <img src="/dhirai.avif" alt="Dhirai" className="h-6 sm:h-8 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)', opacity: 0.5 }} />
                       <div>
                         <p className="text-white text-xs font-medium">Deepak Meena</p>
                         <p className="text-gray-500 text-[11px]">Founder, Dhirai</p>
@@ -441,34 +483,34 @@ export default function HomePage() {
                   </div>
 
                   {/* What we did */}
-                  <div className="mb-6 sm:mb-8">
-                    <p className="text-gold text-[10px] sm:text-xs tracking-[0.2em] font-bold uppercase mb-3 sm:mb-4">What We Did</p>
-                    <ul className="space-y-2 sm:space-y-3">
+                  <div className="mb-7 sm:mb-9">
+                    <p className="text-gold text-[10px] sm:text-xs tracking-[0.25em] font-bold uppercase mb-4 sm:mb-5">What We Did</p>
+                    <ul className="space-y-3 sm:space-y-3.5">
                       {['Rebuilt the ad account structure from scratch', 'Introduced high-AOV bundles to increase order value', 'Scaled winning creatives through aggressive testing', 'Optimized full funnel (TOF → Retargeting → Conversion)'].map((item, idx) => (
                         <li key={idx} className="flex items-start text-xs sm:text-[14px] text-gray-300 font-light">
-                          <span className="text-gold mr-2 sm:mr-3 mt-0.5 opacity-70 flex-shrink-0">✦</span>
+                          <span className="text-gold mr-2 sm:mr-3 mt-0.5 opacity-50 flex-shrink-0">✦</span>
                           <span>{item}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <a href="#contact" className="inline-flex items-center gap-2 text-white font-medium hover:text-gold transition-colors duration-300 group/btn text-sm sm:text-base">
+                  <a href="#contact" className="inline-flex items-center gap-2.5 text-white font-medium hover:text-gold transition-all duration-300 group/btn text-sm sm:text-base hover:gap-3.5">
                     Request Full Case Study
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-1">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                     </svg>
                   </a>
                 </div>
 
                 {/* Results grid */}
-                <div className="grid grid-cols-2 gap-px bg-white/10 min-w-0">
+                <div className="grid grid-cols-2 gap-px bg-white/[0.06] rounded-sm overflow-hidden min-w-0">
                   {CASE_RESULTS.map((stat, index) => (
-                    <motion.div key={index} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.2 + index * 0.08 }}
-                      className="p-4 sm:p-8 bg-dark-bg flex flex-col justify-center min-w-0"
+                    <motion.div key={index} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
+                      className="p-5 sm:p-10 bg-dark-bg flex flex-col justify-center min-w-0 hover:bg-dark-card/50 transition-colors duration-500"
                     >
-                      <span className="text-xl sm:text-3xl md:text-4xl font-display text-gold mb-1 block tabular-nums break-all sm:break-normal">{stat.metric}</span>
-                      <span className="text-[10px] sm:text-xs tracking-[0.15em] uppercase text-white font-bold mb-1 leading-tight">{stat.label}</span>
+                      <span className="text-xl sm:text-3xl md:text-4xl font-display gold-shimmer mb-1.5 block tabular-nums break-all sm:break-normal font-semibold">{stat.metric}</span>
+                      <span className="text-[10px] sm:text-xs tracking-[0.18em] uppercase text-white font-bold mb-1 leading-tight">{stat.label}</span>
                       <span className="text-[10px] sm:text-[11px] text-gray-600 font-light italic">{stat.sub}</span>
                     </motion.div>
                   ))}
@@ -478,23 +520,26 @@ export default function HomePage() {
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* ─── ABOUT / TEAM ─── */}
-        <section className="py-16 sm:py-24 bg-[#050505] relative overflow-hidden border-b border-white/10">
-          <div className="absolute top-0 right-0 w-1/3 h-full border-l border-white/5 hidden lg:block" />
+        <section className="py-20 sm:py-28 md:py-36 bg-dark-bg/50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-1/3 h-full border-l border-white/[0.02] hidden lg:block" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 relative z-10 min-w-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 items-start">
+            <SectionNumber number="04" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-20 items-start relative z-10">
               {/* Left: Story */}
               <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.8, ease: 'easeOut' }}>
                 <CharReveal text="The Origin" delay={0.1} withLine />
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-medium leading-[1.2] mb-6 sm:mb-8 break-words">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-medium leading-[1.15] mb-7 sm:mb-9 break-words">
                   We built the agency <br className="hidden sm:block" />
                   we wished we could hire.
                 </h2>
-                <div className="space-y-5 sm:space-y-6 text-gray-400 font-light leading-relaxed mb-8 sm:mb-12 text-sm sm:text-base">
+                <div className="space-y-6 sm:space-y-7 text-gray-400 font-light leading-relaxed mb-9 sm:mb-12 text-sm sm:text-base">
                   <p>We started Zivonx because we were tired of agencies that vanish after onboarding. The bait-and-switch. The monthly reports that hide bad numbers behind vanity metrics.</p>
                   <p>Our philosophy is simple: Every rupee you spend is tracked, optimized, and reported with complete transparency. We treat your ad budget like our own.</p>
-                  <p className="text-white border-l-2 border-gold pl-4 sm:pl-6 py-2 text-base sm:text-lg">
+                  <p className="text-white border-l-2 border-gold/60 pl-5 sm:pl-7 py-3 text-base sm:text-lg font-display italic">
                     Based in Bangalore.<br />Scaling brands across India.
                   </p>
                 </div>
@@ -502,44 +547,44 @@ export default function HomePage() {
 
               {/* Right: Team */}
               <div>
-                <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-gold text-[10px] sm:text-xs tracking-[0.3em] font-medium uppercase mb-4 sm:mb-6">
+                <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-gold text-[10px] sm:text-xs tracking-[0.35em] font-semibold uppercase mb-5 sm:mb-7">
                   The Team
                 </motion.p>
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-3.5 sm:space-y-4">
                   {TEAM.map((founder, idx) => (
                     <motion.div
                       key={idx}
-                      initial={{ opacity: 0, x: 30, rotate: 1 }}
-                      whileInView={{ opacity: 1, x: 0, rotate: 0 }}
+                      initial={{ opacity: 0, x: 30 }}
+                      whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true, margin: '-30px' }}
-                      transition={{ duration: 0.55, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                      className="bg-dark-card border border-white/8 p-4 sm:p-5 flex gap-3 sm:gap-4 hover:border-gold/20 transition-colors duration-300 group relative overflow-hidden"
+                      transition={{ duration: 0.55, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                      className="bg-dark-card border border-white/[0.05] rounded-sm p-4.5 sm:p-6 flex gap-4 sm:gap-5 card-glow hover:border-gold/15 transition-all duration-500 group relative overflow-hidden"
                     >
-                      <div className={`absolute inset-0 bg-gradient-to-r ${founder.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center flex-shrink-0 group-hover:bg-gold/25 transition-colors duration-300 relative z-10">
+                      <div className={`absolute inset-0 bg-gradient-to-r ${founder.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+                      <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-gradient-to-br from-gold/15 to-gold/5 border border-gold/15 flex items-center justify-center flex-shrink-0 group-hover:from-gold/25 group-hover:to-gold/10 group-hover:border-gold/30 transition-all duration-500 relative z-10">
                         <span className="font-display text-gold text-base sm:text-lg font-bold">{founder.initial}</span>
                       </div>
                       <div className="flex-1 relative z-10 min-w-0">
-                        <div className="flex items-start justify-between mb-1">
+                        <div className="flex items-start justify-between mb-1.5">
                           <div className="min-w-0 flex-1 pr-2">
-                            <h3 className="mb-0.5 text-white font-medium text-sm truncate">{founder.name}</h3>
-                            <p className="text-gold text-[10px] tracking-[0.15em] uppercase font-medium">{founder.role}</p>
+                            <h3 className="mb-0.5 text-white font-medium text-sm sm:text-[15px] truncate group-hover:text-gold/90 transition-colors duration-500">{founder.name}</h3>
+                            <p className="text-gold text-[10px] tracking-[0.2em] uppercase font-semibold">{founder.role}</p>
                           </div>
                         </div>
-                        <p className="text-gray-500 text-xs font-light leading-relaxed mt-1">{founder.bio}</p>
+                        <p className="text-gray-500 text-xs sm:text-[13px] font-light leading-relaxed mt-1.5">{founder.bio}</p>
                       </div>
                     </motion.div>
                   ))}
 
                   {/* Talk to us CTA */}
-                  <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.35 }}
-                    className="border border-white/5 p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mt-2 min-w-0"
+                  <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.4 }}
+                    className="border border-white/[0.04] rounded-sm p-4.5 sm:p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mt-3 min-w-0 bg-dark-card/50"
                   >
                     <div className="min-w-0">
                       <p className="text-white text-sm font-medium mb-0.5">Talk directly to us</p>
                       <p className="text-gray-500 text-xs font-light">No account managers. Ever.</p>
                     </div>
-                    <a href="#contact" className="w-full sm:w-auto min-h-11 inline-flex items-center justify-center gap-2 rounded-sm bg-gold/10 border border-gold/35 text-gold text-sm font-semibold hover:bg-gold hover:text-black hover:border-gold transition-colors px-4 py-3 sm:py-2 sm:px-4 flex-shrink-0 sm:ml-3">
+                    <a href="#contact" className="w-full sm:w-auto min-h-11 inline-flex items-center justify-center gap-2 rounded-sm bg-gold/10 border border-gold/25 text-gold text-sm font-semibold hover:bg-gold hover:text-black hover:border-gold transition-all duration-300 px-5 py-3 sm:py-2.5 sm:px-5 flex-shrink-0 sm:ml-3 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">
                       Apply now
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 shrink-0">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -552,32 +597,36 @@ export default function HomePage() {
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* ─── CONTACT ─── */}
-        <section id="contact" className="scroll-mt-24 border-b border-white/10 bg-dark-card py-16 sm:py-20 md:py-32 min-w-0 [color-scheme:dark]">
-          <div className="mx-auto grid min-w-0 max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 md:gap-16 md:px-12 lg:grid-cols-12 lg:gap-10">
+        <section id="contact" className="scroll-mt-24 bg-dark-card py-20 sm:py-28 md:py-36 min-w-0 [color-scheme:dark] relative">
+          <div className="absolute top-0 left-0 right-0 section-divider" />
+          <div className="mx-auto grid min-w-0 max-w-7xl grid-cols-1 gap-14 px-4 sm:px-6 md:gap-18 md:px-12 lg:grid-cols-12 lg:gap-12 relative">
+            <SectionNumber number="05" />
             {/* Left info */}
             <motion.div
               initial={{ opacity: 0, x: -16 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, amount: 0.2, margin: '0px 0px -8% 0px' }}
               transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-              className="lg:col-span-5"
+              className="lg:col-span-5 relative z-10"
             >
               <CharReveal text="Book a Session" delay={0.08} withLine />
-              <h2 className="mb-4 font-display text-3xl font-medium leading-[1.12] text-white sm:text-4xl lg:text-5xl break-words">
+              <h2 className="mb-5 font-display text-3xl font-medium leading-[1.1] text-white sm:text-4xl lg:text-5xl break-words">
                 Pick a time that works for you.
               </h2>
-              <p className="mb-6 max-w-md font-light text-base leading-relaxed text-gray-400 sm:text-lg">
+              <p className="mb-7 max-w-md font-light text-base leading-relaxed text-gray-400 sm:text-lg">
                 Share your details and preferred slot. We will confirm by email and follow up on WhatsApp if needed.
               </p>
-              <p className="mb-8 max-w-md text-sm font-light text-gray-500">
+              <p className="mb-9 max-w-md text-sm font-light text-gray-500">
                 Direct inbox:{' '}
-                <a href="mailto:brandteam@zivonx.com?subject=Book%20a%20session" className="text-gold underline-offset-2 transition-colors hover:text-gold-light hover:underline">
+                <a href="mailto:brandteam@zivonx.com?subject=Book%20a%20session" className="text-gold underline-offset-3 transition-colors hover:text-gold-light hover:underline decoration-gold/30">
                   brandteam@zivonx.com
                 </a>
               </p>
-              <ul className="space-y-4 border-l border-gold/25 pl-5 text-sm font-light text-gray-500">
-                <li className="text-white/90"><span className="font-medium text-gold">30 min</span> strategy call</li>
+              <ul className="space-y-4.5 border-l-2 border-gold/20 pl-6 text-sm font-light text-gray-500">
+                <li className="text-white/90"><span className="font-semibold text-gold">30 min</span> strategy call</li>
                 <li>No obligation — we map fit and next steps.</li>
                 <li>Slots shown in your local time.</li>
               </ul>
@@ -591,10 +640,10 @@ export default function HomePage() {
               transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
               className="relative min-w-0 lg:col-span-7"
             >
-              <div className="absolute -inset-px rounded-sm bg-gradient-to-br from-gold/20 via-transparent to-gold/10 opacity-60 blur-sm" aria-hidden />
-              <div className="relative overflow-visible rounded-sm border border-white/10 bg-dark-bg p-6 shadow-[0_0_0_1px_rgba(245,158,11,0.06)] sm:p-8 lg:p-10">
-                <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-gold/10 blur-3xl" aria-hidden />
-                <div className="pointer-events-none absolute -bottom-16 -left-16 h-36 w-36 rounded-full bg-amber-600/10 blur-3xl" aria-hidden />
+              <div className="absolute -inset-px rounded-sm bg-gradient-to-br from-gold/15 via-transparent to-gold/8 opacity-50 blur-sm" aria-hidden />
+              <div className="relative overflow-visible rounded-sm border border-white/[0.06] bg-dark-bg p-6 shadow-[0_4px_40px_rgba(0,0,0,0.4)] sm:p-8 lg:p-10">
+                <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-gold/8 blur-[60px]" aria-hidden />
+                <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-amber-600/8 blur-[50px]" aria-hidden />
 
                 <form
                   action="https://formsubmit.co/brandteam@zivonx.com"
@@ -606,27 +655,27 @@ export default function HomePage() {
 
                   <div className="grid gap-6 sm:grid-cols-2">
                     <div className="sm:col-span-2">
-                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Full name</label>
-                      <input name="name" required placeholder="Your name" autoComplete="name" className="w-full min-w-0 rounded-sm border border-white/12 bg-dark-card/50 px-4 py-3.5 font-light text-white placeholder:text-gray-600 transition-[border-color,box-shadow] focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/25" />
+                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Full name</label>
+                      <input name="name" required placeholder="Your name" autoComplete="name" className="w-full min-w-0 rounded-sm border border-white/[0.08] bg-dark-card/60 px-4 py-3.5 font-light text-white placeholder:text-gray-600 transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80" />
                     </div>
                     <div>
-                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Email</label>
-                      <input name="email" type="email" required placeholder="you@company.com" autoComplete="email" className="w-full min-w-0 rounded-sm border border-white/12 bg-dark-card/50 px-4 py-3.5 font-light text-white placeholder:text-gray-600 transition-[border-color,box-shadow] focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/25" />
+                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Email</label>
+                      <input name="email" type="email" required placeholder="you@company.com" autoComplete="email" className="w-full min-w-0 rounded-sm border border-white/[0.08] bg-dark-card/60 px-4 py-3.5 font-light text-white placeholder:text-gray-600 transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80" />
                     </div>
                     <div>
-                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">WhatsApp</label>
-                      <input name="whatsapp" type="tel" placeholder="+91 00000 00000" autoComplete="tel" className="w-full min-w-0 rounded-sm border border-white/12 bg-dark-card/50 px-4 py-3.5 font-light text-white placeholder:text-gray-600 transition-[border-color,box-shadow] focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/25" />
+                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">WhatsApp</label>
+                      <input name="whatsapp" type="tel" placeholder="+91 00000 00000" autoComplete="tel" className="w-full min-w-0 rounded-sm border border-white/[0.08] bg-dark-card/60 px-4 py-3.5 font-light text-white placeholder:text-gray-600 transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80" />
                     </div>
                   </div>
 
                   <div className="grid gap-6 sm:grid-cols-2">
                     <div>
-                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Preferred date</label>
-                      <input name="date" type="date" required className="w-full min-w-0 rounded-sm border border-white/12 bg-dark-card/50 px-4 py-3.5 font-light text-white transition-[border-color,box-shadow] focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/25" />
+                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Preferred date</label>
+                      <input name="date" type="date" required className="w-full min-w-0 rounded-sm border border-white/[0.08] bg-dark-card/60 px-4 py-3.5 font-light text-white transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80" />
                     </div>
                     <div>
-                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Preferred time</label>
-                      <select name="time" required className="w-full min-w-0 rounded-sm border border-white/12 bg-dark-card/50 px-4 py-3.5 font-light text-white transition-[border-color,box-shadow] focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/25">
+                      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Preferred time</label>
+                      <select name="time" required className="w-full min-w-0 rounded-sm border border-white/[0.08] bg-dark-card/60 px-4 py-3.5 font-light text-white transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80">
                         <option value="">Choose a time</option>
                         <option>10:00 AM</option><option>10:30 AM</option>
                         <option>11:00 AM</option><option>11:30 AM</option>
@@ -645,7 +694,7 @@ export default function HomePage() {
                     30 min strategy call · No obligation · Slots shown in your local time
                   </p>
 
-                  <button type="submit" className="w-full rounded-sm border border-gold-dark/30 bg-gold py-4 text-base font-semibold text-black shadow-sm transition-[background-color,transform,opacity] hover:bg-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-dark-bg">
+                  <button type="submit" className="w-full rounded-sm border border-gold-dark/30 bg-gold py-4 text-base font-semibold text-black shadow-sm transition-all duration-300 hover:bg-gold-light hover:shadow-[0_0_30px_rgba(245,158,11,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-dark-bg active:scale-[0.99]">
                     Submit application
                   </button>
                 </form>
@@ -677,25 +726,27 @@ export default function HomePage() {
 function ServiceCard({ service, index }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, delay: index * 0.07 }}
-      className="bg-dark-card border border-white/5 p-6 sm:p-8 lg:p-10 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(255,255,255,0.07)] hover:border-white/20 transition-all duration-500 group flex flex-col h-full relative overflow-hidden"
+      transition={{ duration: 0.55, delay: index * 0.08 }}
+      className="bg-dark-card border border-white/[0.04] rounded-sm p-6 sm:p-8 lg:p-10 card-glow hover:-translate-y-1.5 hover:border-white/[0.08] transition-all duration-500 group flex flex-col h-full relative overflow-hidden"
     >
-      <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-gold group-hover:w-full transition-all duration-500 ease-out" />
-      <div>
-        <h3 className="text-xl sm:text-2xl font-display mb-3 sm:mb-4 font-medium tracking-wide group-hover:text-gold transition-colors duration-300 relative">
+      {/* Bottom gold line */}
+      <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-gold via-gold/60 to-transparent group-hover:w-full transition-all duration-700 ease-out" />
+      {/* Service number */}
+      <span className="text-white/[0.04] font-display text-6xl sm:text-7xl font-bold absolute top-3 right-4 pointer-events-none select-none">0{index + 1}</span>
+      <div className="relative z-10">
+        <h3 className="text-xl sm:text-2xl font-display mb-3 sm:mb-4 font-medium tracking-wide group-hover:text-gold transition-colors duration-500">
           {service.title}
-          <span className="absolute -bottom-1 left-0 h-[1px] w-0 bg-gold group-hover:w-full transition-all duration-500 ease-out block" />
         </h3>
-        <p className="text-gray-400 font-light leading-relaxed mb-5 sm:mb-6 text-sm sm:text-base">{service.desc}</p>
+        <p className="text-gray-400 font-light leading-relaxed mb-6 sm:mb-7 text-sm sm:text-base">{service.desc}</p>
       </div>
-      <div className="mt-auto">
-        <ul className="space-y-2">
+      <div className="mt-auto relative z-10 pt-5 border-t border-white/[0.04]">
+        <ul className="space-y-2.5">
           {service.features.map((feature, idx) => (
             <li key={idx} className="flex items-start text-xs sm:text-[13px] text-gray-300 font-light">
-              <span className="text-gold mr-2 sm:mr-3 mt-0.5 opacity-70 flex-shrink-0">✦</span>
+              <span className="text-gold mr-2.5 sm:mr-3 mt-0.5 opacity-50 flex-shrink-0">✦</span>
               <span>{feature}</span>
             </li>
           ))}
