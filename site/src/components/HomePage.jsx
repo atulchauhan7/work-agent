@@ -37,9 +37,9 @@ const RESULTS = [
 ]
 
 const TEAM = [
-  { initial: 'D', color: 'from-amber-500/20 to-orange-500/20', name: 'Dinesh Yelle', role: 'CEO', desc: 'Leads strategy and client relationships. The D2C growth marketing brain behind every campaign.' },
-  { initial: 'A', color: 'from-gold/20 to-yellow-500/20', name: 'Atul Chauhan', role: 'CTO', desc: 'Leads tech Websites, AI, landing pages — conversion-focused development that drives revenue.' },
-  { initial: 'R', color: 'from-blue-500/20 to-cyan-500/20', name: 'Ritesh Y.', role: 'Performance & Dev', desc: 'Performance marketing meets engineering. The all-rounder who bridges ads and tech.' },
+  { initial: 'D', color: 'from-amber-500/20 to-orange-500/20', name: 'Dinesh Yelle', role: 'CEO', desc: 'Drives the vision, strategy, and marketing engine. The D2C growth brain behind every brand we scale.' },
+  { initial: 'A', color: 'from-gold/20 to-yellow-500/20', name: 'Atul Chauhan', role: 'CTO', desc: 'Leads all tech — websites, AI systems, landing pages, and conversion-focused development that drives revenue.' },
+  { initial: 'R', color: 'from-blue-500/20 to-cyan-500/20', name: 'Ritesh Y.', role: 'CSO', desc: 'Owns the sales pipeline and client acquisition. Turns conversations into partnerships and partnerships into results.' },
 ]
 
 const BRANDS = [
@@ -72,7 +72,7 @@ export default function HomePage() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white noise">
+    <div className="min-h-screen bg-dark-bg text-white noise overflow-x-hidden">
       <Navbar />
 
       {/* ─── HERO ─── */}
