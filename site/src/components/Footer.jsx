@@ -4,8 +4,8 @@ export default function Footer() {
       {/* Subtle gradient glow at top */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[1px] bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
 
-      <div className="max-w-5xl mx-auto px-6 py-16 relative z-10">
-        <div className="grid md:grid-cols-3 gap-12 mb-14">
+      <div className="max-w-5xl mx-auto px-5 sm:px-6 py-12 sm:py-16 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 sm:gap-12 mb-12 sm:mb-14">
           {/* Brand */}
           <div>
             <h3 className="text-2xl font-heading font-bold text-white mb-4">

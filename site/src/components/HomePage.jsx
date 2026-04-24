@@ -50,7 +50,7 @@ const BRANDS = [
 
 function Section({ children, className = '', id }) {
   return (
-    <section id={id} className={`relative py-20 sm:py-28 px-5 sm:px-6 ${className}`}>
+    <section id={id} className={`relative py-12 sm:py-16 px-5 sm:px-6 ${className}`}>
       <div className="max-w-5xl mx-auto relative z-10">{children}</div>
     </section>
   )
@@ -72,15 +72,15 @@ export default function HomePage() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white noise overflow-x-hidden">
+    <div className="min-h-screen bg-dark-bg text-white noise" style={{ overflowX: 'clip' }}>
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section ref={heroRef} id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section ref={heroRef} id="home" className="relative min-h-screen flex items-center justify-center" style={{ overflowX: 'clip', overflowY: 'visible' }}>
         {/* Ambient orbs */}
-        <div className="hero-orb w-[600px] h-[600px] bg-gold/30 top-[-200px] left-[-200px]" />
-        <div className="hero-orb w-[400px] h-[400px] bg-purple-500/20 bottom-[-100px] right-[-100px]" />
-        <div className="hero-orb w-[300px] h-[300px] bg-blue-500/10 top-[30%] right-[20%]" />
+        <div className="hero-orb w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] bg-gold/30 top-[-100px] left-[-100px] sm:top-[-200px] sm:left-[-200px]" />
+        <div className="hero-orb w-[200px] h-[200px] sm:w-[400px] sm:h-[400px] bg-purple-500/20 bottom-[-50px] right-[-50px] sm:bottom-[-100px] sm:right-[-100px]" />
+        <div className="hero-orb w-[150px] h-[150px] sm:w-[300px] sm:h-[300px] bg-blue-500/10 top-[30%] right-[10%] sm:right-[20%]" />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 text-center px-5 sm:px-6 max-w-5xl mx-auto">
           <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
@@ -167,8 +167,8 @@ export default function HomePage() {
       <Section id="services">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <SectionLabel>What We Do</SectionLabel>
-          <h2 className="text-3xl sm:text-5xl font-heading font-bold mt-2 mb-4">Our Services</h2>
-          <p className="text-gray-500 max-w-lg mb-14">End-to-end growth solutions for D2C brands ready to scale profitably.</p>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mt-2 mb-4">Our Services</h2>
+          <p className="text-gray-500 max-w-lg mb-8 sm:mb-14 text-sm sm:text-base">End-to-end growth solutions for D2C brands ready to scale profitably.</p>
         </motion.div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {SERVICES.map((s, i) => (
@@ -200,12 +200,12 @@ export default function HomePage() {
       </Section>
 
       {/* ─── WHY US ─── */}
-      <Section id="about" className="relative">
-        <div className="hero-orb w-[500px] h-[500px] bg-gold/10 top-[10%] right-[-200px]" />
+      <Section id="about" className="relative overflow-hidden">
+        <div className="hero-orb w-[250px] h-[250px] sm:w-[500px] sm:h-[500px] bg-gold/10 top-[10%] right-[-100px] sm:right-[-200px]" />
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <SectionLabel>Why Us</SectionLabel>
-          <h2 className="text-3xl sm:text-5xl font-heading font-bold mt-2 mb-4">Not Another Agency.<br className="hidden sm:block" /> A Revenue Partner.</h2>
-          <p className="text-gray-500 max-w-2xl mb-14 leading-relaxed">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mt-2 mb-4">Not Another Agency.<br className="hidden sm:block" /> A Revenue Partner.</h2>
+          <p className="text-gray-500 max-w-2xl mb-8 sm:mb-14 leading-relaxed text-sm sm:text-base">
             We work with a small number of D2C brands to scale revenue profitably through ads, creatives, and strategy.
           </p>
         </motion.div>
@@ -262,16 +262,16 @@ export default function HomePage() {
       <Section id="work">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <SectionLabel>Featured Case Study</SectionLabel>
-          <h2 className="text-3xl sm:text-5xl font-heading font-bold mt-2 mb-3">Scaling a Premium D2C Brand</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mt-2 mb-3">Scaling a Premium D2C Brand</h2>
           <p className="text-gray-500 mb-10">Dhirai · D2C Fashion & Lifestyle · Bangalore · 2024</p>
         </motion.div>
 
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="card-glow rounded-2xl p-7 sm:p-10 mb-10 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-gold to-transparent rounded-l-2xl" />
-          <blockquote className="text-gray-300 italic text-lg sm:text-xl leading-relaxed mb-5 pl-6">
+          <blockquote className="text-gray-300 italic text-base sm:text-lg md:text-xl leading-relaxed mb-5 pl-4 sm:pl-6">
             "The ZivonX team didn't just manage our ads — they rebuilt our entire growth engine. CAC dropped 42% in the first 60 days..."
           </blockquote>
-          <p className="text-sm text-gray-500 pl-6">— <span className="text-white font-medium">Deepak Meena</span>, Founder, Dhirai</p>
+          <p className="text-sm text-gray-500 pl-4 sm:pl-6">— <span className="text-white font-medium">Deepak Meena</span>, Founder, Dhirai</p>
         </motion.div>
 
         <div className="mb-10">
@@ -326,11 +326,11 @@ export default function HomePage() {
       </Section>
 
       {/* ─── TEAM ─── */}
-      <Section className="relative">
-        <div className="hero-orb w-[400px] h-[400px] bg-purple-500/10 bottom-0 left-[-150px]" />
+      <Section className="relative overflow-hidden">
+        <div className="hero-orb w-[200px] h-[200px] sm:w-[400px] sm:h-[400px] bg-purple-500/10 bottom-0 left-[-80px] sm:left-[-150px]" />
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <SectionLabel>The Origin</SectionLabel>
-          <h2 className="text-3xl sm:text-5xl font-heading font-bold mt-2 mb-4">We built the agency we wished we could hire.</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mt-2 mb-4">We built the agency we wished we could hire.</h2>
           <p className="text-gray-500 max-w-2xl mb-3 leading-relaxed">
             We started Zivonx because we were tired of agencies that vanish after onboarding. Every brand deserves a team that cares about revenue as much as they do.
           </p>
@@ -367,10 +367,10 @@ export default function HomePage() {
       <div className="divider-glow" />
 
       {/* ─── CONTACT ─── */}
-      <Section id="contact" className="max-w-3xl mx-auto">
+      <Section id="contact">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
           <SectionLabel>Book A Session</SectionLabel>
-          <h2 className="text-3xl sm:text-5xl font-heading font-bold mt-2 mb-4">Pick a time that works for you.</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mt-2 mb-4">Pick a time that works for you.</h2>
           <p className="text-gray-500">Share your details and preferred slot. We'll confirm within 24 hours.</p>
           <p className="text-sm text-gray-600 mt-2">
             <a href="mailto:brandteam@zivonx.com" className="text-gold/80 hover:text-gold transition-colors">brandteam@zivonx.com</a>
@@ -381,7 +381,7 @@ export default function HomePage() {
           variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
           action="https://formsubmit.co/brandteam@zivonx.com"
           method="POST"
-          className="space-y-4"
+          className="max-w-2xl mx-auto space-y-4"
         >
           <input type="hidden" name="_captcha" value="false" />
           <input type="hidden" name="_next" value="https://zivonx.com/#contact" />
@@ -410,7 +410,7 @@ export default function HomePage() {
         href="https://wa.me/919664412018"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 w-13 h-13 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 hover:bg-green-400 hover:scale-110 transition-all duration-300 z-50"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-13 sm:h-13 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 hover:bg-green-400 hover:scale-110 transition-all duration-300 z-50"
         aria-label="WhatsApp"
       >
         <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">

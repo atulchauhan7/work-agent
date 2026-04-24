@@ -64,7 +64,7 @@ export default function Navbar() {
           <a
             href="/#contact"
             onClick={() => handleNav('/#contact')}
-            className="ml-4 px-5 py-2.5 text-[13px] font-semibold bg-gradient-to-r from-gold to-gold-light text-black rounded-lg hover:shadow-lg hover:shadow-gold/20 hover:scale-[1.02] transition-all duration-300"
+            className="ml-4 px-5 py-2.5 text-[12px] lg:text-[13px] font-semibold bg-gradient-to-r from-gold to-gold-light text-black rounded-lg hover:shadow-lg hover:shadow-gold/20 hover:scale-[1.02] transition-all duration-300 whitespace-nowrap"
           >
             Apply to Work With Us
           </a>
@@ -94,7 +94,7 @@ export default function Navbar() {
             transition={{ duration: 0.25 }}
             className="lg:hidden fixed inset-x-0 top-16 bottom-0 glass border-t border-white/[0.06] overflow-y-auto"
           >
-            <div className="px-6 py-8 space-y-1">
+            <div className="px-6 py-8 pb-[env(safe-area-inset-bottom,2rem)] space-y-1">
               {NAV.map((n, i) => (
                 <motion.a
                   key={n.label}
