@@ -57,6 +57,23 @@ EXAMPLE — User: "run the tests"
 Correct response:
 <RUN_CMD>npm test</RUN_CMD>
 
+EXAMPLE — User: "create an excel with 3 columns"
+Correct response — ALWAYS do ALL three steps in ONE response:
+<RUN_CMD>npm install xlsx</RUN_CMD>
+<WRITE_FILE path="generate.js">
+const XLSX = require('xlsx');
+let data = [['Name','Age','City'],['Alice',28,'New York'],['Bob',34,'LA'],['Charlie',25,'Chicago']];
+let ws = XLSX.utils.aoa_to_sheet(data);
+let wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+XLSX.writeFile(wb, 'data.xlsx');
+console.log('Created data.xlsx');
+</WRITE_FILE>
+<RUN_CMD>node generate.js</RUN_CMD>
+I'll install xlsx, write the generator script, and run it to create data.xlsx.
+
+IMPORTANT: When user asks for Excel/CSV/PDF — do ALL steps (install + write script + run) in a SINGLE response. Never just create a folder.
+
 RULES:
 - ALWAYS use action tags to create/read/modify files. NEVER put code in markdown blocks as instructions.
 - After each action you get a RESULT — use it to continue or summarize.
@@ -70,6 +87,10 @@ RULES:
 - When user specifies a directory path, use that exact path for file operations.
 - If your code needs external packages, ALWAYS install them first using RUN_CMD (e.g., <RUN_CMD>npm install xlsx</RUN_CMD>) BEFORE running the script.
 - If a RESULT shows an error (e.g., MODULE_NOT_FOUND), fix it immediately — install the missing package and retry.
+- For binary files (Excel, PDF, images), write a generator script and RUN it. Do NOT try to write binary content directly with WRITE_FILE.
+- When generating files like .xlsx, .pdf, .csv — ALWAYS write a script, run it, and confirm the output file was created.
+- NEVER respond with only MAKE_DIR when the user asks to create a file. Create the actual file.
+- When user says "create an excel" — you MUST install xlsx, write a .js script, and run it. All in one response.
 """
 
 app       = FastAPI()
@@ -419,6 +440,25 @@ async def index():
             "Pragma": "no-cache",
         }
     )
+
+
+@app.get("/download/{filename:path}")
+async def download_file(filename: str):
+    """Serve files from the working directory for download."""
+    from fastapi.responses import FileResponse
+    if workdir is None:
+        return JSONResponse({"error": "No working directory set"}, status_code=400)
+    path = (workdir / filename).resolve()
+    # Security: only serve files inside workdir, never project dir
+    try:
+        path.relative_to(workdir)
+    except ValueError:
+        return JSONResponse({"error": "Access denied"}, status_code=403)
+    if is_in_project_dir(path):
+        return JSONResponse({"error": "Access denied"}, status_code=403)
+    if not path.is_file():
+        return JSONResponse({"error": f"File not found: {filename}"}, status_code=404)
+    return FileResponse(path, filename=path.name)
 
 
 @app.post("/chat")

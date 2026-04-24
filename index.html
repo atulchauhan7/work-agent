@@ -78,6 +78,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .act-hdr .act-chevron.open{transform:rotate(90deg)}
 .act-res{background:#0d0d0d;border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;font-size:11px;color:#aaa;max-height:200px;overflow-y:auto;border:1px solid #1a1a1a}
 .act-res.collapsed{display:none}
+.download-link{display:inline-block;margin-top:6px;padding:5px 12px;background:#1a6b3c;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:background .2s}
+.download-link:hover{background:#22884d}
 .act-card.blocked{background:#2a1a1a;border-color:#4a2d2d}
 .act-card.blocked .act-hdr{color:var(--warn)}
 
@@ -412,13 +414,28 @@ function appendActionCard(bbl, action) {
   const hasResult = action.result && action.result.length > 0;
   const resId = 'res-' + Math.random().toString(36).slice(2, 8);
 
+  // Detect downloadable files from RUN_CMD results
+  const dlExts = /\.(xlsx|xls|csv|pdf|zip|tar|gz|png|jpg|jpeg|gif|docx|pptx|json|txt|html)$/i;
+  let downloadHtml = '';
+  if (hasResult && action.type === 'RUN_CMD') {
+    const m = action.result.match(/(?:Created|Wrote|Generated|Saved|Output)[:\s]+(\S+)/i);
+    if (m && dlExts.test(m[1])) {
+      downloadHtml = '<a class="download-link" href="/download/' + encodeURIComponent(m[1]) + '" download>⬇ Download ' + esc(m[1]) + '</a>';
+    }
+  }
+  // Also show download for WRITE_FILE on binary-ish extensions
+  if (action.type === 'WRITE_FILE' && action.path && dlExts.test(action.path)) {
+    downloadHtml = '<a class="download-link" href="/download/' + encodeURIComponent(action.path) + '" download>⬇ Download ' + esc(action.path) + '</a>';
+  }
+
   card.innerHTML =
     '<div class="act-hdr" onclick="toggleResult(\'' + resId + '\', this)">' +
     (action.blocked ? '🚫 ' : '') + (icons[action.type]||'⚙️') + ' ' + action.type +
     ' <span style="font-weight:400;color:#888;font-size:11px">' + esc(label) + '</span>' +
     (hasResult ? ' <span class="act-chevron">▶</span>' : '') +
     '</div>' +
-    (hasResult ? '<div class="act-res collapsed" id="' + resId + '">' + esc(action.result) + '</div>' : '');
+    (hasResult ? '<div class="act-res collapsed" id="' + resId + '">' + esc(action.result) + '</div>' : '') +
+    downloadHtml;
   bbl.appendChild(card);
   scrollDown();
 }
