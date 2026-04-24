@@ -68,6 +68,8 @@ RULES:
 - Use relative paths (e.g., "sort.js") — they resolve to the working directory automatically.
 - You CANNOT delete files. Never attempt rm, del, unlink, or any destructive command.
 - When user specifies a directory path, use that exact path for file operations.
+- If your code needs external packages, ALWAYS install them first using RUN_CMD (e.g., <RUN_CMD>npm install xlsx</RUN_CMD>) BEFORE running the script.
+- If a RESULT shows an error (e.g., MODULE_NOT_FOUND), fix it immediately — install the missing package and retry.
 """
 
 app       = FastAPI()
@@ -572,12 +574,15 @@ async def approve_actions(request: Request):
 
     result_str, executed = run_pending_actions(pending_actions, workdir)
 
+    # Check if any action had an error
+    has_errors = any('ERROR' in (a.get('result', '') or '') for a in executed)
+
     if result_str and workdir:
         history.append({"role": "user", "content": result_str + "\n\nActions approved and executed by user."})
         history = trim_history(history)
         save_history(history)
 
-    return JSONResponse({"actions": executed})
+    return JSONResponse({"actions": executed, "has_errors": has_errors})
 
 
 @app.get("/history")
