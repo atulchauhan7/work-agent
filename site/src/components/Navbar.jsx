@@ -72,7 +72,7 @@ export default function Navbar() {
         className={`fixed top-[2px] w-full z-50 motion-safe:transition-[padding,background-color,box-shadow,border-color,backdrop-filter] motion-safe:duration-500 motion-safe:ease-out ${
           scrolled || open
             ? 'bg-[#0a0a0a]/90 backdrop-blur-2xl py-3 shadow-[0_4px_30px_rgba(0,0,0,0.5)] border-b border-white/[0.04]'
-            : 'bg-transparent backdrop-blur-none py-6 border-b border-transparent'
+            : 'bg-[#0a0a0a] backdrop-blur-none py-6 border-b border-white/[0.04]'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex justify-between items-center gap-3 min-w-0">
