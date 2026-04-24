@@ -100,7 +100,7 @@ export default function ChatPage() {
       <Navbar />
 
       {/* Sub-header */}
-      <div className="pt-16 shrink-0">
+      <div className="pt-20 shrink-0">
         <div className="flex items-center justify-between px-5 sm:px-6 py-2.5 border-b border-white/[0.04]">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
