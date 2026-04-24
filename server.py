@@ -397,6 +397,13 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
                             out = f"BLOCKED: Cannot write to project folder ({PROJECT_DIR})"
                             results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
                             actions.append({"type": "WRITE_FILE", "path": filename, "result": out, "blocked": True})
+                        elif re.search(r'\.(xlsx|xls|pdf|docx|pptx|zip|tar|gz|png|jpg|jpeg|gif|bmp|mp3|mp4|avi)$', filename, re.I):
+                            out = (f"BLOCKED: Cannot write binary file '{filename}' directly with WRITE_FILE. "
+                                   f"Instead: 1) install the needed package (e.g. npm install xlsx), "
+                                   f"2) write a generator .js script, 3) run it with RUN_CMD. "
+                                   f"Do all 3 steps now.")
+                            results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
+                            actions.append({"type": "WRITE_FILE", "path": filename, "result": out, "blocked": True})
                         else:
                             pending.append({"type": "WRITE_FILE", "path": filename, "content": code + "\n", "resolved": str(path)})
 
