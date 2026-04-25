@@ -201,15 +201,13 @@ let busy=false,abortCtrl=null;
 
 // ── Voice ──────────────────────────────────────────────────────────────────
 let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
-let SR=null;
+let SR=null,micStream=null;
 
 function initVoice(){
   SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(window.speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
 }
 
-// Create a FRESH SpeechRecognition instance every time we start listening.
-// Reusing a stopped instance silently fails on Chrome — no mic light, no results.
 function makeRec(){
   if(!SR)return null;
   const r=new SR();
@@ -252,8 +250,18 @@ function startListening(){
   try{voiceRec.start();}catch(err){$('vo-status').textContent='MIC ERROR: '+err.message;console.error('[Voice]',err);}
 }
 
-function startVoiceMode(){
+// Like ChatGPT: getUserMedia first to grab mic hardware (shows green indicator),
+// then use SpeechRecognition for transcription on top of it.
+async function startVoiceMode(){
   if(!SR){alert('Speech recognition not supported. Please use Chrome or Edge.');return;}
+  // Step 1: Request mic via getUserMedia — this shows the green mic indicator
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  }catch(err){
+    alert('Microphone access denied. Please allow mic in browser settings.\n\n'+err.message);
+    return;
+  }
+  // Step 2: Now start voice mode — mic is confirmed active
   voiceMode=true;finalTxt='';interimTxt='';speaking=false;
   $('voice-overlay').classList.add('active');
   $('vo-transcript').textContent='';$('vo-response').textContent='';
@@ -263,6 +271,8 @@ function startVoiceMode(){
 function endVoiceMode(){
   voiceMode=false;speaking=false;clearTimeout(silenceT);
   try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}
+  // Release mic — turns off green indicator
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
   if(window.speechSynthesis)speechSynthesis.cancel();
   $('voice-overlay').classList.remove('active');setOrb('idle');
 }
