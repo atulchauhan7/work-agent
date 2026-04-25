@@ -458,7 +458,7 @@ export default function HomePage() {
                       <p className="text-white text-sm font-semibold mb-0.5">Talk directly to us</p>
                       <p className="text-gray-600 text-xs font-light">No account managers. Ever.</p>
                     </div>
-                    <a href="#contact" className="w-full sm:w-auto min-h-10 inline-flex items-center justify-center gap-2 rounded-xl bg-gold/10 border border-gold/25 text-gold text-sm font-bold hover:bg-gold hover:text-black hover:border-gold transition-all duration-300 px-5 py-2.5 flex-shrink-0 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] font-body">Apply now \u2192</a>
+                    <a href="#contact" className="w-full sm:w-auto min-h-10 inline-flex items-center justify-center gap-2 rounded-xl bg-gold/10 border border-gold/25 text-gold text-sm font-bold hover:bg-gold hover:text-black hover:border-gold transition-all duration-300 px-5 py-2.5 flex-shrink-0 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] font-body">Apply now</a>
                   </motion.div>
                 </div>
               </div>

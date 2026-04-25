@@ -13,6 +13,7 @@ import time
 import hashlib
 import subprocess
 import argparse
+import asyncio
 from pathlib import Path
 from collections import Counter, defaultdict
 
@@ -167,6 +168,36 @@ def is_looping(text: str, threshold: int = 4) -> bool:
         return False
     counts = Counter(lines)
     return counts.most_common(1)[0][1] >= threshold
+
+
+# ── Rate limit helpers ────────────────────────────────────────────────────────
+
+def _parse_rate_limit(err_str: str) -> tuple[str, float | None]:
+    """Parse a Groq/OpenAI rate-limit error into a friendly message + retry seconds."""
+    retry_secs: float | None = None
+    # e.g. "Please try again in 8m58.272s"
+    m = re.search(r'try again in (\d+)m([\d.]+)s', err_str)
+    if m:
+        retry_secs = int(m.group(1)) * 60 + float(m.group(2))
+        wait_str = f"{int(m.group(1))}m {int(float(m.group(2)))}s"
+    else:
+        m2 = re.search(r'try again in ([\d.]+)s', err_str)
+        if m2:
+            retry_secs = float(m2.group(1))
+            wait_str = f"{int(retry_secs)}s"
+        else:
+            wait_str = "a few minutes"
+
+    if 'tokens per day' in err_str or 'TPD' in err_str:
+        kind = "Daily token limit reached"
+    elif 'tokens per minute' in err_str or 'TPM' in err_str:
+        kind = "Token rate limit hit"
+    elif 'requests per minute' in err_str or 'RPM' in err_str:
+        kind = "Request rate limit hit"
+    else:
+        kind = "Rate limit reached"
+
+    return f"{kind} — please try again in {wait_str}.", retry_secs
 
 
 # ── Agent actions ──────────────────────────────────────────────────────────────
@@ -558,24 +589,37 @@ async def chat_send(request: Request):
     chat_timestamps[key] = time.time()
 
     async def stream():
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
-            resp = client.chat.completions.create(
-                model=GROQ_MODEL, messages=messages, stream=True,  # type: ignore[arg-type]
-                temperature=0.4, max_tokens=1024, top_p=0.9,
-            )
-            full = ""
-            for chunk in resp:
-                token = chunk.choices[0].delta.content or ""
-                if token:
-                    full += token
-                    yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
-            hist.append({"role": "assistant", "content": full})
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
-        except Exception as e:
-            msg = "High demand — try again shortly." if "rate_limit" in str(e).lower() else "Something went wrong."
-            yield f"data: {json.dumps({'type': 'error', 'content': msg})}\n\n"
+        from openai import OpenAI
+        for _attempt in range(2):
+            try:
+                client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
+                resp = client.chat.completions.create(
+                    model=GROQ_MODEL, messages=messages, stream=True,  # type: ignore[arg-type]
+                    temperature=0.4, max_tokens=1024, top_p=0.9,
+                )
+                full = ""
+                for chunk in resp:
+                    token = chunk.choices[0].delta.content or ""
+                    if token:
+                        full += token
+                        yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+                hist.append({"role": "assistant", "content": full})
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                return
+            except Exception as e:
+                err_str = str(e)
+                if _attempt == 0 and ('rate_limit' in err_str.lower() or '429' in err_str):
+                    friendly, retry_secs = _parse_rate_limit(err_str)
+                    if retry_secs is not None and retry_secs <= 90:
+                        yield f"data: {json.dumps({'type': 'token', 'content': f'⏳ {friendly} Retrying automatically…'})}\n\n"
+                        await asyncio.sleep(retry_secs + 1)
+                        continue
+                if 'rate_limit' in err_str.lower() or '429' in err_str:
+                    friendly, _ = _parse_rate_limit(err_str)
+                else:
+                    friendly = "Something went wrong. Please try again."
+                yield f"data: {json.dumps({'type': 'error', 'content': friendly})}\n\n"
+                return
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -791,7 +835,17 @@ async def chat(request: Request):
                             break
 
             except Exception as e:
-                yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+                err_str = str(e)
+                if 'rate_limit' in err_str.lower() or '429' in err_str:
+                    friendly, retry_secs = _parse_rate_limit(err_str)
+                    # Auto-retry once if the wait is short
+                    if retry_secs is not None and retry_secs <= 90 and _turn == 0:
+                        yield f"data: {json.dumps({'type': 'token', 'content': f'⏳ {friendly} Retrying automatically…'})}\n\n"
+                        await asyncio.sleep(retry_secs + 1)
+                        continue  # retry via next turn iteration
+                    yield f"data: {json.dumps({'type': 'error', 'content': friendly})}\n\n"
+                else:
+                    yield f"data: {json.dumps({'type': 'error', 'content': 'Something went wrong. Please try again.'})}\n\n"
                 break
 
             if loop_detected:
