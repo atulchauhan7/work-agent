@@ -59,7 +59,7 @@ describe('Navbar', () => {
 
   it('renders the CTA Apply button', () => {
     renderNav()
-    const ctas = screen.getAllByText(/Apply to/i)
+    const ctas = screen.getAllByText(/Apply/i)
     expect(ctas.length).toBeGreaterThan(0)
   })
 

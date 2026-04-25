@@ -190,3 +190,81 @@ html {
 input:focus, select:focus, textarea:focus {
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
+
+/* Dot grid pattern */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Gradient border card */
+.border-gradient {
+  position: relative;
+}
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(255,255,255,0.04) 50%, rgba(245,158,11,0.1) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Number glow - large background watermark numbers */
+.section-num {
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 20vw, 14rem);
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.025);
+  pointer-events: none;
+  user-select: none;
+  position: absolute;
+}
+
+/* Highlight text background */
+.highlight-box {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%);
+  border: 1px solid rgba(245,158,11,0.12);
+}
+
+/* Service card line reveal */
+.service-line::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(90deg, #F59E0B, rgba(245,158,11,0.2));
+  transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+.service-line:hover::after {
+  width: 100%;
+}
+
+/* Fade in up utility */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Glow dot */
+.glow-dot {
+  box-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
+}
+
+/* Horizontal scroll snap */
+.snap-x-container {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.snap-x-item {
+  scroll-snap-align: start;
+}
