@@ -64,6 +64,12 @@ export default function ChatPage() {
                 copy[copy.length - 1] = { ...copy[copy.length - 1], content: copy[copy.length - 1].content + d.content }
                 return copy
               })
+            } else if (d.type === 'error') {
+              setMessages(prev => {
+                const copy = [...prev]
+                copy[copy.length - 1] = { ...copy[copy.length - 1], content: d.content || 'Something went wrong. Please try again.' }
+                return copy
+              })
             }
           } catch {}
         }

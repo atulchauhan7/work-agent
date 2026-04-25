@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 import hashlib
 from http.server import BaseHTTPRequestHandler
@@ -60,6 +61,24 @@ rate_limits: dict = {}
 
 def _key(ip: str) -> str:
     return hashlib.sha256(ip.encode()).hexdigest()[:16]
+
+
+def _parse_rate_limit(err_str: str) -> str:
+    m = re.search(r'try again in (\d+)m([\d.]+)s', err_str)
+    if m:
+        wait = f"{m.group(1)}m {int(float(m.group(2)))}s"
+    else:
+        m2 = re.search(r'try again in ([\d.]+)s', err_str)
+        wait = f"{int(float(m2.group(1)))}s" if m2 else "a few minutes"
+    if 'tokens per day' in err_str or 'TPD' in err_str:
+        kind = "Daily token limit reached"
+    elif 'tokens per minute' in err_str or 'TPM' in err_str:
+        kind = "Token rate limit hit"
+    elif 'requests per minute' in err_str or 'RPM' in err_str:
+        kind = "Request rate limit hit"
+    else:
+        kind = "Rate limit reached"
+    return f"{kind} — please try again in {wait}."
 
 
 def _rate_ok(key: str) -> bool:
@@ -153,8 +172,12 @@ class handler(BaseHTTPRequestHandler):
                     self.wfile.write(f'data: {json.dumps({"type": "token", "content": token})}\n\n'.encode())
                     self.wfile.flush()
         except Exception as e:
-            err_msg = str(e)
-            self.wfile.write(f'data: {json.dumps({"type": "token", "content": f"Error: {err_msg}"})}\n\n'.encode())
+            err_str = str(e)
+            if 'rate_limit' in err_str.lower() or '429' in err_str:
+                msg = _parse_rate_limit(err_str)
+            else:
+                msg = "Something went wrong. Please try again."
+            self.wfile.write(f'data: {json.dumps({"type": "error", "content": msg})}\n\n'.encode())
             self.wfile.flush()
 
         if assistant_reply:
