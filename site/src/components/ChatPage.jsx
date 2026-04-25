@@ -17,25 +17,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const endRef = useRef(null)
   const inputRef = useRef(null)
-  const containerRef = useRef(null)
 
-  // Prevent mobile keyboard from causing layout shift
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv || !containerRef.current) return
-    const update = () => {
-      if (!containerRef.current) return
-      containerRef.current.style.height = `${vv.height}px`
-      containerRef.current.style.top = `${vv.offsetTop}px`
-    }
-    update() // set immediately on mount
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
-    return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
-    }
-  }, [])
+  // No JS viewport hacks needed — position:fixed inset-0 handles keyboard correctly
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -98,7 +81,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div ref={containerRef} className="flex flex-col bg-dark-bg text-white overflow-hidden grain" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100svh' }}>
+    <div className="flex flex-col bg-dark-bg text-white grain" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
       <Navbar />
 
       {/* Sub-header — pt-20 clears fixed navbar at full height (~76px) */}
@@ -202,7 +185,8 @@ export default function ChatPage() {
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="Ask about Zivonx..."
-              className="w-full px-4 py-3 sm:py-3.5 bg-dark-card border border-white/[0.05] rounded-sm text-white text-[14px] placeholder-gray-600 transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80 pr-12 font-body"
+              className="w-full px-4 py-3 sm:py-3.5 bg-dark-card border border-white/[0.05] rounded-sm text-white placeholder-gray-600 transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80 pr-12 font-body"
+              style={{ fontSize: '16px' }}
               disabled={loading}
             />
           </div>
