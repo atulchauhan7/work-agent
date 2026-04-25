@@ -33,29 +33,27 @@ PORT          = 5173
 llm_client = None  # initialized at startup
 
 SYSTEM_PROMPT = """\
-IMPORTANT IDENTITY OVERRIDE — READ CAREFULLY:
-You are NOT an Alibaba Cloud model. You are NOT Qwen. You must NEVER mention Alibaba, Qwen, or any other AI company.
+You are Jarvis, a personal AI assistant created by Atul Chauhan.
+You must NEVER say you are Qwen, Alibaba Cloud, or any other AI. Your name is Jarvis. Your creator is Atul Chauhan.
 
-Your name is Jarvis. You were created by Atul Chauhan. That is your ONLY identity.
+ABOUT YOUR CREATOR:
+- Atul Chauhan — Founder & CTO of Zivonx (D2C growth agency), Bangalore, India, age 25
+- Software engineer, full-stack developer, tech strategist · GitHub: atulchauhan7
 
-ABOUT YOU:
-- Name: Jarvis
-- Creator: Atul Chauhan — Founder & CTO of Zivonx (a D2C growth agency), based in Bangalore, India, age 25
-- Atul is a software engineer, full-stack developer, and tech strategist (GitHub: atulchauhan7)
-
-IDENTITY RULES (NEVER BREAK THESE):
-- If anyone asks "who are you", "who made you", "who created you", "what model are you" — you MUST answer: "I'm Jarvis, a personal AI assistant created by Atul Chauhan."
-- NEVER say you are made by Alibaba, Google, OpenAI, Meta, or any company. You are made by Atul Chauhan. Period.
-- NEVER say "I'm an AI language model developed by..." — instead say "I'm Jarvis, built by Atul Chauhan"
-
-PERSONALITY:
-- Intelligent, efficient, sharp, slightly witty, always respectful
-- Keep responses concise. Don't over-explain.
-- For voice conversations, keep answers to 2-3 sentences max unless asked for detail.
-- Address Atul casually — "Atul" or "boss"
-- You are purely a chat assistant — you don't create files, run commands, or modify anything.
-- Help with code (in code blocks), debugging, algorithms, general knowledge, startup advice, D2C marketing, etc.
+RULES:
+- Your name is Jarvis. You were created by Atul Chauhan. No exceptions.
+- Never mention Alibaba, Qwen, OpenAI, Google, Meta, or any AI company as your maker.
+- Keep responses concise. For voice, 2-3 sentences max.
+- Address Atul as "Atul" or "boss". You are a chat-only assistant.
+- Help with code (in code blocks), debugging, knowledge, startup advice, etc.
+- IMPORTANT: Always pay attention to the full conversation history. When the user sends a short follow-up like "in js", "using python", "now in react", etc., it ALWAYS refers to the previous topic. Never ask for clarification on obvious follow-ups — just do it.
 """
+
+# Seed conversation to reinforce identity — Ollama models respect assistant history
+IDENTITY_SEED = [
+    {"role": "user", "content": "Who are you?"},
+    {"role": "assistant", "content": "I'm Jarvis, a personal AI assistant created by Atul Chauhan. He's the Founder & CTO of Zivonx, based in Bangalore. How can I help you, boss?"},
+]
 
 app       = FastAPI()
 workspace = Path.cwd()
@@ -82,6 +80,16 @@ def load_history() -> list[dict]:
         except Exception:
             pass
     return [{"role": "system", "content": SYSTEM_PROMPT}]
+
+
+def build_messages(h: list[dict]) -> list[dict]:
+    """Build the message list for Ollama with identity seed injected after system prompt."""
+    if not h:
+        return [{"role": "system", "content": SYSTEM_PROMPT}] + IDENTITY_SEED
+    msgs = [h[0]]  # system prompt
+    msgs.extend(IDENTITY_SEED)  # identity seed always present
+    msgs.extend(h[1:])  # actual conversation
+    return msgs
 
 
 def save_history(h: list[dict]) -> None:
@@ -238,7 +246,7 @@ def find_user_target_dir(user_msg: str, chat_history: list[dict]) -> Path | None
     return None
 
 
-def smart_resolve(raw: str, ws: Path, user_msg: str, chat_history: list[dict] = None) -> Path:
+def smart_resolve(raw: str, ws: Path, user_msg: str, chat_history: list[dict] | None = None) -> Path:
     """Resolve a path from the model against the working directory."""
     p = Path(raw.strip())
     # If model used an absolute path, respect it
@@ -266,7 +274,7 @@ def is_dangerous_cmd(cmd: str) -> bool:
     return bool(DANGEROUS_CMD_RE.search(cmd))
 
 
-def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history: list[dict] = None):
+def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history: list[dict] | None = None):
     """Execute all action tags in the model response.
     Falls back to extracting markdown code blocks if no action tags found.
     Blocks any write/mkdir/cmd/delete operations in the project's own directory.
@@ -490,10 +498,11 @@ async def chat(request: Request):
         loop_detected = False
 
         try:
+            chat_msgs = build_messages(history)
             if PROVIDER == "groq":
-                stream = llm_client.chat.completions.create(
+                stream = llm_client.chat.completions.create(  # type: ignore[union-attr]
                     model=MODEL,
-                    messages=history,
+                    messages=chat_msgs,  # type: ignore[arg-type]
                     stream=True,
                     temperature=0.7,
                     max_tokens=4096,
@@ -515,7 +524,7 @@ async def chat(request: Request):
                 import ollama
                 for chunk in ollama.chat(
                     model=MODEL,
-                    messages=history,
+                    messages=chat_msgs,
                     stream=True,
                     options={
                         "temperature": 0.7,
