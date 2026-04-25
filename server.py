@@ -297,7 +297,7 @@ def find_user_target_dir(user_msg: str, chat_history: list[dict]) -> Path | None
     return None
 
 
-def smart_resolve(raw: str, ws: Path, user_msg: str, chat_history: list[dict] = None) -> Path:
+def smart_resolve(raw: str, ws: Path, user_msg: str, chat_history: list[dict] | None = None) -> Path:
     """Resolve a path from the model against the working directory."""
     p = Path(raw.strip())
     # If model used an absolute path, respect it
@@ -325,7 +325,7 @@ def is_dangerous_cmd(cmd: str) -> bool:
     return bool(DANGEROUS_CMD_RE.search(cmd))
 
 
-def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history: list[dict] = None):
+def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history: list[dict] | None = None):
     """Execute all action tags in the model response.
     Falls back to extracting markdown code blocks if no action tags found.
     Blocks any write/mkdir/cmd/delete operations in the project's own directory.
@@ -562,7 +562,7 @@ async def chat_send(request: Request):
             from openai import OpenAI
             client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
             resp = client.chat.completions.create(
-                model=GROQ_MODEL, messages=messages, stream=True,
+                model=GROQ_MODEL, messages=messages, stream=True,  # type: ignore[arg-type]
                 temperature=0.4, max_tokens=1024, top_p=0.9,
             )
             full = ""
@@ -744,9 +744,10 @@ async def chat(request: Request):
 
             try:
                 if PROVIDER == "groq":
+                    assert llm_client is not None, "llm_client not initialised for groq"
                     stream = llm_client.chat.completions.create(
                         model=MODEL,
-                        messages=history,
+                        messages=history,  # type: ignore[arg-type]
                         stream=True,
                         temperature=0.2,
                         max_tokens=4096,

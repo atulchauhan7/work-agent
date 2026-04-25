@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "/Users/atulchauhan/Desktop/My Projects/.venv/bin/python",
+  "python.analysis.extraPaths": [],
+  "python.analysis.venvPath": "/Users/atulchauhan/Desktop/My Projects",
+  "python.analysis.venv": ".venv"
+}

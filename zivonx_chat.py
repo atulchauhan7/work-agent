@@ -155,7 +155,7 @@ async def chat(request: Request):
             client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
             resp = client.chat.completions.create(
                 model=MODEL,
-                messages=messages,
+                messages=messages,  # type: ignore[arg-type]
                 stream=True,
                 temperature=0.4,
                 max_tokens=1024,

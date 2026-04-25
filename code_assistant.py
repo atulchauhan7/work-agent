@@ -256,7 +256,7 @@ def stream_response(messages: list[dict]) -> str:
 
 def check_model(model: str) -> bool:
     try:
-        names = [m.model.split(":")[0] for m in ollama.list().models]
+        names = [m.model.split(":")[0] for m in ollama.list().models if m.model]
         return model in names
     except Exception:
         return False
