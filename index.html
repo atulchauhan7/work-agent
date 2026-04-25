@@ -142,6 +142,38 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .provider-badge.ollama{background:#8b5cf6;color:#fff}
 .provider-badge.groq{background:#f59e0b;color:#000}
 
+/* ── Voice Mode Overlay (ChatGPT-style) ─────────────────────────────────── */
+.voice-overlay{position:fixed;inset:0;z-index:2000;background:radial-gradient(ellipse at center,#1a1a2e 0%,#0d0d1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;opacity:0;pointer-events:none;transition:opacity .3s ease}
+.voice-overlay.active{opacity:1;pointer-events:all}
+.vo-status{font-size:14px;color:#888;font-weight:500;letter-spacing:.5px;text-transform:uppercase;min-height:22px}
+.vo-transcript{font-size:18px;color:var(--tx);max-width:600px;text-align:center;min-height:60px;line-height:1.6;padding:0 20px;word-break:break-word}
+.vo-transcript.interim{color:#666;font-style:italic}
+.vo-orb-wrap{position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.vo-orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#10a37f,#0d6efd);box-shadow:0 0 60px rgba(16,163,127,.3);transition:transform .3s,box-shadow .3s}
+.vo-orb-wrap:hover .vo-orb{transform:scale(1.05);box-shadow:0 0 80px rgba(16,163,127,.45)}
+.vo-orb.listening{animation:orb-pulse 1.5s ease-in-out infinite}
+.vo-orb.speaking{animation:orb-speak .8s ease-in-out infinite;background:radial-gradient(circle at 40% 40%,#8b5cf6,#6d28d9)}
+.vo-orb.thinking{animation:orb-think 2s linear infinite;opacity:.7}
+@keyframes orb-pulse{0%,100%{transform:scale(1);box-shadow:0 0 60px rgba(16,163,127,.3)}50%{transform:scale(1.12);box-shadow:0 0 100px rgba(16,163,127,.5)}}
+@keyframes orb-speak{0%,100%{transform:scale(1);box-shadow:0 0 60px rgba(139,92,246,.3)}50%{transform:scale(1.08);box-shadow:0 0 90px rgba(139,92,246,.5)}}
+@keyframes orb-think{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(.95)}100%{transform:rotate(360deg) scale(1)}}
+.vo-rings{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(16,163,127,.15);animation:ring-expand 2s ease-out infinite;pointer-events:none}
+.vo-rings:nth-child(2){animation-delay:.5s}
+.vo-rings:nth-child(3){animation-delay:1s}
+@keyframes ring-expand{0%{transform:scale(.7);opacity:.6}100%{transform:scale(1.8);opacity:0}}
+.vo-orb-wrap:not(.is-listening) .vo-rings{display:none}
+.vo-bottom{display:flex;gap:16px;align-items:center}
+.vo-btn{width:48px;height:48px;border-radius:50%;border:1px solid #333;background:rgba(255,255,255,.06);color:#999;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:18px}
+.vo-btn:hover{background:rgba(255,255,255,.12);color:#fff;border-color:#555}
+.vo-btn.end{background:#e74c3c;border-color:#e74c3c;color:#fff}
+.vo-btn.end:hover{background:#c0392b}
+.vo-response{font-size:14px;color:#aaa;max-width:600px;text-align:center;line-height:1.6;padding:0 20px;max-height:200px;overflow-y:auto;word-break:break-word}
+.vo-response strong{color:#fff}
+
+/* Voice mode button in input area */
+.voice-mode-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#10a37f,#0d6efd);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;color:#fff;font-size:16px;box-shadow:0 0 12px rgba(16,163,127,.3)}
+.voice-mode-btn:hover{transform:scale(1.1);box-shadow:0 0 20px rgba(16,163,127,.5)}
+
 /* directory prompt */
 .dir-prompt{background:linear-gradient(135deg,#1a2a1a,#16213e);border:1px solid #3d6b3d;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
 .dir-prompt-title{font-size:13px;font-weight:600;color:var(--acc);margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -200,7 +232,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
       <div class="logo-icon">⚡</div>
       <div>
         <div class="logo-name">AtulCoder</div>
-        <div class="logo-sub">AI Coding Agent</div>
+        <div class="logo-sub">Jarvis · Personal AI</div>
       </div>
     </div>
     <button class="btn-new" onclick="newChat()">
@@ -233,7 +265,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
       <div class="empty" id="empty">
         <div class="empty-icon">⚡</div>
         <div class="empty-h">AtulCoder</div>
-        <div class="empty-s">Your personal AI coding agent by Atul Chauhan.<br>I can create files, run commands, and build projects — all locally.</div>
+        <div class="empty-s">Your personal AI assistant & coding agent.<br>Voice mode, file ops, commands — all locally, unlimited.</div>
         <div class="chips">
           <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
           <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
@@ -249,21 +281,32 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
       </div>
       <div class="inp-box">
         <textarea id="userinput" rows="1" placeholder="Ask AtulCoder anything… (Enter to send, Shift+Enter for new line)"></textarea>
-        <button class="mic-btn" id="micbtn" title="Voice input (hold or click)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="1" width="6" height="11" rx="3"/><path d="M19 10v1a7 7 0 01-14 0v-1"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
-          </svg>
-        </button>
-        <button class="voice-toggle" id="voicetoggle" title="Toggle Jarvis voice responses">🔊</button>
+        <button class="voice-mode-btn" id="voicemodebtn" title="Voice Mode — talk like Jarvis">🎙</button>
         <button class="sbtn" id="sbtn" title="Send (Enter)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
             <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
           </svg>
         </button>
       </div>
-      <div class="inp-hint">AtulCoder · Jarvis Mode — <kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line · 🎤 Voice · 🔊 Auto-speak</div>
+      <div class="inp-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line · 🎙 Voice Mode for hands-free conversation</div>
     </div>
   </main>
+</div>
+
+<!-- Voice Mode Overlay -->
+<div class="voice-overlay" id="voice-overlay">
+  <div class="vo-status" id="vo-status">TAP TO START</div>
+  <div class="vo-transcript" id="vo-transcript"></div>
+  <div class="vo-orb-wrap" id="vo-orb-wrap" onclick="voiceOrbTap()">
+    <div class="vo-rings"></div>
+    <div class="vo-rings"></div>
+    <div class="vo-rings"></div>
+    <div class="vo-orb" id="vo-orb"></div>
+  </div>
+  <div class="vo-response" id="vo-response"></div>
+  <div class="vo-bottom">
+    <button class="vo-btn end" id="vo-end" title="End voice mode" onclick="endVoiceMode()">✕</button>
+  </div>
 </div>
 
 <script>
@@ -274,83 +317,291 @@ let busy = false;
 let abortCtrl = null;  // for stop button
 let lastUserMessage = null;  // for auto-retry after workdir is set
 let retryAfterWorkdir = null;  // message to auto-resend after directory is set
-let jarvisVoice = false;  // auto-speak responses
-let recognition = null;   // SpeechRecognition instance
-let isListening = false;
 
-// ── Jarvis Voice (Web Speech API) ─────────────────────────────────────────────
-function initVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-    recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      document.getElementById('userinput').value = transcript;
-      autoResize();
-      stopListening();
-    };
-    recognition.onend = () => stopListening();
-    recognition.onerror = () => stopListening();
+// ── Voice Mode State ──────────────────────────────────────────────────────────
+let voiceMode = false;
+let voiceRecognition = null;
+let voiceSpeaking = false;
+let voiceAutoSend = true;   // auto-send when user stops speaking
+let silenceTimer = null;
+let interimText = '';
+let finalText = '';
+
+function initVoiceMode() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  voiceRecognition = new SR();
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = true;
+  voiceRecognition.lang = 'en-US';
+  voiceRecognition.maxAlternatives = 1;
+
+  voiceRecognition.onresult = (e) => {
+    clearTimeout(silenceTimer);
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    if (final) {
+      finalText += (finalText ? ' ' : '') + final.trim();
+      document.getElementById('vo-transcript').textContent = finalText;
+      document.getElementById('vo-transcript').classList.remove('interim');
+    }
+    if (interim) {
+      document.getElementById('vo-transcript').textContent = finalText + (finalText ? ' ' : '') + interim;
+      document.getElementById('vo-transcript').classList.add('interim');
+    }
+    // Auto-send after 1.5s of silence once we have final text
+    if (finalText) {
+      silenceTimer = setTimeout(() => {
+        if (voiceMode && finalText && !voiceSpeaking && !busy) {
+          voiceAutoSendMessage();
+        }
+      }, 1500);
+    }
+  };
+
+  voiceRecognition.onend = () => {
+    // Restart if still in voice mode and not speaking
+    if (voiceMode && !voiceSpeaking && !busy) {
+      try { voiceRecognition.start(); } catch(_) {}
+    }
+  };
+
+  voiceRecognition.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      setVoiceStatus('MICROPHONE BLOCKED');
+      setTimeout(endVoiceMode, 2000);
+    } else if (voiceMode && e.error !== 'aborted') {
+      // Restart on transient errors
+      setTimeout(() => {
+        if (voiceMode && !voiceSpeaking) {
+          try { voiceRecognition.start(); } catch(_) {}
+        }
+      }, 500);
+    }
+  };
+
+  // Preload voices
+  if (window.speechSynthesis) {
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
   }
 }
 
-function toggleListening() {
-  if (!recognition) { alert('Speech recognition not supported in this browser.'); return; }
-  if (isListening) { recognition.stop(); stopListening(); }
-  else { recognition.start(); startListening(); }
+function startVoiceMode() {
+  if (!voiceRecognition) {
+    alert('Speech recognition is not supported in this browser. Use Chrome or Edge.');
+    return;
+  }
+  voiceMode = true;
+  finalText = '';
+  interimText = '';
+  document.getElementById('voice-overlay').classList.add('active');
+  document.getElementById('vo-transcript').textContent = '';
+  document.getElementById('vo-response').textContent = '';
+  setVoiceStatus('LISTENING...');
+  setOrbState('listening');
+  try { voiceRecognition.start(); } catch(_) {}
 }
 
-function startListening() {
-  isListening = true;
-  document.getElementById('micbtn').classList.add('listening');
+function endVoiceMode() {
+  voiceMode = false;
+  voiceSpeaking = false;
+  clearTimeout(silenceTimer);
+  try { voiceRecognition.stop(); } catch(_) {}
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  document.getElementById('voice-overlay').classList.remove('active');
+  setOrbState('idle');
 }
 
-function stopListening() {
-  isListening = false;
-  document.getElementById('micbtn').classList.remove('listening');
+function voiceOrbTap() {
+  if (voiceSpeaking) {
+    // Tap while speaking = interrupt, go back to listening
+    speechSynthesis.cancel();
+    voiceSpeaking = false;
+    finalText = '';
+    document.getElementById('vo-transcript').textContent = '';
+    document.getElementById('vo-response').textContent = '';
+    setVoiceStatus('LISTENING...');
+    setOrbState('listening');
+    try { voiceRecognition.start(); } catch(_) {}
+  } else if (busy) {
+    // Tap while thinking = do nothing
+  } else if (finalText) {
+    // Tap with text = send now
+    clearTimeout(silenceTimer);
+    voiceAutoSendMessage();
+  }
 }
 
-function toggleJarvisVoice() {
-  jarvisVoice = !jarvisVoice;
-  const btn = document.getElementById('voicetoggle');
-  btn.classList.toggle('active', jarvisVoice);
-  btn.title = jarvisVoice ? 'Jarvis voice ON — click to disable' : 'Toggle Jarvis voice responses';
-  if (jarvisVoice) speechSynthesis.cancel();  // cancel any in-progress
+function setVoiceStatus(s) {
+  document.getElementById('vo-status').textContent = s;
 }
 
-function speakText(text) {
-  if (!jarvisVoice || !window.speechSynthesis) return;
+function setOrbState(state) {
+  const orb = document.getElementById('vo-orb');
+  const wrap = document.getElementById('vo-orb-wrap');
+  orb.className = 'vo-orb' + (state !== 'idle' ? ' ' + state : '');
+  wrap.classList.toggle('is-listening', state === 'listening');
+}
+
+async function voiceAutoSendMessage() {
+  if (!finalText || busy) return;
+  const msg = finalText.trim();
+  finalText = '';
+  interimText = '';
+
+  // Stop listening while processing
+  try { voiceRecognition.stop(); } catch(_) {}
+  setVoiceStatus('THINKING...');
+  setOrbState('thinking');
+  document.getElementById('vo-transcript').textContent = msg;
+  document.getElementById('vo-transcript').classList.remove('interim');
+
+  // Also add to chat
+  appendMsg('user', msg);
+  const { bbl: agentBbl, txt: agentTxt } = appendMsg('agent', '', true);
+
+  busy = true;
+  let raw = '';
+  let firstToken = true;
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg })
+    });
+
+    if (!res.ok) {
+      setVoiceStatus('ERROR');
+      agentTxt.textContent = 'Server error: ' + res.status;
+      busy = false;
+      voiceResumeListening();
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let ev;
+        try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (ev.type === 'token') {
+          if (firstToken) { agentTxt.innerHTML = ''; firstToken = false; }
+          raw += ev.content;
+          const display = stripActionTags(raw);
+          agentTxt.innerHTML = renderMarkdown(display) + '<span class="cur"></span>';
+          // Update voice overlay response live
+          const clean = display.replace(/```[\s\S]*?```/g,'').replace(/[*_#`]/g,'').trim();
+          if (clean) document.getElementById('vo-response').textContent = clean.slice(-300);
+          scrollDown();
+        } else if (ev.type === 'action') {
+          appendActionCard(agentBbl, ev.action);
+        } else if (ev.type === 'pending') {
+          agentTxt.innerHTML = renderMarkdown('I\'d like to make the following changes:');
+          appendPendingActions(agentBbl, ev.actions);
+        } else if (ev.type === 'done') {
+          agentBbl.querySelectorAll('.thinking').forEach(el => el.remove());
+          const final = stripActionTags(raw);
+          if (final) agentTxt.innerHTML = renderMarkdown(final);
+          else if (!agentTxt.textContent.trim()) agentTxt.innerHTML = '<span style="color:var(--dim)">Done.</span>';
+          scrollDown();
+        } else if (ev.type === 'agent_continue') {
+          const cont = document.createElement('div');
+          cont.className = 'thinking';
+          cont.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> Processing…';
+          agentBbl.appendChild(cont);
+          raw = '';
+          firstToken = true;
+        } else if (ev.type === 'error') {
+          agentTxt.innerHTML = '<span style="color:var(--warn)">Error: ' + esc(ev.content) + '</span>';
+        }
+      }
+    }
+  } catch (err) {
+    agentTxt.textContent = 'Error: ' + err.message;
+  }
+
+  busy = false;
+
+  // Speak the response, then auto-resume listening
+  const finalResponse = stripActionTags(raw);
+  if (finalResponse && voiceMode) {
+    voiceSpeaking = true;
+    setVoiceStatus('SPEAKING...');
+    setOrbState('speaking');
+    voiceSpeak(finalResponse, () => {
+      voiceSpeaking = false;
+      voiceResumeListening();
+    });
+  } else {
+    voiceResumeListening();
+  }
+}
+
+function voiceSpeak(text, onDone) {
+  if (!window.speechSynthesis) { if (onDone) onDone(); return; }
   speechSynthesis.cancel();
-  // Clean text: remove code blocks, action tags, markdown
   let clean = text
-    .replace(/```[\s\S]*?```/g, ' code block ')
+    .replace(/```[\s\S]*?```/g, '. code block. ')
     .replace(/<[^>]+>/g, '')
     .replace(/[*_#`]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-  if (!clean || clean.length < 3) return;
-  // Truncate very long responses for speech
-  if (clean.length > 500) clean = clean.slice(0, 500) + '... and more.';
+  if (!clean || clean.length < 3) { if (onDone) onDone(); return; }
+  if (clean.length > 800) clean = clean.slice(0, 800) + '... and more.';
+
   const utter = new SpeechSynthesisUtterance(clean);
   utter.rate = 1.05;
-  utter.pitch = 0.95;
-  // Prefer a deep male voice for Jarvis feel
+  utter.pitch = 0.9;
   const voices = speechSynthesis.getVoices();
-  const preferred = voices.find(v => /Daniel|Alex|Google UK English Male|Aaron/i.test(v.name))
-                 || voices.find(v => /Male/i.test(v.name))
+  const preferred = voices.find(v => /Daniel|Aaron|Alex|Google UK English Male/i.test(v.name))
+                 || voices.find(v => /en.*male/i.test(v.name))
+                 || voices.find(v => /en/i.test(v.lang))
                  || voices[0];
   if (preferred) utter.voice = preferred;
+  utter.onend = () => { if (onDone) onDone(); };
+  utter.onerror = () => { if (onDone) onDone(); };
   speechSynthesis.speak(utter);
+}
+
+function voiceResumeListening() {
+  if (!voiceMode) return;
+  finalText = '';
+  document.getElementById('vo-transcript').textContent = '';
+  document.getElementById('vo-response').textContent = '';
+  setVoiceStatus('LISTENING...');
+  setOrbState('listening');
+  setTimeout(() => {
+    if (voiceMode && !voiceSpeaking) {
+      try { voiceRecognition.start(); } catch(_) {}
+    }
+  }, 300);
+}
+
+// Legacy speak for text-mode responses
+function speakText(text) {
+  // only speak if not in voice mode (voice mode handles its own speech)
+  if (voiceMode) return;
 }
 
 // ── init ───────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  initVoice();
-  // Preload voices for speech synthesis
-  if (window.speechSynthesis) speechSynthesis.getVoices();
+  initVoiceMode();
 
   // Fetch provider info
   try {
@@ -392,8 +643,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch(_) {}
 
   document.getElementById('sbtn').addEventListener('click', send);
-  document.getElementById('micbtn').addEventListener('click', toggleListening);
-  document.getElementById('voicetoggle').addEventListener('click', toggleJarvisVoice);
+  document.getElementById('voicemodebtn').addEventListener('click', startVoiceMode);
   document.getElementById('userinput').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   });
@@ -455,7 +705,7 @@ const EMPTY_HTML = `
   <div class="empty" id="empty">
     <div class="empty-icon">⚡</div>
     <div class="empty-h">AtulCoder</div>
-    <div class="empty-s">Your personal AI coding agent by Atul Chauhan.<br>I can create files, run commands, and build projects — all locally.</div>
+    <div class="empty-s">Your personal AI assistant & coding agent.<br>Voice mode, file ops, commands — all locally, unlimited.</div>
     <div class="chips">
       <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
       <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
