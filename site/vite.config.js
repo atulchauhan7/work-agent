@@ -10,4 +10,10 @@ export default defineConfig({
       '/api/clear': 'http://localhost:7860',
     },
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test-setup.js',
+    css: false,
+  },
 })

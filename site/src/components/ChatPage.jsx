@@ -99,8 +99,8 @@ export default function ChatPage() {
     <div ref={containerRef} className="flex flex-col h-[100svh] bg-dark-bg text-white overflow-hidden grain">
       <Navbar />
 
-      {/* Sub-header */}
-      <div className="pt-14 shrink-0">
+      {/* Sub-header — pt-20 clears fixed navbar at full height (~76px) */}
+      <div className="pt-20 shrink-0">
         <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-white/[0.03] bg-dark-bg/50 backdrop-blur-xl">
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 bg-green-400 rounded-full pulse-ring text-green-400" />

@@ -389,9 +389,9 @@ export default function HomePage() {
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-gold/30 font-display text-3xl font-bold">0{index + 1}</span>
                   </div>
-                  <p className="text-gold/85 text-[11px] sm:text-xs tracking-[0.14em] font-semibold font-body uppercase mb-2.5">{reason.title}</p>
-                  <h3 className="text-lg sm:text-[22px] font-body mb-4 sm:mb-5 font-semibold leading-tight text-white group-hover:text-gold/90 transition-colors duration-500">{reason.subtitle}</h3>
-                  <p className="text-gray-300 font-normal leading-7 text-sm sm:text-[15px] mb-6 font-body">{reason.desc}</p>
+                  <p className="text-gold/80 text-[10px] tracking-[0.2em] font-semibold font-body uppercase mb-3">{reason.title}</p>
+                  <h3 className="text-xl sm:text-2xl font-display mb-4 sm:mb-5 font-medium leading-snug text-white group-hover:text-gold/90 transition-colors duration-500">{reason.subtitle}</h3>
+                  <p className="text-gray-400 font-light leading-7 text-sm sm:text-[15px] mb-6 font-body">{reason.desc}</p>
                   <div className="mt-auto pt-5 border-t border-white/[0.04]">
                     <ul className="space-y-2.5 sm:space-y-3">
                       {reason.bullets.map((bullet, idx) => (
