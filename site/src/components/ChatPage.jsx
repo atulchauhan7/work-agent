@@ -23,15 +23,17 @@ export default function ChatPage() {
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv || !containerRef.current) return
-    const onResize = () => {
-      // Adjust container height to visual viewport (excludes keyboard)
+    const update = () => {
+      if (!containerRef.current) return
       containerRef.current.style.height = `${vv.height}px`
+      containerRef.current.style.top = `${vv.offsetTop}px`
     }
-    vv.addEventListener('resize', onResize)
-    vv.addEventListener('scroll', onResize)
+    update() // set immediately on mount
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
     return () => {
-      vv.removeEventListener('resize', onResize)
-      vv.removeEventListener('scroll', onResize)
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
     }
   }, [])
 
@@ -96,7 +98,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div ref={containerRef} className="flex flex-col h-[100svh] bg-dark-bg text-white overflow-hidden grain">
+    <div ref={containerRef} className="flex flex-col bg-dark-bg text-white overflow-hidden grain" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100svh' }}>
       <Navbar />
 
       {/* Sub-header — pt-20 clears fixed navbar at full height (~76px) */}
@@ -213,7 +215,7 @@ export default function ChatPage() {
             <svg className="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
           </button>
         </form>
-        <p className="text-center text-[10px] text-gray-700 pb-3 tracking-[0.1em] font-body">Powered by Zivonx AI · Groq</p>
+        <p className="text-center text-[10px] text-gray-700 pb-3 tracking-[0.1em] font-body">Powered by Zivonx AI</p>
       </div>
     </div>
   )
