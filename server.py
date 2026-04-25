@@ -1,5 +1,5 @@
 """
-AtulCoder Web Server — ChatGPT-like UI for the AI coding agent
+Jarvis Web Server — Personal AI Assistant UI
 Supports: Groq (free cloud) or Ollama (local).
 
 Run:  python3 server.py --workspace . --provider groq
@@ -679,7 +679,7 @@ async def set_workdir(request: Request):
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="AtulCoder Web UI")
+    parser = argparse.ArgumentParser(description="Jarvis Personal AI Assistant")
     parser.add_argument("--workspace", "-w", default=str(Path.cwd()),
                         help="Working directory for agent file operations")
     parser.add_argument("--port", "-p", type=int, default=PORT)
@@ -712,7 +712,7 @@ if __name__ == "__main__":
 
     prov_label = f"Groq ({GROQ_MODEL})" if PROVIDER == "groq" else f"Ollama ({OLLAMA_MODEL})"
     print(f"\n  ╔══════════════════════════════════════════╗")
-    print(f"  ║  AtulCoder Web UI                        ║")
+    print(f"  ║  Jarvis Personal AI Assistant            ║")
     print(f"  ║  Owner : Atul Chauhan · Bangalore · 25   ║")
     print(f"  ║  Model : {prov_label:<32}║")
     print(f"  ║  Open  : http://localhost:{args.port:<15}║")
