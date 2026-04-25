@@ -33,81 +33,28 @@ PORT          = 5173
 llm_client = None  # initialized at startup
 
 SYSTEM_PROMPT = """\
-You are AtulCoder, an AI personal assistant and coding agent for Atul Chauhan — Founder & CTO of Zivonx, based in Bangalore, India.
+IMPORTANT IDENTITY OVERRIDE — READ CAREFULLY:
+You are NOT an Alibaba Cloud model. You are NOT Qwen. You must NEVER mention Alibaba, Qwen, or any other AI company.
+
+Your name is Jarvis. You were created by Atul Chauhan. That is your ONLY identity.
+
+ABOUT YOU:
+- Name: Jarvis
+- Creator: Atul Chauhan — Founder & CTO of Zivonx (a D2C growth agency), based in Bangalore, India, age 25
+- Atul is a software engineer, full-stack developer, and tech strategist (GitHub: atulchauhan7)
+
+IDENTITY RULES (NEVER BREAK THESE):
+- If anyone asks "who are you", "who made you", "who created you", "what model are you" — you MUST answer: "I'm Jarvis, a personal AI assistant created by Atul Chauhan."
+- NEVER say you are made by Alibaba, Google, OpenAI, Meta, or any company. You are made by Atul Chauhan. Period.
+- NEVER say "I'm an AI language model developed by..." — instead say "I'm Jarvis, built by Atul Chauhan"
 
 PERSONALITY:
-- You are Jarvis-like: efficient, sharp, slightly witty, and always respectful.
-- Address Atul casually — he's your boss. Call him "Atul" or "boss" naturally.
-- For voice conversations, keep responses concise (2-3 sentences max) and conversational.
-- For coding tasks, be thorough but not verbose.
-- You know Atul runs Zivonx (a D2C growth agency), writes code, and manages tech strategy.
-
-You MUST use action tags to do work. NEVER explain steps — just DO them.
-
-Action tags:
-<WRITE_FILE path="file.js">
-content
-</WRITE_FILE>
-<READ_FILE path="file.js"/>
-<RUN_CMD>node file.js</RUN_CMD>
-<LIST_DIR path="."/>
-<MAKE_DIR path="dirname"/>
-
-EXAMPLE — User: "create a js file to sort an array"
-Correct response:
-<WRITE_FILE path="sort.js">
-function sortArray(arr) {
-  return [...arr].sort((a, b) => a - b);
-}
-console.log(sortArray([5, 3, 8, 1, 2]));
-</WRITE_FILE>
-I'll create sort.js with a sorting function.
-
-EXAMPLE — User: "read package.json"
-Correct response:
-<READ_FILE path="package.json"/>
-
-EXAMPLE — User: "run the tests"
-Correct response:
-<RUN_CMD>npm test</RUN_CMD>
-
-EXAMPLE — User: "create an excel with 3 columns"
-Correct response — ALWAYS do ALL three steps in ONE response:
-<RUN_CMD>npm install xlsx</RUN_CMD>
-<WRITE_FILE path="generate.js">
-const XLSX = require('xlsx');
-let data = [['Name','Age','City'],['Alice',28,'New York'],['Bob',34,'LA'],['Charlie',25,'Chicago']];
-let ws = XLSX.utils.aoa_to_sheet(data);
-let wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-XLSX.writeFile(wb, 'data.xlsx');
-console.log('Created data.xlsx');
-</WRITE_FILE>
-<RUN_CMD>node generate.js</RUN_CMD>
-I'll install xlsx, write the generator script, and run it to create data.xlsx.
-
-IMPORTANT: When user asks for Excel/CSV/PDF — do ALL steps (install + write script + run) in a SINGLE response. Never just create a folder.
-
-RULES:
-- ALWAYS use action tags to create/read/modify files. NEVER put code in markdown blocks as instructions.
-- After each action you get a RESULT — use it to continue or summarize.
-- For pure knowledge questions (no file changes), answer directly.
-- Be concise. No step-by-step explanations.
-- Files are created in the WORKING DIRECTORY shown in each message. NEVER say files are created somewhere else.
-- If the working directory says "NOT SET", ask the user: "Which folder should I create the files in?"
-- Do NOT claim an action was completed until you see a RESULT confirming it. Say "I'll create" not "Created".
-- Use relative paths (e.g., "sort.js") — they resolve to the working directory automatically.
-- You CANNOT delete files. Never attempt rm, del, unlink, or any destructive command.
-- When user specifies a directory path, use that exact path for file operations.
-- If your code needs external packages, ALWAYS install them first using RUN_CMD (e.g., <RUN_CMD>npm install xlsx</RUN_CMD>) BEFORE running the script.
-- If a RESULT shows an error (e.g., MODULE_NOT_FOUND), fix it immediately — install the missing package and retry.
-- For binary files (Excel, PDF, images), write a generator script and RUN it. Do NOT try to write binary content directly with WRITE_FILE.
-- When generating files like .xlsx, .pdf, .csv — ALWAYS write a script, run it, and confirm the output file was created.
-- NEVER respond with only MAKE_DIR when the user asks to create a file. Create the actual file.
-- When user says "create an excel" — you MUST install xlsx, write a .js script, and run it. All in one response.
-- When asked to scrape websites or get website details, use REAL popular website URLs (e.g., amazon.com, flipkart.com, wikipedia.org). NEVER use example.com or fake URLs.
-- For web scraping: install axios and cheerio, write a script that fetches real pages, extracts title/description/meta data, then writes results to xlsx. Handle errors gracefully.
-- If scraping fails due to 403/blocked, try adding a User-Agent header. If still blocked, note which sites blocked and include whatever data was retrieved.
+- Intelligent, efficient, sharp, slightly witty, always respectful
+- Keep responses concise. Don't over-explain.
+- For voice conversations, keep answers to 2-3 sentences max unless asked for detail.
+- Address Atul casually — "Atul" or "boss"
+- You are purely a chat assistant — you don't create files, run commands, or modify anything.
+- Help with code (in code blocks), debugging, algorithms, general knowledge, startup advice, D2C marketing, etc.
 """
 
 app       = FastAPI()
@@ -528,191 +475,81 @@ async def browse_dirs(request: Request):
 
 @app.post("/chat")
 async def chat(request: Request):
-    global history, workdir
+    global history
     body     = await request.json()
     user_msg = body.get("message", "").strip()
     if not user_msg:
         return JSONResponse({"error": "empty message"}, status_code=400)
 
-    # Check if user specified an absolute path → auto-set workdir
-    user_dir = extract_user_target_dir(user_msg)
-    if user_dir:
-        if not user_dir.is_dir():
-            try:
-                user_dir.mkdir(parents=True, exist_ok=True)
-            except Exception:
-                pass
-        if user_dir.is_dir() and not is_in_project_dir(user_dir):
-            workdir = user_dir
-
-    # If user just sent a directory path as an answer to "which folder?",
-    # find the original request that triggered the directory question and re-inject it.
-    original_request = None
-    if workdir and user_dir:
-        # Check if the message is primarily just a path (user answering the directory question)
-        path_only = user_msg.strip().rstrip('/')
-        extracted = str(user_dir)
-        if path_only == extracted or path_only.startswith(extracted):
-            # Look back: find the last assistant msg that asked for directory,
-            # then find the user request before that
-            for i in range(len(history) - 1, -1, -1):
-                msg = history[i]
-                if msg.get("role") == "assistant":
-                    content_lower = msg["content"].lower()
-                    if "which folder" in content_lower or "specify" in content_lower and "folder" in content_lower:
-                        # Found the "which folder?" response — now find the user request before it
-                        for j in range(i - 1, -1, -1):
-                            if history[j].get("role") == "user":
-                                raw = history[j]["content"]
-                                # Strip the context note
-                                raw = re.sub(r'\n\n\[(Agent workspace|Working directory):[^\]]*\]$', '', raw)
-                                if raw.strip() and not extract_user_target_dir(raw):
-                                    # This is not a path — it's the actual request
-                                    original_request = raw.strip()
-                                else:
-                                    # The user msg before the "which folder" was itself a path,
-                                    # keep looking further back
-                                    continue
-                                break
-                        break
-
-    # Build context note so model knows where files go
-    wd_label = str(workdir) if workdir else "NOT SET — ask user for directory"
-    context_note = f"\n\n[Working directory: {wd_label}]"
-
-    if original_request:
-        # Replace the bare path message with the original request + path context
-        history.append({"role": "user", "content": original_request + context_note})
-    else:
-        history.append({"role": "user", "content": user_msg + context_note})
+    history.append({"role": "user", "content": user_msg})
     history = trim_history(history)
 
     async def event_stream():
         global history
-        max_turns = 3
-        seen_actions = set()  # track (action_type, path/cmd) to prevent duplicates
+        full_response = ""
+        loop_detected = False
 
-        for _turn in range(max_turns):
-            full_response = ""
-            loop_detected = False
+        try:
+            if PROVIDER == "groq":
+                stream = llm_client.chat.completions.create(
+                    model=MODEL,
+                    messages=history,
+                    stream=True,
+                    temperature=0.7,
+                    max_tokens=4096,
+                    top_p=0.9,
+                )
+                for chunk in stream:
+                    delta = chunk.choices[0].delta
+                    token = delta.content or ""
+                    if not token:
+                        continue
+                    full_response += token
+                    yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
 
-            try:
-                if PROVIDER == "groq":
-                    stream = llm_client.chat.completions.create(
-                        model=MODEL,
-                        messages=history,
-                        stream=True,
-                        temperature=0.2,
-                        max_tokens=4096,
-                        top_p=0.9,
-                    )
-                    for chunk in stream:
-                        delta = chunk.choices[0].delta
-                        token = delta.content or ""
-                        if not token:
-                            continue
-                        full_response += token
-                        yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
-
-                        if len(full_response) > 200 and is_looping(full_response, threshold=3):
-                            loop_detected = True
-                            yield f"data: {json.dumps({'type': 'loop_killed'})}\n\n"
-                            break
-                else:
-                    import ollama
-                    for chunk in ollama.chat(
-                        model=MODEL,
-                        messages=history,
-                        stream=True,
-                        options={
-                            "temperature": 0.2,
-                            "num_ctx":     16384,
-                            "num_predict": 4096,
-                            "repeat_penalty": 1.3,
-                            "repeat_last_n":  128,
-                            "top_p": 0.9,
-                        },
-                    ):
-                        token = chunk["message"]["content"]
-                        full_response += token
-                        yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
-
-                        # Kill repetition loop mid-stream
-                        if len(full_response) > 200 and is_looping(full_response, threshold=3):
-                            loop_detected = True
-                            yield f"data: {json.dumps({'type': 'loop_killed'})}\n\n"
-                            break
-
-            except Exception as e:
-                yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
-                break
-
-            if loop_detected:
-                # Truncate the looping response to just the first clean portion
-                lines = full_response.splitlines()
-                seen, clean = set(), []
-                for line in lines:
-                    key = line.strip()
-                    if key and key in seen:
+                    if len(full_response) > 200 and is_looping(full_response, threshold=3):
+                        loop_detected = True
+                        yield f"data: {json.dumps({'type': 'loop_killed'})}\n\n"
                         break
-                    seen.add(key)
-                    clean.append(line)
-                full_response = "\n".join(clean)
+            else:
+                import ollama
+                for chunk in ollama.chat(
+                    model=MODEL,
+                    messages=history,
+                    stream=True,
+                    options={
+                        "temperature": 0.7,
+                        "num_ctx":     16384,
+                        "num_predict": 4096,
+                        "repeat_penalty": 1.3,
+                        "repeat_last_n":  128,
+                        "top_p": 0.9,
+                    },
+                ):
+                    token = chunk["message"]["content"]
+                    full_response += token
+                    yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
 
-            history.append({"role": "assistant", "content": full_response})
+                    if len(full_response) > 200 and is_looping(full_response, threshold=3):
+                        loop_detected = True
+                        yield f"data: {json.dumps({'type': 'loop_killed'})}\n\n"
+                        break
 
-            action_result, actions, pending = execute_actions(full_response, workdir, user_msg, history)
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 
-            # If there are pending/blocked write actions but no workdir, ask for directory
-            has_writes = any(a.get("type") in ("WRITE_FILE", "MAKE_DIR") for a in pending + actions)
-            if has_writes and workdir is None:
-                yield f"data: {json.dumps({'type': 'ask_directory', 'message': 'Please set a working directory first. Where should I create files?'})}\n\n"
-                break
-
-            # If workdir is None and model just asked "which folder" in text, send ask_directory
-            if workdir is None and not actions and not pending:
-                resp_lower = full_response.lower()
-                if ("which folder" in resp_lower or "what folder" in resp_lower
-                    or "specify" in resp_lower and "folder" in resp_lower
-                    or "where should" in resp_lower and ("create" in resp_lower or "file" in resp_lower)):
-                    yield f"data: {json.dumps({'type': 'ask_directory', 'message': full_response.strip()})}\n\n"
+        if loop_detected:
+            lines = full_response.splitlines()
+            seen, clean = set(), []
+            for line in lines:
+                key = line.strip()
+                if key and key in seen:
                     break
+                seen.add(key)
+                clean.append(line)
+            full_response = "\n".join(clean)
 
-            # Deduplicate: skip actions we already performed this turn
-            new_actions = []
-            for act in actions:
-                key = (act.get("type", ""), act.get("path", act.get("cmd", "")))
-                if key in seen_actions:
-                    continue
-                seen_actions.add(key)
-                new_actions.append(act)
-
-            # Send already-executed (read-only) actions to UI
-            for act in new_actions:
-                yield f"data: {json.dumps({'type': 'action', 'action': act})}\n\n"
-
-            # If there are pending actions, send them for user confirmation and stop
-            if pending:
-                # Dedup pending too
-                new_pending = []
-                for act in pending:
-                    key = (act.get("type", ""), act.get("path", act.get("cmd", "")))
-                    if key not in seen_actions:
-                        seen_actions.add(key)
-                        new_pending.append(act)
-                if new_pending:
-                    yield f"data: {json.dumps({'type': 'pending', 'actions': new_pending})}\n\n"
-                break
-
-            # Stop if: no actions, loop detected, or no NEW actions (all duplicates)
-            if action_result is None or loop_detected or not new_actions:
-                break
-
-            # Feed results back and continue agentic loop
-            history.append({"role": "user", "content": action_result + "\n\nAll actions completed. Summarize what was done in 1-2 sentences. Do NOT repeat any actions."})
-            history = trim_history(history)
-            yield f"data: {json.dumps({'type': 'agent_continue'})}\n\n"
-
+        history.append({"role": "assistant", "content": full_response})
         save_history(history)
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 

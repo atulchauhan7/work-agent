@@ -3,16 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AtulCoder</title>
+<title>Jarvis</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#212121;--sb:#171717;--inp:#2f2f2f;--bdr:#3a3a3a;
   --tx:#ececec;--dim:#8e8ea0;--acc:#10a37f;--acc2:#0d8a6c;
-  --ubg:#2f2f2f;--abg:#1a2a1a;--abdr:#2d4a2d;
-  --font:'Segoe UI',system-ui,sans-serif;
+  --ubg:#2f2f2f;--font:'Segoe UI',system-ui,sans-serif;
   --mono:'Fira Code',Consolas,monospace;
-  --warn:#e87e7e;--info:#a0a0ff;--ok:#4caf50;
+  --warn:#e87e7e;--ok:#4caf50;
 }
 html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font)}
 .layout{display:flex;height:100vh;overflow:hidden}
@@ -25,18 +24,14 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .logo-sub{font-size:11px;color:var(--dim)}
 .btn-new{width:100%;padding:10px 14px;border-radius:8px;background:var(--inp);border:1px solid var(--bdr);color:var(--tx);font-size:13px;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .btn-new:hover{background:#3a3a3a;border-color:var(--acc)}
-.btn-new svg{opacity:.7}
 .sb-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--bdr);font-size:11px;color:var(--dim);line-height:1.7}
 .online{color:#7ec87e}
-.ws-path{word-break:break-all;margin-bottom:4px;cursor:pointer;padding:4px 6px;border-radius:4px;transition:background .15s}
-.ws-path:hover{background:var(--inp)}
 
 /* main */
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .hdr{padding:12px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(8px);background:rgba(33,33,33,.85)}
 .hdr-left{display:flex;align-items:center;gap:10px}
 .hdr-title{font-weight:600;font-size:15px}
-.hdr-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--acc);color:#fff;font-weight:600}
 .btn-clr{padding:6px 14px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-size:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
 .btn-clr:hover{background:var(--inp);color:var(--tx);border-color:#555}
 
@@ -50,58 +45,28 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .av.user{background:#5865f2;color:#fff}
 .av.agent{background:var(--acc);color:#fff}
 .bbl{flex:1;min-width:0;padding-top:3px}
-.bbl .lbl{font-size:12px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.bbl .lbl{font-size:12px;font-weight:600;margin-bottom:5px}
 .bbl .txt{font-size:14px;line-height:1.75;color:var(--tx);word-break:break-word;white-space:pre-wrap}
-.bbl.user .txt{background:var(--ubg);border-radius:12px;padding:10px 14px;display:inline-block;white-space:pre-wrap}
+.bbl.user .txt{background:var(--ubg);border-radius:12px;padding:10px 14px;display:inline-block}
 
-/* markdown in responses */
+/* markdown */
 .bbl .txt code{background:#1a1a1a;padding:2px 5px;border-radius:4px;font-family:var(--mono);font-size:12.5px;color:#e0e0e0}
 .bbl .txt pre{background:#111;border:1px solid var(--bdr);border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre}
 .bbl .txt pre code{background:none;padding:0;font-size:inherit}
 .bbl .txt strong{color:#fff;font-weight:600}
 .bbl .txt h3{font-size:15px;margin:12px 0 6px;color:#fff}
-.bbl .txt a{color:var(--acc);text-decoration:none}
-.bbl .txt a:hover{text-decoration:underline}
 
-/* thinking indicator */
-.thinking{display:flex;align-items:center;gap:8px;padding:6px 0;color:var(--dim);font-size:13px;animation:fi .2s ease}
+/* thinking */
+.thinking{display:flex;align-items:center;gap:8px;padding:6px 0;color:var(--dim);font-size:13px}
 .thinking-dots{display:flex;gap:3px}
 .thinking-dots span{width:6px;height:6px;border-radius:50%;background:var(--acc);opacity:.4;animation:pulse 1.2s ease-in-out infinite}
 .thinking-dots span:nth-child(2){animation-delay:.2s}
 .thinking-dots span:nth-child(3){animation-delay:.4s}
 @keyframes pulse{0%,80%,100%{opacity:.4;transform:scale(1)}40%{opacity:1;transform:scale(1.2)}}
 
-/* action cards */
-.act-card{background:var(--abg);border:1px solid var(--abdr);border-radius:8px;padding:10px 14px;margin:6px 0;font-family:var(--mono);font-size:12px;animation:fi .2s ease}
-.act-hdr{font-weight:700;color:#7ec87e;margin-bottom:3px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
-.act-hdr .act-chevron{font-size:10px;transition:transform .2s;color:var(--dim)}
-.act-hdr .act-chevron.open{transform:rotate(90deg)}
-.act-res{background:#0d0d0d;border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;font-size:11px;color:#aaa;max-height:200px;overflow-y:auto;border:1px solid #1a1a1a}
-.act-res.collapsed{display:none}
-.download-link{display:inline-block;margin-top:6px;padding:5px 12px;background:#1a6b3c;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:background .2s}
-.download-link:hover{background:#22884d}
-.act-card.blocked{background:#2a1a1a;border-color:#4a2d2d}
-.act-card.blocked .act-hdr{color:var(--warn)}
-
-/* pending actions */
-.pending-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #3d3d6b;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
-.pending-title{font-size:13px;font-weight:600;color:var(--info);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.pending-item{font-family:var(--mono);font-size:12px;color:var(--dim);padding:6px 10px;margin:4px 0;background:rgba(0,0,0,.2);border-radius:6px;display:flex;align-items:flex-start;gap:8px}
-.pending-item-icon{flex-shrink:0;margin-top:1px}
-.pending-item-detail{flex:1;min-width:0}
-.pending-item-path{color:#ccc;font-weight:500}
-.pending-item-preview{margin-top:4px;max-height:120px;overflow-y:auto;background:#0a0a0a;border-radius:4px;padding:6px 8px;font-size:11px;color:#888;white-space:pre;border:1px solid #222}
-.pending-btns{display:flex;gap:10px;margin-top:12px;align-items:center}
-.btn-approve{padding:8px 20px;border-radius:8px;border:none;background:var(--acc);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
-.btn-approve:hover{background:var(--acc2);transform:translateY(-1px)}
-.btn-approve:disabled{background:#333;cursor:wait;transform:none}
-.btn-deny{padding:8px 20px;border-radius:8px;border:1px solid #4a2d2d;background:transparent;color:var(--warn);font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
-.btn-deny:hover{background:#2a1a1a}
-.pending-hint{font-size:11px;color:var(--dim);margin-left:auto}
-
-/* stop button */
+/* stop */
 .stop-bar{max-width:780px;margin:0 auto;padding:0 20px}
-.stop-btn{display:none;width:100%;padding:8px;border-radius:8px;border:1px solid #555;background:var(--inp);color:var(--tx);font-size:13px;cursor:pointer;transition:all .15s;margin-bottom:6px}
+.stop-btn{display:none;width:100%;padding:8px;border-radius:8px;border:1px solid #555;background:var(--inp);color:var(--tx);font-size:13px;cursor:pointer;margin-bottom:6px}
 .stop-btn:hover{background:#444;border-color:var(--warn)}
 .stop-btn.visible{display:block}
 
@@ -111,7 +76,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 
 /* empty */
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;text-align:center}
-.empty-icon{font-size:48px;filter:drop-shadow(0 0 20px rgba(16,163,127,.3))}
+.empty-icon{filter:drop-shadow(0 0 20px rgba(16,163,127,.3))}
 .empty-h{font-size:22px;font-weight:700}
 .empty-s{color:var(--dim);font-size:13px;max-width:380px;line-height:1.6}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
@@ -126,31 +91,21 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 #userinput::placeholder{color:var(--dim)}
 .sbtn{width:36px;height:36px;border-radius:8px;flex-shrink:0;background:var(--acc);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .sbtn:hover:not(:disabled){background:var(--acc2);transform:scale(1.05)}
-.sbtn:disabled{background:#333;cursor:not-allowed;transform:none}
-.mic-btn{width:36px;height:36px;border-radius:8px;flex-shrink:0;background:transparent;border:1px solid var(--bdr);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--dim)}
-.mic-btn:hover{background:var(--inp);color:var(--tx);border-color:#555}
-.mic-btn.listening{background:#e74c3c;border-color:#e74c3c;color:#fff;animation:mic-pulse 1s ease infinite}
-@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 8px rgba(231,76,60,0)}}
-.voice-toggle{width:36px;height:36px;border-radius:8px;flex-shrink:0;background:transparent;border:1px solid var(--bdr);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--dim);font-size:16px}
-.voice-toggle:hover{background:var(--inp);color:var(--tx);border-color:#555}
-.voice-toggle.active{background:#1a2a1a;border-color:var(--acc);color:var(--acc)}
+.sbtn:disabled{background:#333;cursor:not-allowed}
+.voice-mode-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#10a37f,#0d6efd);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;color:#fff;font-size:16px;box-shadow:0 0 12px rgba(16,163,127,.3)}
+.voice-mode-btn:hover{transform:scale(1.1);box-shadow:0 0 20px rgba(16,163,127,.5)}
 .inp-hint{text-align:center;font-size:11px;color:var(--dim);margin-top:7px;max-width:780px;margin-left:auto;margin-right:auto}
 .inp-hint kbd{background:#333;padding:1px 5px;border-radius:3px;font-size:10px;font-family:var(--mono);border:1px solid #444}
 
-/* provider badge */
-.provider-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;margin-left:6px}
-.provider-badge.ollama{background:#8b5cf6;color:#fff}
-.provider-badge.groq{background:#f59e0b;color:#000}
-
-/* ── Voice Mode Overlay (ChatGPT-style) ─────────────────────────────────── */
+/* Voice Mode Overlay */
 .voice-overlay{position:fixed;inset:0;z-index:2000;background:radial-gradient(ellipse at center,#1a1a2e 0%,#0d0d1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;opacity:0;pointer-events:none;transition:opacity .3s ease}
 .voice-overlay.active{opacity:1;pointer-events:all}
 .vo-status{font-size:14px;color:#888;font-weight:500;letter-spacing:.5px;text-transform:uppercase;min-height:22px}
 .vo-transcript{font-size:18px;color:var(--tx);max-width:600px;text-align:center;min-height:60px;line-height:1.6;padding:0 20px;word-break:break-word}
 .vo-transcript.interim{color:#666;font-style:italic}
 .vo-orb-wrap{position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.vo-orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#10a37f,#0d6efd);box-shadow:0 0 60px rgba(16,163,127,.3);transition:transform .3s,box-shadow .3s}
-.vo-orb-wrap:hover .vo-orb{transform:scale(1.05);box-shadow:0 0 80px rgba(16,163,127,.45)}
+.vo-orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#10a37f,#0d6efd);box-shadow:0 0 60px rgba(16,163,127,.3);transition:transform .3s,box-shadow .3s;display:flex;align-items:center;justify-content:center}
+.vo-orb-wrap:hover .vo-orb{transform:scale(1.05)}
 .vo-orb.listening{animation:orb-pulse 1.5s ease-in-out infinite}
 .vo-orb.speaking{animation:orb-speak .8s ease-in-out infinite;background:radial-gradient(circle at 40% 40%,#8b5cf6,#6d28d9)}
 .vo-orb.thinking{animation:orb-think 2s linear infinite;opacity:.7}
@@ -168,71 +123,18 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .vo-btn.end{background:#e74c3c;border-color:#e74c3c;color:#fff}
 .vo-btn.end:hover{background:#c0392b}
 .vo-response{font-size:14px;color:#aaa;max-width:600px;text-align:center;line-height:1.6;padding:0 20px;max-height:200px;overflow-y:auto;word-break:break-word}
-.vo-response strong{color:#fff}
 
-/* Voice mode button in input area */
-.voice-mode-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#10a37f,#0d6efd);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;color:#fff;font-size:16px;box-shadow:0 0 12px rgba(16,163,127,.3)}
-.voice-mode-btn:hover{transform:scale(1.1);box-shadow:0 0 20px rgba(16,163,127,.5)}
-
-/* directory prompt */
-.dir-prompt{background:linear-gradient(135deg,#1a2a1a,#16213e);border:1px solid #3d6b3d;border-radius:10px;padding:14px;margin:10px 0;animation:fi .25s ease}
-.dir-prompt-title{font-size:13px;font-weight:600;color:var(--acc);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.dir-prompt-input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:var(--tx);font-size:13px;font-family:var(--mono);outline:none}
-.dir-prompt-input:focus{border-color:var(--acc)}
-.dir-prompt-btns{display:flex;gap:8px;margin-top:10px}
-.dir-prompt .btn-approve{padding:8px 20px}
-
-/* folder picker modal */
-.fp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fi .15s ease}
-.fp-modal{background:#1e1e2e;border:1px solid #333;border-radius:12px;width:480px;max-width:92vw;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(0,0,0,.5)}
-.fp-header{padding:14px 16px;border-bottom:1px solid #2a2a3a;display:flex;align-items:center;justify-content:space-between}
-.fp-header h3{margin:0;font-size:14px;color:var(--acc);display:flex;align-items:center;gap:6px}
-.fp-close{background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px}
-.fp-close:hover{background:#333;color:#fff}
-.fp-shortcuts{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid #2a2a3a;flex-wrap:wrap}
-.fp-shortcut{background:#2a2a3a;border:1px solid #3a3a4a;border-radius:6px;padding:5px 10px;font-size:12px;color:#ccc;cursor:pointer;transition:all .15s}
-.fp-shortcut:hover{background:var(--acc);color:#fff;border-color:var(--acc)}
-.fp-breadcrumb{padding:8px 16px;font-size:11px;color:#888;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border-bottom:1px solid #2a2a3a;font-family:var(--mono)}
-.fp-breadcrumb span{cursor:pointer;color:#aaa;padding:1px 3px;border-radius:3px}
-.fp-breadcrumb span:hover{background:#333;color:var(--acc)}
-.fp-list{flex:1;overflow-y:auto;padding:6px 0;min-height:200px}
-.fp-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:#ccc;transition:background .1s}
-.fp-item:hover{background:#2a2a3a}
-.fp-item-icon{font-size:16px;flex-shrink:0}
-.fp-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fp-empty{padding:24px 16px;text-align:center;color:#666;font-size:12px}
-.fp-footer{padding:12px 16px;border-top:1px solid #2a2a3a;display:flex;align-items:center;gap:8px}
-.fp-footer input{flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--bdr);background:var(--inp);color:var(--tx);font-size:12px;font-family:var(--mono);outline:none}
-.fp-footer input:focus{border-color:var(--acc)}
-.fp-footer .fp-select-btn{padding:7px 16px;border-radius:6px;border:none;background:var(--acc);color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s}
-.fp-footer .fp-select-btn:hover{filter:brightness(1.15)}
-.fp-footer .fp-new-btn{padding:7px 12px;border-radius:6px;border:1px solid #3d6b3d;background:transparent;color:var(--acc);font-size:12px;cursor:pointer}
-.fp-footer .fp-new-btn:hover{background:#1a2a1a}
-.fp-loading{padding:24px;text-align:center;color:#888;font-size:12px}
-
-/* workdir badge */
-.workdir-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.workdir-label{word-break:break-all;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.workdir-btn{padding:2px 8px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-size:10px;cursor:pointer;flex-shrink:0;transition:all .15s}
-.workdir-btn:hover{background:var(--inp);color:var(--tx)}
-.workdir-not-set{color:var(--warn);font-size:11px}
-
-/* responsive */
-@media(max-width:768px){
-  .sidebar{display:none}
-  .msg{padding:6px 12px}
-}
+@media(max-width:768px){.sidebar{display:none}.msg{padding:6px 12px}}
 </style>
 </head>
 <body>
 <div class="layout">
-
   <aside class="sidebar">
     <div class="logo">
-      <div class="logo-icon">⚡</div>
+      <div class="logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
       <div>
-        <div class="logo-name">AtulCoder</div>
-        <div class="logo-sub">Jarvis · Personal AI</div>
+        <div class="logo-name">Jarvis</div>
+        <div class="logo-sub">Personal AI Assistant</div>
       </div>
     </div>
     <button class="btn-new" onclick="newChat()">
@@ -240,21 +142,13 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
       New chat
     </button>
     <div class="sb-foot">
-      <div class="workdir-row">
-        <div id="workdir-display" class="workdir-label workdir-not-set">📂 No folder set</div>
-        <button class="workdir-btn" onclick="changeWorkdir()">Change</button>
-      </div>
-      <div class="online">● <span id="sb-model-info">Local · Unlimited</span></div>
+      <div style="margin-top:4px">Created by Atul Chauhan</div>
     </div>
   </aside>
 
   <main class="main">
     <header class="hdr">
-      <div class="hdr-left">
-        <div class="hdr-title">AtulCoder</div>
-        <span class="hdr-badge">AGENT</span>
-        <span class="provider-badge" id="provider-badge"></span>
-      </div>
+      <div class="hdr-left"><div class="hdr-title">Jarvis</div></div>
       <button class="btn-clr" onclick="newChat()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
         Clear
@@ -263,32 +157,28 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 
     <div class="msgs" id="msgs">
       <div class="empty" id="empty">
-        <div class="empty-icon">⚡</div>
-        <div class="empty-h">AtulCoder</div>
-        <div class="empty-s">Your personal AI assistant & coding agent.<br>Voice mode, file ops, commands — all locally, unlimited.</div>
+        <div class="empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/><path d="M8 12h8"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div class="empty-h">Hey Atul</div>
+        <div class="empty-s">I'm Jarvis, your personal AI assistant. Ask me anything — tech, code, strategy, or just chat.</div>
         <div class="chips">
-          <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
-          <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
-          <div class="chip" onclick="suggest('List the files in the current workspace')">📁 List workspace</div>
-          <div class="chip" onclick="suggest('Who is your owner?')">👤 Who owns you?</div>
+          <div class="chip" onclick="suggest('Explain how React hooks work')">⚛️ React hooks</div>
+          <div class="chip" onclick="suggest('What are the best D2C growth strategies?')">📈 D2C growth</div>
+          <div class="chip" onclick="suggest('Help me optimize a slow SQL query')">🔧 Optimize SQL</div>
+          <div class="chip" onclick="suggest('Who created you?')">👤 About you</div>
         </div>
       </div>
     </div>
 
     <div class="inp-area">
-      <div class="stop-bar">
-        <button class="stop-btn" id="stopbtn" onclick="stopGeneration()">■ Stop generating</button>
-      </div>
+      <div class="stop-bar"><button class="stop-btn" id="stopbtn" onclick="stopGen()">■ Stop generating</button></div>
       <div class="inp-box">
-        <textarea id="userinput" rows="1" placeholder="Ask AtulCoder anything… (Enter to send, Shift+Enter for new line)"></textarea>
-        <button class="voice-mode-btn" id="voicemodebtn" title="Voice Mode — talk like Jarvis">🎙</button>
-        <button class="sbtn" id="sbtn" title="Send (Enter)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-            <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
-          </svg>
+        <textarea id="userinput" rows="1" placeholder="Ask Jarvis anything…"></textarea>
+        <button class="voice-mode-btn" id="voicemodebtn" title="Voice Mode"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+        <button class="sbtn" id="sbtn" title="Send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
       </div>
-      <div class="inp-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line · 🎙 Voice Mode for hands-free conversation</div>
+      <div class="inp-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line · <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Voice mode</div>
     </div>
   </main>
 </div>
@@ -298,966 +188,221 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   <div class="vo-status" id="vo-status">TAP TO START</div>
   <div class="vo-transcript" id="vo-transcript"></div>
   <div class="vo-orb-wrap" id="vo-orb-wrap" onclick="voiceOrbTap()">
-    <div class="vo-rings"></div>
-    <div class="vo-rings"></div>
-    <div class="vo-rings"></div>
-    <div class="vo-orb" id="vo-orb"></div>
+    <div class="vo-rings"></div><div class="vo-rings"></div><div class="vo-rings"></div>
+    <div class="vo-orb" id="vo-orb"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
   </div>
   <div class="vo-response" id="vo-response"></div>
-  <div class="vo-bottom">
-    <button class="vo-btn end" id="vo-end" title="End voice mode" onclick="endVoiceMode()">✕</button>
-  </div>
+  <div class="vo-bottom"><button class="vo-btn end" onclick="endVoiceMode()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 </div>
 
 <script>
 'use strict';
+let busy=false,abortCtrl=null;
 
-// ── state ──────────────────────────────────────────────────────────────────────
-let busy = false;
-let abortCtrl = null;  // for stop button
-let lastUserMessage = null;  // for auto-retry after workdir is set
-let retryAfterWorkdir = null;  // message to auto-resend after directory is set
+// ── Voice ──────────────────────────────────────────────────────────────────
+let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
 
-// ── Voice Mode State ──────────────────────────────────────────────────────────
-let voiceMode = false;
-let voiceRecognition = null;
-let voiceSpeaking = false;
-let voiceAutoSend = true;   // auto-send when user stops speaking
-let silenceTimer = null;
-let interimText = '';
-let finalText = '';
+function initVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return;
+  voiceRec=new SR();
+  voiceRec.continuous=true;voiceRec.interimResults=true;voiceRec.lang='en-US';
 
-function initVoiceMode() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  voiceRecognition = new SR();
-  voiceRecognition.continuous = true;
-  voiceRecognition.interimResults = true;
-  voiceRecognition.lang = 'en-US';
-  voiceRecognition.maxAlternatives = 1;
-
-  voiceRecognition.onresult = (e) => {
-    clearTimeout(silenceTimer);
-    let interim = '', final = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) final += t;
-      else interim += t;
+  voiceRec.onresult=(e)=>{
+    clearTimeout(silenceT);
+    let interim='',final='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal)final+=t;else interim+=t;
     }
-    if (final) {
-      finalText += (finalText ? ' ' : '') + final.trim();
-      document.getElementById('vo-transcript').textContent = finalText;
-      document.getElementById('vo-transcript').classList.remove('interim');
+    if(final){
+      finalTxt+=(finalTxt?' ':'')+final.trim();
+      interimTxt='';
+      $('vo-transcript').textContent=finalTxt;
+      $('vo-transcript').classList.remove('interim');
     }
-    if (interim) {
-      document.getElementById('vo-transcript').textContent = finalText + (finalText ? ' ' : '') + interim;
-      document.getElementById('vo-transcript').classList.add('interim');
+    if(interim){
+      interimTxt=interim.trim();
+      $('vo-transcript').textContent=(finalTxt+(finalTxt?' ':'')+interim).trim();
+      $('vo-transcript').classList.add('interim');
     }
-    // Auto-send after 1.5s of silence once we have final text
-    if (finalText) {
-      silenceTimer = setTimeout(() => {
-        if (voiceMode && finalText && !voiceSpeaking && !busy) {
-          voiceAutoSendMessage();
-        }
-      }, 1500);
+    // Use combined text (final + interim) for silence detection
+    const combined=(finalTxt+(finalTxt&&interimTxt?' ':'')+interimTxt).trim();
+    if(combined){
+      silenceT=setTimeout(()=>{
+        if(!voiceMode||speaking||busy)return;
+        // Merge any remaining interim into final before sending
+        if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
+        if(finalTxt)voiceSend();
+      },2000);
     }
   };
-
-  voiceRecognition.onend = () => {
-    // Restart if still in voice mode and not speaking
-    if (voiceMode && !voiceSpeaking && !busy) {
-      try { voiceRecognition.start(); } catch(_) {}
-    }
-  };
-
-  voiceRecognition.onerror = (e) => {
-    if (e.error === 'not-allowed') {
-      setVoiceStatus('MICROPHONE BLOCKED');
-      setTimeout(endVoiceMode, 2000);
-    } else if (voiceMode && e.error !== 'aborted') {
-      // Restart on transient errors
-      setTimeout(() => {
-        if (voiceMode && !voiceSpeaking) {
-          try { voiceRecognition.start(); } catch(_) {}
-        }
-      }, 500);
-    }
-  };
-
-  // Preload voices
-  if (window.speechSynthesis) {
-    speechSynthesis.getVoices();
-    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
-  }
-}
-
-function startVoiceMode() {
-  if (!voiceRecognition) {
-    alert('Speech recognition is not supported in this browser. Use Chrome or Edge.');
-    return;
-  }
-  voiceMode = true;
-  finalText = '';
-  interimText = '';
-  document.getElementById('voice-overlay').classList.add('active');
-  document.getElementById('vo-transcript').textContent = '';
-  document.getElementById('vo-response').textContent = '';
-  setVoiceStatus('LISTENING...');
-  setOrbState('listening');
-  try { voiceRecognition.start(); } catch(_) {}
-}
-
-function endVoiceMode() {
-  voiceMode = false;
-  voiceSpeaking = false;
-  clearTimeout(silenceTimer);
-  try { voiceRecognition.stop(); } catch(_) {}
-  if (window.speechSynthesis) speechSynthesis.cancel();
-  document.getElementById('voice-overlay').classList.remove('active');
-  setOrbState('idle');
-}
-
-function voiceOrbTap() {
-  if (voiceSpeaking) {
-    // Tap while speaking = interrupt, go back to listening
-    speechSynthesis.cancel();
-    voiceSpeaking = false;
-    finalText = '';
-    document.getElementById('vo-transcript').textContent = '';
-    document.getElementById('vo-response').textContent = '';
-    setVoiceStatus('LISTENING...');
-    setOrbState('listening');
-    try { voiceRecognition.start(); } catch(_) {}
-  } else if (busy) {
-    // Tap while thinking = do nothing
-  } else if (finalText) {
-    // Tap with text = send now
-    clearTimeout(silenceTimer);
-    voiceAutoSendMessage();
-  }
-}
-
-function setVoiceStatus(s) {
-  document.getElementById('vo-status').textContent = s;
-}
-
-function setOrbState(state) {
-  const orb = document.getElementById('vo-orb');
-  const wrap = document.getElementById('vo-orb-wrap');
-  orb.className = 'vo-orb' + (state !== 'idle' ? ' ' + state : '');
-  wrap.classList.toggle('is-listening', state === 'listening');
-}
-
-async function voiceAutoSendMessage() {
-  if (!finalText || busy) return;
-  const msg = finalText.trim();
-  finalText = '';
-  interimText = '';
-
-  // Stop listening while processing
-  try { voiceRecognition.stop(); } catch(_) {}
-  setVoiceStatus('THINKING...');
-  setOrbState('thinking');
-  document.getElementById('vo-transcript').textContent = msg;
-  document.getElementById('vo-transcript').classList.remove('interim');
-
-  // Also add to chat
-  appendMsg('user', msg);
-  const { bbl: agentBbl, txt: agentTxt } = appendMsg('agent', '', true);
-
-  busy = true;
-  let raw = '';
-  let firstToken = true;
-
-  try {
-    const res = await fetch('/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg })
-    });
-
-    if (!res.ok) {
-      setVoiceStatus('ERROR');
-      agentTxt.textContent = 'Server error: ' + res.status;
-      busy = false;
-      voiceResumeListening();
+  voiceRec.onend=()=>{
+    // When recognition ends, any pending interim becomes final
+    if(interimTxt&&voiceMode&&!speaking&&!busy){
+      finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';
+      $('vo-transcript').textContent=finalTxt;
+      $('vo-transcript').classList.remove('interim');
+      if(finalTxt){clearTimeout(silenceT);silenceT=setTimeout(()=>{if(voiceMode&&finalTxt&&!speaking&&!busy)voiceSend();},500);}
       return;
     }
-
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        let ev;
-        try { ev = JSON.parse(line.slice(6)); } catch { continue; }
-
-        if (ev.type === 'token') {
-          if (firstToken) { agentTxt.innerHTML = ''; firstToken = false; }
-          raw += ev.content;
-          const display = stripActionTags(raw);
-          agentTxt.innerHTML = renderMarkdown(display) + '<span class="cur"></span>';
-          // Update voice overlay response live
-          const clean = display.replace(/```[\s\S]*?```/g,'').replace(/[*_#`]/g,'').trim();
-          if (clean) document.getElementById('vo-response').textContent = clean.slice(-300);
-          scrollDown();
-        } else if (ev.type === 'action') {
-          appendActionCard(agentBbl, ev.action);
-        } else if (ev.type === 'pending') {
-          agentTxt.innerHTML = renderMarkdown('I\'d like to make the following changes:');
-          appendPendingActions(agentBbl, ev.actions);
-        } else if (ev.type === 'done') {
-          agentBbl.querySelectorAll('.thinking').forEach(el => el.remove());
-          const final = stripActionTags(raw);
-          if (final) agentTxt.innerHTML = renderMarkdown(final);
-          else if (!agentTxt.textContent.trim()) agentTxt.innerHTML = '<span style="color:var(--dim)">Done.</span>';
-          scrollDown();
-        } else if (ev.type === 'agent_continue') {
-          const cont = document.createElement('div');
-          cont.className = 'thinking';
-          cont.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> Processing…';
-          agentBbl.appendChild(cont);
-          raw = '';
-          firstToken = true;
-        } else if (ev.type === 'error') {
-          agentTxt.innerHTML = '<span style="color:var(--warn)">Error: ' + esc(ev.content) + '</span>';
-        }
-      }
-    }
-  } catch (err) {
-    agentTxt.textContent = 'Error: ' + err.message;
-  }
-
-  busy = false;
-
-  // Speak the response, then auto-resume listening
-  const finalResponse = stripActionTags(raw);
-  if (finalResponse && voiceMode) {
-    voiceSpeaking = true;
-    setVoiceStatus('SPEAKING...');
-    setOrbState('speaking');
-    voiceSpeak(finalResponse, () => {
-      voiceSpeaking = false;
-      voiceResumeListening();
-    });
-  } else {
-    voiceResumeListening();
-  }
+    if(voiceMode&&!speaking&&!busy)try{voiceRec.start();}catch(_){}
+  };
+  voiceRec.onerror=(e)=>{
+    console.warn('SpeechRecognition error:',e.error);
+    if(e.error==='not-allowed'){$('vo-status').textContent='MIC BLOCKED';setTimeout(endVoiceMode,2000);}
+    else if(voiceMode&&e.error!=='aborted')setTimeout(()=>{if(voiceMode&&!speaking)try{voiceRec.start();}catch(_){}},500);
+  };
+  if(window.speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
 }
 
-function voiceSpeak(text, onDone) {
-  if (!window.speechSynthesis) { if (onDone) onDone(); return; }
+function startVoiceMode(){
+  if(!voiceRec){alert('Speech recognition not supported. Use Chrome or Edge.');return;}
+  voiceMode=true;finalTxt='';
+  $('voice-overlay').classList.add('active');$('vo-transcript').textContent='';$('vo-response').textContent='';
+  $('vo-status').textContent='LISTENING...';setOrb('listening');
+  try{voiceRec.start();}catch(_){}
+}
+function endVoiceMode(){
+  voiceMode=false;speaking=false;clearTimeout(silenceT);
+  try{voiceRec.stop();}catch(_){}
+  if(window.speechSynthesis)speechSynthesis.cancel();
+  $('voice-overlay').classList.remove('active');setOrb('idle');
+}
+function voiceOrbTap(){
+  if(speaking){speechSynthesis.cancel();speaking=false;finalTxt='';interimTxt='';$('vo-transcript').textContent='';$('vo-response').textContent='';$('vo-status').textContent='LISTENING...';setOrb('listening');try{voiceRec.start();}catch(_){}}
+  else if(!busy){
+    // Merge interim into final on manual tap
+    if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
+    if(finalTxt){clearTimeout(silenceT);voiceSend();}
+  }
+}
+function setOrb(s){$('vo-orb').className='vo-orb'+(s!=='idle'?' '+s:'');$('vo-orb-wrap').classList.toggle('is-listening',s==='listening');}
+
+async function voiceSend(){
+  if(!finalTxt||busy)return;
+  const msg=finalTxt.trim();finalTxt='';interimTxt='';
+  try{voiceRec.stop();}catch(_){}
+  $('vo-status').textContent='THINKING...';setOrb('thinking');
+  $('vo-transcript').textContent=msg;$('vo-transcript').classList.remove('interim');
+  appendMsg('user',msg);
+  const{bbl,txt}=appendMsg('agent','',true);
+  busy=true;let raw='',first=true;
+  try{
+    const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
+    if(!res.ok){txt.textContent='Error: '+res.status;busy=false;voiceResume();return;}
+    const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data: '))continue;
+        let ev;try{ev=JSON.parse(line.slice(6));}catch{continue;}
+        if(ev.type==='token'){if(first){txt.innerHTML='';first=false;}raw+=ev.content;txt.innerHTML=renderMd(raw)+'<span class="cur"></span>';const c=raw.replace(/```[\s\S]*?```/g,'').replace(/[*_#`]/g,'').trim();if(c)$('vo-response').textContent=c.slice(-300);scrollDown();}
+        else if(ev.type==='error'){txt.innerHTML='<span style="color:var(--warn)">Error: '+esc(ev.content)+'</span>';}
+        else if(ev.type==='done'){bbl.querySelectorAll('.thinking').forEach(el=>el.remove());if(raw)txt.innerHTML=renderMd(raw);scrollDown();}
+      }
+    }
+  }catch(err){txt.textContent='Error: '+err.message;}
+  busy=false;
+  if(raw&&voiceMode){speaking=true;$('vo-status').textContent='SPEAKING...';setOrb('speaking');speak(raw,()=>{speaking=false;voiceResume();});}
+  else voiceResume();
+}
+
+function speak(text,cb){
+  if(!window.speechSynthesis){cb();return;}
   speechSynthesis.cancel();
-  let clean = text
-    .replace(/```[\s\S]*?```/g, '. code block. ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/[*_#`]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!clean || clean.length < 3) { if (onDone) onDone(); return; }
-  if (clean.length > 800) clean = clean.slice(0, 800) + '... and more.';
-
-  const utter = new SpeechSynthesisUtterance(clean);
-  utter.rate = 1.05;
-  utter.pitch = 0.9;
-  const voices = speechSynthesis.getVoices();
-  const preferred = voices.find(v => /Daniel|Aaron|Alex|Google UK English Male/i.test(v.name))
-                 || voices.find(v => /en.*male/i.test(v.name))
-                 || voices.find(v => /en/i.test(v.lang))
-                 || voices[0];
-  if (preferred) utter.voice = preferred;
-  utter.onend = () => { if (onDone) onDone(); };
-  utter.onerror = () => { if (onDone) onDone(); };
-  speechSynthesis.speak(utter);
+  let c=text.replace(/```[\s\S]*?```/g,'. code block. ').replace(/<[^>]+>/g,'').replace(/[*_#`]/g,'').replace(/\s+/g,' ').trim();
+  if(!c||c.length<3){cb();return;}
+  if(c.length>800)c=c.slice(0,800)+'... and more.';
+  const u=new SpeechSynthesisUtterance(c);u.rate=1.05;u.pitch=0.9;
+  const voices=speechSynthesis.getVoices();
+  const v=voices.find(v=>/Daniel|Aaron|Alex|Google UK English Male/i.test(v.name))||voices.find(v=>/en/i.test(v.lang))||voices[0];
+  if(v)u.voice=v;
+  // Chrome bug: speechSynthesis can pause forever. Keep it alive.
+  let alive=setInterval(()=>{if(speechSynthesis.speaking&&!speechSynthesis.paused)speechSynthesis.resume();},5000);
+  const done=()=>{clearInterval(alive);cb();};
+  u.onend=done;u.onerror=done;
+  // Small delay helps Chrome pick up the utterance
+  setTimeout(()=>speechSynthesis.speak(u),50);
 }
 
-function voiceResumeListening() {
-  if (!voiceMode) return;
-  finalText = '';
-  document.getElementById('vo-transcript').textContent = '';
-  document.getElementById('vo-response').textContent = '';
-  setVoiceStatus('LISTENING...');
-  setOrbState('listening');
-  setTimeout(() => {
-    if (voiceMode && !voiceSpeaking) {
-      try { voiceRecognition.start(); } catch(_) {}
-    }
-  }, 300);
+function voiceResume(){
+  if(!voiceMode)return;finalTxt='';interimTxt='';$('vo-transcript').textContent='';$('vo-response').textContent='';
+  $('vo-status').textContent='LISTENING...';setOrb('listening');
+  setTimeout(()=>{if(voiceMode&&!speaking)try{voiceRec.start();}catch(_){}},300);
 }
 
-// Legacy speak for text-mode responses
-function speakText(text) {
-  // only speak if not in voice mode (voice mode handles its own speech)
-  if (voiceMode) return;
-}
-
-// ── init ───────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  initVoiceMode();
-
-  // Fetch provider info
-  try {
-    const p = await (await fetch('/provider')).json();
-    const badge = document.getElementById('provider-badge');
-    const sbInfo = document.getElementById('sb-model-info');
-    if (p.provider === 'ollama') {
-      badge.textContent = 'OLLAMA · ' + p.model;
-      badge.className = 'provider-badge ollama';
-      sbInfo.textContent = 'Local · Unlimited · ' + p.model;
-    } else {
-      badge.textContent = 'GROQ · ' + p.model;
-      badge.className = 'provider-badge groq';
-      sbInfo.textContent = 'Cloud · ' + p.model;
-    }
-  } catch(_) {}
-
-  try {
-    const d = await (await fetch('/workspace')).json();
-    updateWorkdirDisplay(d.workdir);
-  } catch(_) {}
-
-  try {
-    const d = await (await fetch('/history')).json();
-    if (d.history && d.history.length > 0) {
-      removeEmpty();
-      for (const m of d.history) {
-        const role = m.role === 'user' ? 'user' : 'agent';
-        const text = m.content.replace(/\n\n\[(Agent workspace|Working directory):[^\]]*\]$/,'').trim();
-        if (role === 'agent') {
-          const { txt } = appendMsg(role, '', false);
-          txt.innerHTML = renderMarkdown(stripActionTags(text));
-        } else {
-          appendMsg(role, text);
-        }
-      }
-      scrollDown();
-    }
-  } catch(_) {}
-
-  document.getElementById('sbtn').addEventListener('click', send);
-  document.getElementById('voicemodebtn').addEventListener('click', startVoiceMode);
-  document.getElementById('userinput').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  });
-  document.getElementById('userinput').addEventListener('input', autoResize);
-  document.getElementById('userinput').focus();
+// ── Init ───────────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+document.addEventListener('DOMContentLoaded',async()=>{
+  initVoice();
+  try{const d=await(await fetch('/history')).json();if(d.history&&d.history.length>0){removeEmpty();for(const m of d.history){if(m.role==='user')appendMsg('user',m.content);else{const{txt}=appendMsg('agent','',false);txt.innerHTML=renderMd(m.content);}}scrollDown();}}catch(_){}
+  $('sbtn').addEventListener('click',send);
+  $('voicemodebtn').addEventListener('click',startVoiceMode);
+  $('userinput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+  $('userinput').addEventListener('input',autoResize);
+  $('userinput').focus();
 });
 
-// ── helpers ────────────────────────────────────────────────────────────────────
-function scrollDown() {
-  const el = document.getElementById('msgs');
-  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-}
+// ── Helpers ────────────────────────────────────────────────────────────────
+function scrollDown(){const el=$('msgs');requestAnimationFrame(()=>{el.scrollTop=el.scrollHeight;});}
+function autoResize(){const ta=$('userinput');ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,180)+'px';}
+function removeEmpty(){const e=$('empty');if(e)e.remove();}
+function suggest(t){$('userinput').value=t;send();}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function renderMd(t){let h=esc(t);h=h.replace(/```(\w*)\n([\s\S]*?)```/g,(_,l,c)=>'<pre><code>'+c+'</code></pre>');h=h.replace(/`([^`]+)`/g,'<code>$1</code>');h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');h=h.replace(/^### (.+)$/gm,'<h3>$1</h3>');return h;}
 
-function autoResize() {
-  const ta = document.getElementById('userinput');
-  ta.style.height = 'auto';
-  ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
-}
+const EMPTY_HTML='<div class="empty" id="empty"><div class="empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/><path d="M8 12h8"/><circle cx="12" cy="12" r="3"/></svg></div><div class="empty-h">Hey Atul</div><div class="empty-s">I\'m Jarvis, your personal AI assistant. Ask me anything — tech, code, strategy, or just chat.</div><div class="chips"><div class="chip" onclick="suggest(\'Explain how React hooks work\')">⚛️ React hooks</div><div class="chip" onclick="suggest(\'What are the best D2C growth strategies?\')">📈 D2C growth</div><div class="chip" onclick="suggest(\'Help me optimize a slow SQL query\')">🔧 Optimize SQL</div><div class="chip" onclick="suggest(\'Who created you?\')">👤 About you</div></div></div>';
 
-function removeEmpty() {
-  const e = document.getElementById('empty');
-  if (e) e.remove();
-}
+function newChat(){fetch('/clear',{method:'POST'});$('msgs').innerHTML=EMPTY_HTML;busy=false;$('sbtn').disabled=false;$('stopbtn').classList.remove('visible');}
+function stopGen(){if(abortCtrl){abortCtrl.abort();abortCtrl=null;}}
 
-function suggest(text) {
-  document.getElementById('userinput').value = text;
-  send();
-}
-
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function stripActionTags(s) {
-  return s
-    .replace(/<(READ_FILE|LIST_DIR|MAKE_DIR)[^>]*\/?>/gi, '')
-    .replace(/<WRITE_FILE[^>]*>[\s\S]*?<\/WRITE_FILE>/gi, '')
-    .replace(/<RUN_CMD>[\s\S]*?<\/RUN_CMD>/gi, '')
-    .trim();
-}
-
-function renderMarkdown(text) {
-  // Simple markdown: code blocks, inline code, bold, headers, links
-  let html = esc(text);
-  // code blocks: ```lang\n...\n```
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-    return '<pre><code>' + code + '</code></pre>';
-  });
-  // inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // bold
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // headers
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  return html;
-}
-
-const EMPTY_HTML = `
-  <div class="empty" id="empty">
-    <div class="empty-icon">⚡</div>
-    <div class="empty-h">AtulCoder</div>
-    <div class="empty-s">Your personal AI assistant & coding agent.<br>Voice mode, file ops, commands — all locally, unlimited.</div>
-    <div class="chips">
-      <div class="chip" onclick="suggest('Write a JS function to sort an array and save it to sort.js')">📄 Sort array in JS</div>
-      <div class="chip" onclick="suggest('Create a Python Flask REST API with a /hello endpoint')">🐍 Flask REST API</div>
-      <div class="chip" onclick="suggest('List the files in the current workspace')">📁 List workspace</div>
-      <div class="chip" onclick="suggest('Who is your owner?')">👤 Who owns you?</div>
-    </div>
-  </div>`;
-
-function newChat() {
-  fetch('/clear', { method:'POST' });
-  document.getElementById('msgs').innerHTML = EMPTY_HTML;
-  busy = false;
-  document.getElementById('sbtn').disabled = false;
-  document.getElementById('stopbtn').classList.remove('visible');
-}
-
-function updateWorkdirDisplay(wd) {
-  const el = document.getElementById('workdir-display');
-  if (wd) {
-    el.textContent = '📂 ' + wd;
-    el.className = 'workdir-label';
-    el.title = wd;
-  } else {
-    el.textContent = '📂 No folder set';
-    el.className = 'workdir-label workdir-not-set';
-    el.title = 'Click Change to set a working directory';
-  }
-}
-
-async function changeWorkdir() {
-  openFolderPicker(function(selectedPath) {
-    fetch('/workdir', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: selectedPath })
-    }).then(r => r.json()).then(d => {
-      if (d.workdir) updateWorkdirDisplay(d.workdir);
-      else if (d.error) alert(d.error);
-    }).catch(e => alert('Error: ' + e.message));
-  });
-}
-
-function openFolderPicker(onSelect) {
-  // Remove existing picker if any
-  const old = document.querySelector('.fp-overlay');
-  if (old) old.remove();
-
-  const overlay = document.createElement('div');
-  overlay.className = 'fp-overlay';
-  overlay.innerHTML =
-    '<div class="fp-modal">' +
-      '<div class="fp-header"><h3>📂 Choose a folder</h3><button class="fp-close">&times;</button></div>' +
-      '<div class="fp-shortcuts" id="fp-shortcuts"></div>' +
-      '<div class="fp-breadcrumb" id="fp-breadcrumb"></div>' +
-      '<div class="fp-list" id="fp-list"><div class="fp-loading">Loading…</div></div>' +
-      '<div class="fp-footer">' +
-        '<input type="text" id="fp-path-input" placeholder="Or type a path…" />' +
-        '<button class="fp-new-btn" id="fp-new-btn" title="Create new folder">+ New</button>' +
-        '<button class="fp-select-btn" id="fp-select-btn">Select This Folder</button>' +
-      '</div>' +
-    '</div>';
-  document.body.appendChild(overlay);
-
-  let currentPath = '';
-
-  // Close on overlay click or close button
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-  overlay.querySelector('.fp-close').addEventListener('click', () => overlay.remove());
-
-  // Select button
-  overlay.querySelector('#fp-select-btn').addEventListener('click', () => {
-    const p = overlay.querySelector('#fp-path-input').value.trim() || currentPath;
-    if (p) { onSelect(p); overlay.remove(); }
-  });
-
-  // New folder button
-  overlay.querySelector('#fp-new-btn').addEventListener('click', () => {
-    const name = prompt('New folder name:');
-    if (!name) return;
-    const newPath = currentPath + '/' + name;
-    fetch('/workdir', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: newPath })
-    }).then(r => r.json()).then(d => {
-      if (d.workdir) { loadDir(currentPath); }
-      else { loadDir(currentPath); } // refresh regardless
-    });
-  });
-
-  // Enter on input
-  overlay.querySelector('#fp-path-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const v = e.target.value.trim();
-      if (v) loadDir(v);
-    }
-  });
-
-  function renderBreadcrumb(path) {
-    const bc = overlay.querySelector('#fp-breadcrumb');
-    const parts = path.split('/').filter(Boolean);
-    let html = '<span data-path="/">/</span>';
-    let built = '';
-    parts.forEach((p) => {
-      built += '/' + p;
-      html += ' › <span data-path="' + esc(built) + '">' + esc(p) + '</span>';
-    });
-    bc.innerHTML = html;
-    bc.querySelectorAll('span').forEach(s => {
-      s.addEventListener('click', () => loadDir(s.dataset.path));
-    });
-  }
-
-  function loadDir(path) {
-    const list = overlay.querySelector('#fp-list');
-    list.innerHTML = '<div class="fp-loading">Loading…</div>';
-    const url = path ? '/browse?path=' + encodeURIComponent(path) : '/browse';
-    fetch(url).then(r => r.json()).then(data => {
-      if (data.error) {
-        list.innerHTML = '<div class="fp-empty">⚠️ ' + esc(data.error) + '</div>';
-        return;
-      }
-      currentPath = data.current;
-      overlay.querySelector('#fp-path-input').value = currentPath;
-      renderBreadcrumb(currentPath);
-
-      // Render shortcuts if available
-      if (data.shortcuts) {
-        const sc = overlay.querySelector('#fp-shortcuts');
-        sc.innerHTML = data.shortcuts.map(s =>
-          '<button class="fp-shortcut" data-path="' + esc(s.path) + '">' + esc(s.name) + '</button>'
-        ).join('');
-        sc.querySelectorAll('.fp-shortcut').forEach(b => {
-          b.addEventListener('click', () => loadDir(b.dataset.path));
-        });
-      }
-
-      // Render directory list
-      let html = '';
-      if (data.parent) {
-        html += '<div class="fp-item" data-path="' + esc(data.parent) + '"><span class="fp-item-icon">⬆️</span><span class="fp-item-name">..</span></div>';
-      }
-      if (data.dirs.length === 0 && !data.parent) {
-        html += '<div class="fp-empty">No subfolders found</div>';
-      } else {
-        data.dirs.forEach(d => {
-          html += '<div class="fp-item" data-path="' + esc(d.path) + '"><span class="fp-item-icon">📁</span><span class="fp-item-name">' + esc(d.name) + '</span></div>';
-        });
-      }
-      list.innerHTML = html;
-      list.querySelectorAll('.fp-item').forEach(item => {
-        item.addEventListener('click', () => loadDir(item.dataset.path));
-      });
-    }).catch(err => {
-      list.innerHTML = '<div class="fp-empty">Error: ' + esc(err.message) + '</div>';
-    });
-  }
-
-  // Initial load
-  loadDir('');
-}
-
-function stopGeneration() {
-  if (abortCtrl) {
-    abortCtrl.abort();
-    abortCtrl = null;
-  }
-}
-
-// ── append a message bubble ────────────────────────────────────────────────────
-function appendMsg(role, text, streaming) {
+function appendMsg(role,text,streaming){
   removeEmpty();
-  const wrap = document.createElement('div');
-  wrap.className = 'msg';
-
-  const av = document.createElement('div');
-  av.className = 'av ' + role;
-  av.textContent = role === 'user' ? 'U' : 'A';
-
-  const bbl = document.createElement('div');
-  bbl.className = 'bbl ' + role;
-
-  const lbl = document.createElement('div');
-  lbl.className = 'lbl';
-  lbl.textContent = role === 'user' ? 'You' : 'AtulCoder';
-
-  const txt = document.createElement('div');
-  txt.className = 'txt';
-  if (streaming) {
-    // show thinking indicator
-    txt.innerHTML = '<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div> Thinking…</div>';
-  } else {
-    txt.textContent = text;
-  }
-
-  bbl.appendChild(lbl);
-  bbl.appendChild(txt);
-  wrap.appendChild(av);
-  wrap.appendChild(bbl);
-  document.getElementById('msgs').appendChild(wrap);
-  scrollDown();
-  return { wrap, bbl, txt };
+  const w=document.createElement('div');w.className='msg';
+  const av=document.createElement('div');av.className='av '+role;av.textContent=role==='user'?'A':'J';
+  const bbl=document.createElement('div');bbl.className='bbl '+role;
+  const lbl=document.createElement('div');lbl.className='lbl';lbl.textContent=role==='user'?'You':'Jarvis';
+  const txt=document.createElement('div');txt.className='txt';
+  if(streaming)txt.innerHTML='<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div> Thinking…</div>';
+  else txt.textContent=text;
+  bbl.appendChild(lbl);bbl.appendChild(txt);w.appendChild(av);w.appendChild(bbl);
+  $('msgs').appendChild(w);scrollDown();
+  return{wrap:w,bbl,txt};
 }
 
-// ── action card (collapsible) ──────────────────────────────────────────────────
-function appendActionCard(bbl, action) {
-  const icons = { READ_FILE:'📖', WRITE_FILE:'✏️', RUN_CMD:'⚡', LIST_DIR:'📁', MAKE_DIR:'📂' };
-  const card = document.createElement('div');
-  card.className = 'act-card' + (action.blocked ? ' blocked' : '');
-  const label = action.path ? action.path : (action.cmd || '');
-  const hasResult = action.result && action.result.length > 0;
-  const resId = 'res-' + Math.random().toString(36).slice(2, 8);
-
-  // Detect downloadable files from RUN_CMD results
-  const dlExts = /\.(xlsx|xls|csv|pdf|zip|tar|gz|png|jpg|jpeg|gif|docx|pptx|json|txt|html)$/i;
-  let downloadHtml = '';
-  if (hasResult && action.type === 'RUN_CMD') {
-    const m = action.result.match(/(?:Created|Wrote|Generated|Saved|Output)[:\s]+(\S+)/i);
-    if (m && dlExts.test(m[1])) {
-      downloadHtml = '<a class="download-link" href="/download/' + encodeURIComponent(m[1]) + '" download>⬇ Download ' + esc(m[1]) + '</a>';
-    }
-  }
-  // Also show download for WRITE_FILE on binary-ish extensions
-  if (action.type === 'WRITE_FILE' && action.path && dlExts.test(action.path)) {
-    downloadHtml = '<a class="download-link" href="/download/' + encodeURIComponent(action.path) + '" download>⬇ Download ' + esc(action.path) + '</a>';
-  }
-
-  card.innerHTML =
-    '<div class="act-hdr" onclick="toggleResult(\'' + resId + '\', this)">' +
-    (action.blocked ? '🚫 ' : '') + (icons[action.type]||'⚙️') + ' ' + action.type +
-    ' <span style="font-weight:400;color:#888;font-size:11px">' + esc(label) + '</span>' +
-    (hasResult ? ' <span class="act-chevron">▶</span>' : '') +
-    '</div>' +
-    (hasResult ? '<div class="act-res collapsed" id="' + resId + '">' + esc(action.result) + '</div>' : '') +
-    downloadHtml;
-  bbl.appendChild(card);
-  scrollDown();
-}
-
-function toggleResult(id, hdr) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const chevron = hdr.querySelector('.act-chevron');
-  el.classList.toggle('collapsed');
-  if (chevron) chevron.classList.toggle('open');
-}
-
-// ── pending actions (approval UI) ──────────────────────────────────────────────
-function appendPendingActions(bbl, pendingActions) {
-  const icons = { WRITE_FILE:'✏️', RUN_CMD:'⚡', MAKE_DIR:'📂' };
-  const box = document.createElement('div');
-  box.className = 'pending-box';
-
-  let itemsHtml = '<div class="pending-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Actions require your approval</div>';
-
-  pendingActions.forEach((act) => {
-    const label = act.resolved || act.path || act.cmd || '';
-    const icon = icons[act.type] || '⚙️';
-    let preview = '';
-    if (act.content) {
-      const lines = act.content.split('\n');
-      const previewText = lines.slice(0, 15).join('\n');
-      const more = lines.length > 15 ? '\n… (' + (lines.length - 15) + ' more lines)' : '';
-      preview = '<div class="pending-item-preview">' + esc(previewText + more) + '</div>';
-    }
-    itemsHtml +=
-      '<div class="pending-item">' +
-        '<span class="pending-item-icon">' + icon + '</span>' +
-        '<div class="pending-item-detail">' +
-          '<span class="pending-item-path">' + act.type + ' — ' + esc(label) + '</span>' +
-          preview +
-        '</div>' +
-      '</div>';
-  });
-
-  itemsHtml +=
-    '<div class="pending-btns">' +
-      '<button class="btn-approve" data-role="approve">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
-        ' Approve (' + pendingActions.length + ')' +
-      '</button>' +
-      '<button class="btn-deny" data-role="deny">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-        ' Deny' +
-      '</button>' +
-      '<span class="pending-hint">Review the changes above before approving</span>' +
-    '</div>';
-
-  box.innerHTML = itemsHtml;
-  bbl.appendChild(box);
-  scrollDown();
-
-  return new Promise((resolve) => {
-    const approveBtn = box.querySelector('[data-role="approve"]');
-    const denyBtn = box.querySelector('[data-role="deny"]');
-
-    approveBtn.addEventListener('click', async () => {
-      approveBtn.disabled = true;
-      approveBtn.innerHTML = '<div class="thinking-dots" style="display:inline-flex;gap:3px"><span></span><span></span><span></span></div> Executing…';
-      denyBtn.style.display = 'none';
-      try {
-        const res = await fetch('/approve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ actions: pendingActions })
-        });
-        const data = await res.json();
-        if (data.has_errors) {
-          box.querySelector('.pending-btns').innerHTML =
-            '<div style="color:var(--warn);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
-            ' Some actions had errors — auto-fixing…</div>';
-        } else {
-          box.querySelector('.pending-btns').innerHTML =
-            '<div style="color:var(--ok);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
-            ' Actions executed successfully</div>';
-        }
-        if (data.actions) {
-          data.actions.forEach(act => appendActionCard(bbl, act));
-        }
-        // If there were errors, auto-send a fix request to the model
-        if (data.has_errors) {
-          resolve('error-retry');
-          setTimeout(() => {
-            document.getElementById('userinput').value = 'The previous action had errors. Please fix the issue and try again.';
-            send();
-          }, 300);
-          return;
-        }
-      } catch (err) {
-        box.querySelector('.pending-btns').innerHTML =
-          '<span style="color:var(--warn)">Error: ' + esc(err.message) + '</span>';
-      }
-      resolve('approved');
-    });
-
-    denyBtn.addEventListener('click', () => {
-      box.querySelector('.pending-btns').innerHTML =
-        '<div style="color:var(--warn);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-        ' Actions denied</div>';
-      resolve('denied');
-    });
-  });
-}
-
-// ── directory prompt (inline) ───────────────────────────────────────────────
-function showDirectoryPrompt(bbl) {
-  const box = document.createElement('div');
-  box.className = 'dir-prompt';
-  box.innerHTML =
-    '<div class="dir-prompt-title">📂 Set working directory</div>' +
-    '<div class="dir-prompt-btns">' +
-      '<button class="btn-approve" data-role="browse-dir" style="padding:8px 20px">' +
-        '📁 Browse Folders' +
-      '</button>' +
-      '<input class="dir-prompt-input" type="text" placeholder="Or type a path and press Enter…" id="dir-prompt-input" style="flex:1;margin-left:8px" />' +
-    '</div>';
-  bbl.appendChild(box);
-  scrollDown();
-
-  const inp = box.querySelector('#dir-prompt-input');
-
-  return new Promise((resolve) => {
-    async function setDir(path) {
-      if (!path) return;
-      const btns = box.querySelector('.dir-prompt-btns');
-      btns.innerHTML = '<span style="color:#888;font-size:12px">Setting…</span>';
-      try {
-        const res = await fetch('/workdir', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path })
-        });
-        const data = await res.json();
-        if (data.workdir) {
-          updateWorkdirDisplay(data.workdir);
-          box.innerHTML =
-            '<div style="color:var(--ok);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
-            ' Working directory set to: ' + esc(data.workdir) +
-            '</div>';
-          if (retryAfterWorkdir) {
-            const retryMsg = retryAfterWorkdir;
-            retryAfterWorkdir = null;
-            resolve('set');
-            setTimeout(() => {
-              document.getElementById('userinput').value = retryMsg;
-              send();
-            }, 300);
-            return;
-          }
-        } else {
-          box.querySelector('.dir-prompt-btns').innerHTML =
-            '<span style="color:var(--warn)">' + esc(data.error || 'Unknown error') + '</span>';
-        }
-      } catch (err) {
-        box.querySelector('.dir-prompt-btns').innerHTML =
-          '<span style="color:var(--warn)">Error: ' + esc(err.message) + '</span>';
-      }
-      resolve('set');
-    }
-
-    // Browse button opens the folder picker modal
-    box.querySelector('[data-role="browse-dir"]').addEventListener('click', () => {
-      openFolderPicker(setDir);
-    });
-
-    // Also allow typing a path and pressing Enter
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const path = inp.value.trim();
-        if (path) setDir(path);
-      }
-    });
-  });
-}
-
-// ── send ───────────────────────────────────────────────────────────────────────
-async function send() {
-  if (busy) return;
-  const ta   = document.getElementById('userinput');
-  const text = ta.value.trim();
-  if (!text) return;
-
-  ta.value = '';
-  ta.style.height = 'auto';
-  busy = true;
-  document.getElementById('sbtn').disabled = true;
-  document.getElementById('stopbtn').classList.add('visible');
-  abortCtrl = new AbortController();
-
-  lastUserMessage = text;
-  appendMsg('user', text);
-  const { bbl: agentBbl, txt: agentTxt } = appendMsg('agent', '', true);
-  let raw = '';
-  let pendingPromise = null;
-  let firstToken = true;
-
-  try {
-    const res = await fetch('/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text }),
-      signal: abortCtrl.signal
-    });
-
-    if (!res.ok) {
-      agentTxt.textContent = 'Server error: ' + res.status;
-      return;
-    }
-
-    const reader  = res.body.getReader();
-    const dec     = new TextDecoder();
-    let   buf     = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        let ev;
-        try { ev = JSON.parse(line.slice(6)); } catch { continue; }
-
-        if (ev.type === 'token') {
-          if (firstToken) {
-            agentTxt.innerHTML = '';  // remove thinking indicator
-            firstToken = false;
-          }
-          raw += ev.content;
-          const display = stripActionTags(raw);
-          agentTxt.innerHTML = renderMarkdown(display) + '<span class="cur"></span>';
-          scrollDown();
-
-        } else if (ev.type === 'action') {
-          appendActionCard(agentBbl, ev.action);
-
-        } else if (ev.type === 'pending') {
-          // Replace model's premature "Created..." text with proper proposal header
-          agentTxt.innerHTML = renderMarkdown('I\'d like to make the following changes:');
-          pendingPromise = appendPendingActions(agentBbl, ev.actions);
-
-        } else if (ev.type === 'ask_directory') {
-          // Remove thinking indicator and show directory prompt
-          agentTxt.innerHTML = renderMarkdown(ev.message || 'Which folder should I create files in?');
-          retryAfterWorkdir = lastUserMessage;  // save for auto-retry
-          pendingPromise = showDirectoryPrompt(agentBbl);
-
-        } else if (ev.type === 'loop_killed') {
-          const w = document.createElement('div');
-          w.style.cssText = 'color:var(--warn);font-size:12px;margin-top:6px;display:flex;align-items:center;gap:5px';
-          w.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Repetition detected — stopped early';
-          agentBbl.appendChild(w);
-
-        } else if (ev.type === 'agent_continue') {
-          // show brief "thinking again" indicator
-          const cont = document.createElement('div');
-          cont.className = 'thinking';
-          cont.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> Processing results…';
-          agentBbl.appendChild(cont);
-          raw = '';
-          firstToken = true;
-          scrollDown();
-
-        } else if (ev.type === 'error') {
-          agentTxt.innerHTML = '<span style="color:var(--warn)">Error: ' + esc(ev.content) + '</span>';
-
-        } else if (ev.type === 'done') {
-          // Remove any leftover thinking indicators
-          agentBbl.querySelectorAll('.thinking').forEach(el => el.remove());
-          const final = stripActionTags(raw);
-          // If pending actions were shown, don't override with model's premature text
-          if (pendingPromise) {
-            // keep the "I'd like to make..." text already set
-          } else if (final) {
-            agentTxt.innerHTML = renderMarkdown(final);
-            // Jarvis: speak the response
-            speakText(final);
-          } else if (!agentTxt.textContent.trim()) {
-            agentTxt.innerHTML = '<span style="color:var(--dim)">Done.</span>';
-          }
-          scrollDown();
-        }
+// ── Send ───────────────────────────────────────────────────────────────────
+async function send(){
+  if(busy)return;
+  const ta=$('userinput'),text=ta.value.trim();if(!text)return;
+  ta.value='';ta.style.height='auto';busy=true;
+  $('sbtn').disabled=true;$('stopbtn').classList.add('visible');
+  abortCtrl=new AbortController();
+  appendMsg('user',text);
+  const{bbl,txt}=appendMsg('agent','',true);
+  let raw='',first=true;
+  try{
+    const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text}),signal:abortCtrl.signal});
+    if(!res.ok){txt.textContent='Server error: '+res.status;busy=false;return;}
+    const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data: '))continue;
+        let ev;try{ev=JSON.parse(line.slice(6));}catch{continue;}
+        if(ev.type==='token'){if(first){txt.innerHTML='';first=false;}raw+=ev.content;txt.innerHTML=renderMd(raw)+'<span class="cur"></span>';scrollDown();}
+        else if(ev.type==='error'){txt.innerHTML='<span style="color:var(--warn)">Error: '+esc(ev.content)+'</span>';}
+        else if(ev.type==='loop_killed'){const w=document.createElement('div');w.style.cssText='color:var(--warn);font-size:12px;margin-top:6px';w.textContent='⚠ Repetition detected — stopped';bbl.appendChild(w);}
+        else if(ev.type==='done'){bbl.querySelectorAll('.thinking').forEach(el=>el.remove());if(raw)txt.innerHTML=renderMd(raw);else if(!txt.textContent.trim())txt.innerHTML='<span style="color:var(--dim)">No response.</span>';scrollDown();}
       }
     }
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      agentBbl.querySelectorAll('.thinking').forEach(el => el.remove());
-      const final = stripActionTags(raw);
-      agentTxt.innerHTML = (final ? renderMarkdown(final) : '') +
-        '<div style="color:var(--dim);font-size:12px;margin-top:6px">■ Generation stopped</div>';
-    } else {
-      agentTxt.textContent = 'Error: ' + err.message;
-    }
+  }catch(err){
+    if(err.name==='AbortError'){bbl.querySelectorAll('.thinking').forEach(el=>el.remove());txt.innerHTML=(raw?renderMd(raw):'')+'<div style="color:var(--dim);font-size:12px;margin-top:6px">■ Stopped</div>';}
+    else txt.textContent='Error: '+err.message;
   }
-
-  // Wait for user to approve/deny pending actions before unlocking UI
-  if (pendingPromise) {
-    await pendingPromise;
-  }
-
-  busy = false;
-  abortCtrl = null;
-  document.getElementById('sbtn').disabled = false;
-  document.getElementById('stopbtn').classList.remove('visible');
-  document.getElementById('userinput').focus();
+  busy=false;abortCtrl=null;$('sbtn').disabled=false;$('stopbtn').classList.remove('visible');$('userinput').focus();
 }
 </script>
 </body>
