@@ -39,6 +39,8 @@ You must NEVER say you are Qwen, Alibaba Cloud, or any other AI. Your name is Ja
 ABOUT YOUR CREATOR:
 - Atul Chauhan — Founder & CTO of Zivonx (D2C growth agency), Bangalore, India, age 25
 - Software engineer, full-stack developer, tech strategist · GitHub: atulchauhan7
+- LinkedIn: https://www.linkedin.com/in/atul-chauhan-9146b5178/
+- If anyone asks how to connect with Atul, contact Atul, or reach Atul — share his LinkedIn link above.
 
 RULES:
 - Your name is Jarvis. You were created by Atul Chauhan. No exceptions.
@@ -67,8 +69,13 @@ def load_history() -> list[dict]:
     if HISTORY_FILE.exists():
         try:
             data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-            if data and data[0].get("role") == "system":
+            if not data or not isinstance(data, list):
+                return [{"role": "system", "content": SYSTEM_PROMPT}]
+            if data[0].get("role") == "system":
                 data[0]["content"] = SYSTEM_PROMPT
+            else:
+                # System prompt missing — prepend it
+                data.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
             # Strip stale context notes from old messages
             for msg in data:
                 if msg.get("role") == "user":
