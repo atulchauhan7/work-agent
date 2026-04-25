@@ -5,8 +5,8 @@
 FROM qwen2.5-coder:7b
 
 PARAMETER temperature 0.2
-PARAMETER num_ctx 8192
-PARAMETER num_predict 1024
+PARAMETER num_ctx 16384
+PARAMETER num_predict 4096
 PARAMETER repeat_penalty 1.3
 PARAMETER repeat_last_n 128
 PARAMETER top_p 0.9

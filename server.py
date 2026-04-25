@@ -19,10 +19,10 @@ from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 import uvicorn
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-PROVIDER      = os.getenv("ATUL_PROVIDER", "groq")   # "groq" or "ollama"
+PROVIDER      = os.getenv("ATUL_PROVIDER", "ollama")  # "ollama" (default, unlimited) or "groq"
 GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL    = "llama-3.3-70b-versatile"              # free, 30 req/min
-OLLAMA_MODEL  = "atul-coder"                           # local fallback
+OLLAMA_MODEL  = "qwen2.5-coder:7b"                     # local, unlimited
 MODEL         = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
 HISTORY_FILE  = Path(__file__).parent / "chat_history.json"
 HISTORY_LIMIT = 20
@@ -619,8 +619,8 @@ async def chat(request: Request):
                         stream=True,
                         options={
                             "temperature": 0.2,
-                            "num_ctx":     8192,
-                            "num_predict": 1024,
+                            "num_ctx":     16384,
+                            "num_predict": 4096,
                             "repeat_penalty": 1.3,
                             "repeat_last_n":  128,
                             "top_p": 0.9,
@@ -762,6 +762,16 @@ async def get_history():
     return JSONResponse({"history": history[1:]})  # omit system prompt
 
 
+@app.get("/provider")
+async def get_provider():
+    """Return current LLM provider info."""
+    return JSONResponse({
+        "provider": PROVIDER,
+        "model": MODEL,
+        "unlimited": PROVIDER == "ollama",
+    })
+
+
 @app.get("/workspace")
 async def get_workspace():
     return JSONResponse({
@@ -814,7 +824,7 @@ if __name__ == "__main__":
                         help="Working directory for agent file operations")
     parser.add_argument("--port", "-p", type=int, default=PORT)
     parser.add_argument("--provider", choices=["groq", "ollama"], default=PROVIDER,
-                        help="LLM provider: groq (free cloud) or ollama (local)")
+                        help="LLM provider: ollama (local, unlimited) or groq (cloud, rate-limited)")
     parser.add_argument("--groq-key", default=GROQ_API_KEY,
                         help="Groq API key (or set GROQ_API_KEY env var)")
     args = parser.parse_args()
