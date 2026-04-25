@@ -1,5 +1,26 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+site/dist/
+site/.vite/
+dist/
+.vite/
+
+# AI-generated output artifacts
+results/
+sort.js
+
+# Runtime / secrets
 chat_history.json
+.env
+*.env
+
+# OS
 .DS_Store
+Desktop/
