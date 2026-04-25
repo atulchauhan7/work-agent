@@ -3,7 +3,7 @@ AtulCoder Web Server — ChatGPT-like UI for the AI coding agent
 Supports: Groq (free cloud) or Ollama (local).
 
 Run:  python3 server.py --workspace . --provider groq
-Open: http://localhost:7860
+Open: http://localhost:5173
 """
 
 import os
@@ -27,7 +27,7 @@ MODEL         = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
 HISTORY_FILE  = Path(__file__).parent / "chat_history.json"
 HISTORY_LIMIT = 20
 MAX_FILE_READ = 6000
-PORT          = 7860
+PORT          = 5173
 
 # ── LLM client setup ───────────────────────────────────────────────────────────
 llm_client = None  # initialized at startup
