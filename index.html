@@ -125,6 +125,11 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .vo-btn:hover{background:rgba(255,255,255,.12);color:#fff;border-color:#555}
 .vo-btn.end{background:#e74c3c;border-color:#e74c3c;color:#fff}
 .vo-btn.end:hover{background:#c0392b}
+/* Language toggle */
+.vo-lang{display:flex;gap:6px;margin-bottom:10px}
+.vo-lang-btn{padding:6px 16px;border-radius:20px;border:1px solid #444;background:rgba(255,255,255,.06);color:#888;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+.vo-lang-btn.active{background:var(--acc);border-color:var(--acc);color:#fff}
+.vo-lang-btn:hover:not(.active){background:rgba(255,255,255,.12);color:#ccc}
 .vo-response{font-size:15px;color:#555;max-width:600px;text-align:center;line-height:1.8;padding:0 20px;max-height:220px;overflow-y:auto;word-break:break-word;scroll-behavior:smooth}
 .vo-response .cap-sentence{transition:color .3s,opacity .3s}
 .vo-response .cap-spoken{color:#888;opacity:.5}
@@ -226,6 +231,11 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
     <div class="vo-orb" id="vo-orb"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
   </div>
   <div class="vo-response" id="vo-response"></div>
+  <div class="vo-lang" id="vo-lang">
+    <button class="vo-lang-btn active" data-lang="en" onclick="setVoiceLang('en')">English</button>
+    <button class="vo-lang-btn" data-lang="hi" onclick="setVoiceLang('hi')">Hindi</button>
+    <button class="vo-lang-btn" data-lang="auto" onclick="setVoiceLang('auto')">Auto</button>
+  </div>
   <div class="vo-bottom"><button class="vo-btn end" onclick="endVoiceMode()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 </div>
 
@@ -251,10 +261,28 @@ let voiceMode=false,voiceRec=null,speaking=false,silenceTimer=null,finalTxt='',i
 let SR=null,micStream=null,audioTrackSupported=false,networkRetries=0;
 let speechQueue=[];
 let ttsPrimed=false;
-let ttsWorks=null; // null=unknown, true/false after first test
+let ttsWorks=null;
 const SILENCE_MS=1300;
 const IS_OPERA=navigator.userAgent.includes('OPR')||navigator.userAgent.includes('Opera');
 const IS_SAFARI=/^((?!chrome|android|crios|fxios|opr).)*safari/i.test(navigator.userAgent);
+
+// Language setting: 'en' | 'hi' | 'auto'
+let voiceLang='en';
+function setVoiceLang(lang){
+  voiceLang=lang;
+  document.querySelectorAll('.vo-lang-btn').forEach(b=>b.classList.toggle('active',b.dataset.lang===lang));
+  // Restart recognition with new lang if currently listening
+  if(voiceMode&&voiceRec&&!speaking&&!busy){
+    const old=voiceRec;voiceRec=null;
+    try{if(old)old.abort();}catch(_){}
+    startListening();
+  }
+}
+function getRecLang(){
+  if(voiceLang==='hi')return 'hi-IN';
+  if(voiceLang==='en')return 'en-IN';
+  return 'hi-IN'; // auto: hi-IN recognizes both Hindi and English
+}
 
 // Caption tracking for voice overlay
 let captionSentences=[];  // [{text, el}]
@@ -300,7 +328,7 @@ function primeTTS(){
 function makeRec(){
   if(!SR)return null;
   const r=new SR();
-  r.continuous=true;r.interimResults=true;r.lang='en-IN';r.maxAlternatives=1;
+  r.continuous=true;r.interimResults=true;r.lang=getRecLang();r.maxAlternatives=1;
 
   function commitSpeech(){
     clearTimeout(silenceTimer);silenceTimer=null;
@@ -639,17 +667,28 @@ function speakOne(text,cb){
     .replace(/\s+/g,' ').trim();
   if(!c||c.length<2){cb();return;}
   const isHindi=/[\u0900-\u097F]/.test(c);
+  const isHinglish=!isHindi&&/\b(kya|kaise|karo|bhai|yaar|acha|theek|nahi|haan|abhi|kuch|mujhe|tum|mere|tera|mera|kaha|bol|sun|dekh|chal|kar|hai|ho|hu|hum|aap|ji|woh|yeh|bas|sab|log)\b/i.test(c);
+  // User-selected lang overrides auto-detection
+  const useLang=voiceLang==='hi'?'hi':voiceLang==='en'?'en':(isHindi?'hi':isHinglish?'hinglish':'en');
 
   function pickVoice(voices){
     if(!voices||!voices.length)return null;
-    if(isHindi){
-      return voices.find(x=>x.lang&&x.lang.startsWith('hi'))
-        ||voices.find(x=>x.name&&/hindi/i.test(x.name))
+    if(useLang==='hi'){
+      return voices.find(x=>x.lang==='hi-IN')
+        ||voices.find(x=>x.name&&/lekha|hindi/i.test(x.name))
+        ||voices.find(x=>x.lang&&x.lang.startsWith('hi'))
+        ||voices.find(x=>x.lang==='en-IN')
+        ||voices[0];
+    }
+    if(useLang==='hinglish'){
+      return voices.find(x=>x.lang==='en-IN')
+        ||voices.find(x=>x.name&&/rishi|indian/i.test(x.name))
         ||voices.find(x=>x.lang&&x.lang.startsWith('en'))
         ||voices[0];
     }
-    const femaleNames=/female|girl|woman|samantha|siri|victoria|karen|moira|tessa|fiona|veena|rishi/i;
-    const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David','Microsoft Mark','Fred','Tom','Ralph'];
+    // English
+    const femaleNames=/female|girl|woman|samantha|siri|victoria|karen|moira|tessa|fiona|veena/i;
+    const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David','Fred','Tom','Ralph'];
     const enVoices=voices.filter(x=>x.lang&&x.lang.startsWith('en'));
     const maleOnly=enVoices.filter(x=>!femaleNames.test(x.name));
     return maleOnly.find(x=>preferred.some(p=>x.name.includes(p)))||maleOnly[0]||enVoices[0]||voices[0];
@@ -660,14 +699,14 @@ function speakOne(text,cb){
 
     const u=new SpeechSynthesisUtterance(c);
     u.rate=1.05;u.pitch=1.0;u.volume=1.0;
-    u.lang=isHindi?'hi-IN':'en-IN';
+    u.lang=useLang==='hi'?'hi-IN':'en-IN';
     const v=pickVoice(voices);
     if(v)u.voice=v;
 
     let done=false;
     const finish=()=>{if(done)return;done=true;clearInterval(keepAlive);clearTimeout(safetyT);cb();};
-    // Safety timeout proportional to text
-    const safetyMs=Math.min(3000+c.length*80,15000);
+    // Safety timeout — generous to avoid cutting off mid-sentence
+    const safetyMs=Math.min(4000+c.length*100,20000);
     const safetyT=setTimeout(finish,safetyMs);
 
     u.onend=finish;
