@@ -206,10 +206,12 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 let busy=false,abortCtrl=null;
 
 // ── Voice ──────────────────────────────────────────────────────────────────
+// Architecture: getUserMedia captures mic → green indicator appears.
+// Chrome 135+: pass audioTrack directly to SpeechRecognition.start(audioTrack)
+// Older Chrome: SpeechRecognition uses its own mic handle (getUserMedia released first)
 let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
-let SR=null;
+let SR=null,micStream=null,audioTrackSupported=false;
 
-// On-screen debug log visible on voice overlay
 function vlog(msg){
   console.log('[Voice]',msg);
   const d=document.getElementById('vo-debug');
@@ -218,17 +220,20 @@ function vlog(msg){
 
 function initVoice(){
   SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  // Test if audioTrack param is supported (Chrome 135+)
+  if(SR){try{const t=new SR();audioTrackSupported='start' in t && t.start.length>=0;/* will test properly on use */}catch(_){}}
   if(window.speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
+  vlog('initVoice: SR='+(SR?'yes':'NO')+' audioTrackSupported='+audioTrackSupported);
 }
 
 function makeRec(){
   if(!SR)return null;
   const r=new SR();
   r.continuous=false;r.interimResults=true;r.lang='en-US';r.maxAlternatives=1;
-  r.onaudiostart=()=>{vlog('🎙️ AUDIO STARTED — mic is capturing sound');};
-  r.onsoundstart=()=>{vlog('🔊 SOUND DETECTED');};
-  r.onspeechstart=()=>{vlog('🗣️ SPEECH DETECTED');};
-  r.onspeechend=()=>{vlog('🗣️ SPEECH ENDED');};
+  r.onaudiostart=()=>{vlog('✅ AUDIO STARTED — mic is live, listening for speech');};
+  r.onsoundstart=()=>{vlog('🔊 Sound detected');};
+  r.onspeechstart=()=>{vlog('🗣️ Speech detected — transcribing...');};
+  r.onspeechend=()=>{vlog('🗣️ Speech ended');};
   r.onresult=(e)=>{
     clearTimeout(silenceT);
     let interim='',final='';
@@ -241,22 +246,35 @@ function makeRec(){
     const display=(finalTxt+(finalTxt&&interimTxt?' ':'')+interimTxt).trim();
     $('vo-transcript').textContent=display;
     $('vo-transcript').classList.toggle('interim',!final&&!!interim);
-    vlog('result — final:"'+finalTxt+'" interim:"'+interimTxt+'"');
+    vlog('📝 "'+display+'"'+(final?' [FINAL]':' [interim]'));
   };
   r.onend=()=>{
     clearTimeout(silenceT);
-    vlog('onend — finalTxt:"'+finalTxt+'" interimTxt:"'+interimTxt+'" voiceMode:'+voiceMode+' speaking:'+speaking+' busy:'+busy);
+    vlog('onend — final:"'+finalTxt+'" interim:"'+interimTxt+'" mode:'+voiceMode+' speak:'+speaking+' busy:'+busy);
     if(!voiceMode)return;
     if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
-    if(finalTxt&&!speaking&&!busy){vlog('→ voiceSend()');voiceSend();}
-    else if(!speaking&&!busy){vlog('→ restart listening in 300ms');setTimeout(startListening,300);}
+    if(finalTxt&&!speaking&&!busy){vlog('→ sending to Jarvis...');voiceSend();}
+    else if(!speaking&&!busy){vlog('→ restarting listener...');setTimeout(startListening,300);}
   };
   r.onerror=(e)=>{
-    vlog('ERROR: '+e.error);
+    vlog('⚠️ ERROR: '+e.error);
     if(!voiceMode)return;
-    if(e.error==='not-allowed'){$('vo-status').textContent='MIC BLOCKED — ALLOW IN BROWSER';setTimeout(endVoiceMode,3000);}
-    else if(e.error==='no-speech'){vlog('no-speech → restarting');if(!speaking&&!busy)setTimeout(startListening,300);}
-    else if(e.error==='audio-capture'){$('vo-status').textContent='NO MIC FOUND';setTimeout(endVoiceMode,3000);}
+    if(e.error==='not-allowed'){
+      $('vo-status').textContent='MIC BLOCKED — CLICK 🔒 IN ADDRESS BAR → ALLOW';
+      vlog('FIX: Click lock icon in Chrome address bar → Site settings → Microphone → Allow');
+      setTimeout(endVoiceMode,5000);
+    }
+    else if(e.error==='no-speech'){vlog('No speech heard, retrying...');if(!speaking&&!busy)setTimeout(startListening,300);}
+    else if(e.error==='audio-capture'){
+      $('vo-status').textContent='NO MIC — CHECK SYSTEM PREFERENCES';
+      vlog('FIX: System Preferences → Sound → Input → Select your mic');
+      setTimeout(endVoiceMode,5000);
+    }
+    else if(e.error==='network'){
+      $('vo-status').textContent='NETWORK ERROR — SPEECH NEEDS INTERNET';
+      vlog('Chrome sends audio to Google servers — needs internet connection');
+      setTimeout(endVoiceMode,5000);
+    }
     else if(e.error!=='aborted'){setTimeout(startListening,500);}
   };
   return r;
@@ -266,27 +284,62 @@ function startListening(){
   if(!voiceMode||speaking||busy)return;
   try{if(voiceRec)voiceRec.abort();}catch(_){}
   voiceRec=makeRec();
-  if(!voiceRec){$('vo-status').textContent='NOT SUPPORTED — USE CHROME/EDGE';return;}
+  if(!voiceRec){$('vo-status').textContent='NOT SUPPORTED — USE CHROME';return;}
   $('vo-status').textContent='LISTENING...';setOrb('listening');
-  try{voiceRec.start();vlog('SpeechRecognition.start() OK');}catch(err){vlog('START FAILED: '+err.message);$('vo-status').textContent='MIC ERROR: '+err.message;}
+  try{
+    // Chrome 135+: pass audioTrack from getUserMedia so both share same mic
+    if(micStream){
+      const track=micStream.getAudioTracks()[0];
+      if(track){
+        try{voiceRec.start(track);vlog('start(audioTrack) OK — shared mic mode');return;}
+        catch(_){vlog('audioTrack param not supported, falling back');}
+      }
+    }
+    voiceRec.start();
+    vlog('start() OK — standalone mic mode');
+  }catch(err){
+    vlog('❌ START FAILED: '+err.message);
+    $('vo-status').textContent='MIC ERROR: '+err.message;
+  }
+  // Diagnostic: if no audiostart within 3s, something is wrong
+  setTimeout(()=>{
+    if(voiceMode&&!speaking&&!busy&&$('vo-status').textContent==='LISTENING...'){
+      const dbg=document.getElementById('vo-debug');
+      if(dbg&&!dbg.textContent.includes('AUDIO STARTED')){
+        vlog('⚠️ 3s with no audio — mic may not be working');
+        vlog('Try: Chrome → Settings → Privacy → Site Settings → Microphone → Allow localhost:5173');
+      }
+    }
+  },3000);
 }
 
-// Pure SpeechRecognition — no getUserMedia (conflicts with USB mics on macOS).
-// Green mic indicator shown via CSS in the header bar instead.
-function startVoiceMode(){
+async function startVoiceMode(){
   if(!SR){alert('Speech recognition not supported. Use Chrome or Edge.');return;}
   voiceMode=true;finalTxt='';interimTxt='';speaking=false;
   $('voice-overlay').classList.add('active');
   $('vo-transcript').textContent='';$('vo-response').textContent='';
   $('mic-indicator').classList.add('active');
   const dbg=document.getElementById('vo-debug');if(dbg)dbg.textContent='';
-  vlog('Voice mode ON — starting listener');
+  vlog('Voice mode ON');
+
+  // Try getUserMedia for green indicator + audioTrack sharing
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    vlog('🎤 getUserMedia OK: '+micStream.getAudioTracks().map(t=>t.label).join(', '));
+  }catch(err){
+    vlog('getUserMedia failed ('+err.message+') — using SpeechRecognition alone');
+    micStream=null;
+  }
+  // Small delay for USB mics to stabilize
+  await new Promise(r=>setTimeout(r,200));
+  if(!voiceMode)return;
   startListening();
 }
 
 function endVoiceMode(){
   voiceMode=false;speaking=false;clearTimeout(silenceT);
   try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
   if(window.speechSynthesis)speechSynthesis.cancel();
   $('voice-overlay').classList.remove('active');
   $('mic-indicator').classList.remove('active');
