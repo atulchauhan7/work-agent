@@ -243,19 +243,25 @@ let busy=false,abortCtrl=null;
 // Architecture: getUserMedia captures mic → green indicator appears.
 // Chrome 135+: pass audioTrack directly to SpeechRecognition.start(audioTrack)
 // Older Chrome: SpeechRecognition uses its own mic handle (getUserMedia released first)
-let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
+let voiceMode=false,voiceRec=null,speaking=false,silenceTimer=null,finalTxt='',interimTxt='';
 let SR=null,micStream=null,audioTrackSupported=false,networkRetries=0;
 let speechQueue=[];
 let ttsPrimed=false;
+const SILENCE_MS=1300; // ms of silence before treating as end-of-utterance
 
 function vlog(){}
 
 function initVoice(){
   SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  // Test if audioTrack param is supported (Chrome 135+)
-  if(SR){try{const t=new SR();audioTrackSupported='start' in t && t.start.length>=0;/* will test properly on use */}catch(_){}}
-  if(window.speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
-  vlog('initVoice: SR='+(SR?'yes':'NO')+' audioTrackSupported='+audioTrackSupported);
+  if(SR){try{const t=new SR();audioTrackSupported='start' in t && t.start.length>=0;}catch(_){}}
+  // Eagerly load TTS voices — some browsers (Opera, Firefox) load async
+  if(window.speechSynthesis){
+    const load=()=>speechSynthesis.getVoices();
+    load();
+    speechSynthesis.onvoiceschanged=load;
+    // Retry a few times for slow loaders
+    setTimeout(load,500);setTimeout(load,1500);
+  }
 }
 
 function primeTTS(){
@@ -273,20 +279,38 @@ function primeTTS(){
 function makeRec(){
   if(!SR)return null;
   const r=new SR();
-  r.continuous=false;r.interimResults=true;r.lang='en-IN';r.maxAlternatives=1;
-  r.onaudiostart=()=>{networkRetries=0;vlog('✅ AUDIO STARTED — mic is live, listening for speech');};
-  r.onsoundstart=()=>{vlog('🔊 Sound detected');};
+  // continuous=true so full sentences are captured without premature cutoff
+  r.continuous=true;r.interimResults=true;r.lang='en-IN';r.maxAlternatives=1;
+  r.onaudiostart=()=>{networkRetries=0;};
   r.onspeechstart=()=>{
-    vlog('🗣️ Speech detected — transcribing...');
-    // Auto-interrupt: if Jarvis is speaking and user starts talking, stop speech
-    if(speaking){
-      speechQueue=[];speechSynthesis.cancel();speaking=false;
+    clearTimeout(silenceTimer);silenceTimer=null;
+    // Interrupt: user started speaking while Jarvis is talking/streaming
+    if(speaking||busy){
+      speechQueue=[];
+      if(window.speechSynthesis)speechSynthesis.cancel();
+      speaking=false;
+      // Abort current stream so busy resets and next voiceSend can run
+      if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
+      busy=false;
       $('vo-status').textContent='LISTENING...';setOrb('listening');
     }
   };
-  r.onspeechend=()=>{vlog('🗣️ Speech ended');};
+  r.onspeechend=()=>{
+    // Start silence timer — if no more speech in SILENCE_MS, treat as end of utterance
+    clearTimeout(silenceTimer);
+    silenceTimer=setTimeout(()=>{
+      silenceTimer=null;
+      if(!voiceMode)return;
+      if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
+      if(finalTxt&&!busy){
+        // Commit: abort recognizer → onend fires → voiceSend
+        try{r.abort();}catch(_){}
+      }
+    },SILENCE_MS);
+  };
   r.onresult=(e)=>{
-    clearTimeout(silenceT);
+    // Reset silence timer on every new speech chunk
+    clearTimeout(silenceTimer);silenceTimer=null;
     let interim='',final='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const t=e.results[i][0].transcript;
@@ -297,41 +321,32 @@ function makeRec(){
     const display=(finalTxt+(finalTxt&&interimTxt?' ':'')+interimTxt).trim();
     $('vo-transcript').textContent=display;
     $('vo-transcript').classList.toggle('interim',!final&&!!interim);
-    vlog('📝 "'+display+'"'+(final?' [FINAL]':' [interim]'));
   };
   r.onend=()=>{
-    clearTimeout(silenceT);
-    vlog('onend — final:"'+finalTxt+'" interim:"'+interimTxt+'" mode:'+voiceMode+' speak:'+speaking+' busy:'+busy);
+    clearTimeout(silenceTimer);silenceTimer=null;
     if(!voiceMode)return;
     if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
-    if(finalTxt&&!speaking&&!busy){vlog('→ sending to Jarvis...');voiceSend();}
-    else if(!speaking&&!busy){vlog('→ restarting listener...');setTimeout(startListening,200);}
+    if(finalTxt&&!busy){voiceSend();}
+    else if(!speaking&&!busy){setTimeout(startListening,150);}
   };
   r.onerror=(e)=>{
-    vlog('⚠️ ERROR: '+e.error);
+    clearTimeout(silenceTimer);silenceTimer=null;
     if(!voiceMode)return;
     if(e.error==='not-allowed'){
       const isMobile=/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
-      $('vo-status').textContent=isMobile?'MIC BLOCKED — GO TO BROWSER SETTINGS → ALLOW MIC':'MIC BLOCKED — CLICK 🔒 IN ADDRESS BAR → ALLOW';
+      $('vo-status').textContent=isMobile?'MIC BLOCKED — BROWSER SETTINGS → ALLOW MIC':'MIC BLOCKED — CLICK 🔒 → ALLOW MIC';
       setTimeout(endVoiceMode,5000);
     }
-    else if(e.error==='no-speech'){vlog('No speech heard, retrying...');if(!speaking&&!busy)setTimeout(startListening,300);}
     else if(e.error==='audio-capture'){
       $('vo-status').textContent='NO MIC — CHECK SYSTEM PREFERENCES';
-      vlog('FIX: System Preferences → Sound → Input → Select your mic');
       setTimeout(endVoiceMode,5000);
     }
     else if(e.error==='network'){
       networkRetries++;
-      if(networkRetries>=3){
-        $('vo-status').textContent='NETWORK ERROR — CHECK INTERNET';
-        vlog('3 network failures — stopping. Chrome speech needs internet.');
-        setTimeout(endVoiceMode,3000);return;
-      }
-      vlog('Network error ('+networkRetries+'/3) — retrying in 2s...');
+      if(networkRetries>=3){$('vo-status').textContent='NETWORK ERROR';setTimeout(endVoiceMode,3000);return;}
       setTimeout(startListening,2000);return;
     }
-    else if(e.error!=='aborted'){setTimeout(startListening,500);}
+    else if(e.error!=='aborted'&&e.error!=='no-speech'){setTimeout(startListening,300);}
   };
   return r;
 }
@@ -378,20 +393,23 @@ async function startVoiceMode(){
     micStream=null;
   }
   // Small delay for USB mics to stabilize
-  await new Promise(r=>setTimeout(r,200));
+  await new Promise(r=>setTimeout(r,80));
   if(!voiceMode)return;
   startListening();
 }
 
 function endVoiceMode(){
-  voiceMode=false;speaking=false;clearTimeout(silenceT);speechQueue=[];
+  voiceMode=false;speaking=false;
+  clearTimeout(silenceTimer);silenceTimer=null;
+  speechQueue=[];
+  if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
+  busy=false;
   try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}
   if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
   if(window.speechSynthesis)speechSynthesis.cancel();
   $('voice-overlay').classList.remove('active');
   $('mic-indicator').classList.remove('active');
   setOrb('idle');
-  vlog('Voice mode OFF');
 }
 
 function voiceOrbTap(){
@@ -405,7 +423,7 @@ function voiceOrbTap(){
     setTimeout(startListening,300);
   } else {
     if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
-    if(finalTxt){clearTimeout(silenceT);try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}voiceSend();}
+    if(finalTxt){clearTimeout(silenceTimer);silenceTimer=null;try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}voiceSend();}
   }
 }
 
@@ -424,6 +442,9 @@ function setOrb(s){
 async function voiceSend(){
   if(!finalTxt||busy)return;
   const msg=finalTxt.trim();finalTxt='';interimTxt='';
+  // Clear old recognizer so drainQueue starts a fresh background interrupt listener
+  try{if(voiceRec){voiceRec.abort();}}catch(_){}
+  voiceRec=null;
   $('vo-status').textContent='THINKING...';setOrb('thinking');
   $('vo-transcript').textContent=msg;$('vo-transcript').classList.remove('interim');
   appendMsg('user',msg);
@@ -436,7 +457,19 @@ async function voiceSend(){
   if(voiceMode){speaking=true;}
 
   function cleanForSpeech(s){
-    return s.replace(/```[\s\S]*?```/g,' code block ').replace(/<[^>]+>/g,'').replace(/[*_#`\[\]]/g,'').replace(/https?:\/\/\S+/g,' link ').replace(/\s+/g,' ').trim();
+    return s
+      .replace(/```[\s\S]*?```/g,' ')           // code blocks
+      .replace(/<[^>]+>/g,'')                    // html tags
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')    // emojis (supplementary)
+      .replace(/[\u2600-\u27BF]/gu,'')           // misc symbols/emojis
+      .replace(/[\u{1F300}-\u{1F9FF}]/gu,'')    // more emojis
+      .replace(/https?:\/\/\S+/g,' ')            // urls
+      .replace(/[*_#`\[\]~>|]/g,'')             // markdown symbols
+      .replace(/!+/g,'.')                        // ! → . (avoid "exclamation mark")
+      .replace(/\?+/g,'?')                       // normalize ?
+      .replace(/\.{2,}/g,'.')                    // multiple dots → one
+      .replace(/\s+/g,' ')
+      .trim();
   }
   function enqueueSentence(s){
     const c=cleanForSpeech(s);
@@ -444,24 +477,34 @@ async function voiceSend(){
     if(!speechActive)drainQueue();
   }
   function drainQueue(){
-    // If speech was interrupted (speaking set to false externally), stop draining
+    // Interrupt cleared the queue — stop speaking
     if(!speaking&&speechQueue.length){speechQueue=[];speechActive=false;return;}
     if(!speechQueue.length){
       speechActive=false;
-      if(streamDone){speaking=false;$('vo-status').textContent='LISTENING...';setOrb('listening');voiceResume();}
+      if(streamDone){
+        speaking=false;
+        $('vo-status').textContent='LISTENING...';setOrb('listening');
+        // Short settle delay, then resume listening
+        setTimeout(()=>{
+          try{if(voiceRec)voiceRec.abort();}catch(_){}
+          voiceRec=null;
+          voiceResume();
+        },120);
+      }
       return;
     }
     speechActive=true;
     if(!speaking){speaking=true;}
     $('vo-status').textContent='SPEAKING...';setOrb('speaking');
-    // Start listener in background so user can interrupt by speaking
-    startListening();
+    // Start background interrupt listener if not already running
+    if(!voiceRec)startListening();
     speakOne(speechQueue.shift(),drainQueue);
   }
 
   try{
-    const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
-    if(!res.ok){txt.textContent='Error: '+res.status;busy=false;speaking=false;voiceResume();return;}
+    abortCtrl=new AbortController();
+    const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg}),signal:abortCtrl.signal});
+    if(!res.ok){txt.textContent='Error: '+res.status;busy=false;speaking=false;abortCtrl=null;voiceResume();return;}
     const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
     while(true){
       const{done,value}=await reader.read();if(done)break;
@@ -498,51 +541,71 @@ async function voiceSend(){
         }
       }
     }
-  }catch(err){txt.textContent='Error: '+err.message;}
-  busy=false;
+  }catch(err){
+    if(err.name!=='AbortError')txt.textContent='Error: '+err.message;
+  }
+  busy=false;abortCtrl=null;
   // Flush remaining speech buffer
-  if(voiceMode&&speechBuf.trim()){enqueueSentence(speechBuf);speechBuf='';}
+  if(voiceMode&&speechBuf.trim()){enqueueSentence(speechBuf);speechBuf='';
+  } else if(voiceMode&&!speechActive&&!speechQueue.length){
+    speaking=false;streamDone=true;
+    setTimeout(()=>{try{if(voiceRec)voiceRec.abort();}catch(_){}voiceRec=null;voiceResume();},120);
+    return;
+  }
   streamDone=true;
-  if(!speechActive&&!speechQueue.length){speaking=false;voiceResume();}
+  if(!speechActive&&!speechQueue.length){speaking=false;setTimeout(()=>{try{if(voiceRec)voiceRec.abort();}catch(_){}voiceRec=null;voiceResume();},120);}
 }
 
 function speakOne(text,cb){
   if(!window.speechSynthesis||!text||!speaking){cb();return;}
   if(!ttsPrimed)primeTTS();
-  const c=text.replace(/\s+/g,' ').trim();
+  // Strip emojis, symbols, markdown from TTS input
+  let c=text
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'').replace(/[\u{1F300}-\u{1F9FF}]/gu,'')
+    .replace(/[\u2600-\u27BF]/gu,'')
+    .replace(/[*_#`\[\]~>|]/g,'').replace(/!+/g,'.').replace(/https?:\/\/\S+/g,' ')
+    .replace(/\s+/g,' ').trim();
   if(!c||c.length<2){cb();return;}
-  const u=new SpeechSynthesisUtterance(c);
-  u.rate=1.0;u.pitch=1.0;u.volume=1.0;
-  const voices=speechSynthesis.getVoices();
-  // Detect if text is Hindi (Devanagari script)
   const isHindi=/[\u0900-\u097F]/.test(c);
-  let v=null;
-  if(isHindi){
-    // Pick a Hindi voice
-    v=voices.find(x=>x.lang.startsWith('hi'))
-      ||voices.find(x=>x.name.toLowerCase().includes('hindi'))
-      ||voices.find(x=>x.lang.startsWith('en'));
-  } else {
-    // Strictly male English voice
-    const femaleNames=/female|girl|woman|samantha|siri|victoria|karen|moira|tessa|fiona|veena|rishi/i;
-    const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David','Microsoft Mark','Fred','Tom','Ralph'];
-    const maleOnly=voices.filter(x=>x.lang.startsWith('en')&&!femaleNames.test(x.name));
-    v=maleOnly.find(x=>preferred.some(p=>x.name.includes(p)))
-      ||maleOnly[0]
-      ||voices.find(x=>x.lang.startsWith('en')&&!femaleNames.test(x.name))
-      ||voices[0];
+
+  function doSpeak(voices){
+    if(!speaking){cb();return;}
+    const u=new SpeechSynthesisUtterance(c);
+    u.rate=1.0;u.pitch=1.0;u.volume=1.0;
+    u.lang=isHindi?'hi-IN':'en-IN';
+    let v=null;
+    if(isHindi){
+      v=voices.find(x=>x.lang&&x.lang.startsWith('hi'))
+        ||voices.find(x=>x.name&&/hindi/i.test(x.name))
+        ||voices.find(x=>x.lang&&x.lang.startsWith('en'))
+        ||voices[0];
+    } else {
+      const femaleNames=/female|girl|woman|samantha|siri|victoria|karen|moira|tessa|fiona|veena|rishi/i;
+      const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David','Microsoft Mark','Fred','Tom','Ralph'];
+      const enVoices=voices.filter(x=>x.lang&&x.lang.startsWith('en'));
+      const maleOnly=enVoices.filter(x=>!femaleNames.test(x.name));
+      v=maleOnly.find(x=>preferred.some(p=>x.name.includes(p)))||maleOnly[0]||enVoices[0]||voices[0];
+    }
+    if(v)u.voice=v;
+    let done=false;
+    const finish=()=>{if(!done){done=true;cb();}};
+    // Safety timeout — if TTS never fires onend (Opera bug), move on after 8s per sentence
+    const safetyT=setTimeout(finish,8000);
+    const keepAlive=setInterval(()=>{try{if(speechSynthesis.paused)speechSynthesis.resume();}catch(_){}},400);
+    u.onend=()=>{clearInterval(keepAlive);clearTimeout(safetyT);finish();};
+    u.onerror=(e)=>{clearInterval(keepAlive);clearTimeout(safetyT);finish();};
+    try{speechSynthesis.cancel();speechSynthesis.resume();}catch(_){}
+    setTimeout(()=>{ try{speechSynthesis.speak(u);}catch(_){finish();} },50);
   }
-  if(v){u.voice=v;vlog('🔈 Voice: '+v.name);}
-  let done=false;
-  const finish=()=>{if(!done){done=true;cb();}};
-  if(isHindi)u.lang='hi-IN';
-  else u.lang='en-IN';
-  // Chrome bug: TTS can pause silently — check every 500ms and resume if paused
-  const keepAlive=setInterval(()=>{if(speechSynthesis.paused)speechSynthesis.resume();},500);
-  u.onend=()=>{clearInterval(keepAlive);finish();};
-  u.onerror=()=>{clearInterval(keepAlive);finish();};
-  try{speechSynthesis.resume();}catch(_){ }
-  speechSynthesis.speak(u);
+
+  // Voices may not be ready yet (Opera/Android loads them async)
+  let voices=speechSynthesis.getVoices();
+  if(voices.length>0){doSpeak(voices);return;}
+  // Wait for voices to load — max 1s then proceed anyway
+  let resolved=false;
+  const onVoices=()=>{ if(resolved)return;resolved=true;doSpeak(speechSynthesis.getVoices()); };
+  speechSynthesis.onvoiceschanged=onVoices;
+  setTimeout(()=>{ if(!resolved){resolved=true;doSpeak([]);} },1000);
 }
 
 function voiceResume(){
