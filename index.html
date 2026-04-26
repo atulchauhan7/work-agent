@@ -687,29 +687,29 @@ function speakOne(text,cb){
   if(!c||c.length<2){cb();return;}
   const isHindi=/[\u0900-\u097F]/.test(c);
   const isHinglish=!isHindi&&/\b(kya|kaise|karo|bhai|yaar|acha|theek|nahi|haan|abhi|kuch|mujhe|tum|mere|tera|mera|kaha|bol|sun|dekh|chal|kar|hai|ho|hu|hum|aap|ji|woh|yeh|bas|sab|log)\b/i.test(c);
-  // User-selected lang overrides auto-detection
-  const useLang=voiceLang==='hi'?'hi':voiceLang==='en'?'en':(isHindi?'hi':isHinglish?'hinglish':'en');
+  // Devanagari text MUST use Hindi voice — override user selector
+  // User selector only matters for non-Devanagari text
+  const useLang=isHindi?'hi':(voiceLang==='hi'?'hi':voiceLang==='en'?'en':(isHinglish?'hinglish':'en'));
 
   function pickVoice(voices){
     if(!voices||!voices.length)return null;
+    // Log available voices for debugging
+    console.log('[TTS] useLang='+useLang+' voices='+voices.length+' text="'+c.slice(0,40)+'..."');
+    console.log('[TTS] hi-IN voices:', voices.filter(x=>x.lang&&x.lang.startsWith('hi')).map(x=>x.name+'/'+x.lang));
     if(useLang==='hi'){
-      // For Devanagari text, we MUST use a hi-IN voice — English voices skip Hindi script entirely
-      // Lekha (macOS) works for Devanagari even though it sounds robotic
-      // Google Hindi (Chrome) is best if available
-      const google=voices.find(x=>/google.*hindi/i.test(x.name));
-      if(google)return google;
+      // MUST use hi-IN voice for Devanagari — no English fallback
       const hiVoices=voices.filter(x=>x.lang&&(x.lang==='hi-IN'||x.lang.startsWith('hi')));
+      const google=hiVoices.find(x=>/google/i.test(x.name));
+      if(google){console.log('[TTS] picked Google Hindi');return google;}
       const premium=hiVoices.find(x=>/premium|enhanced|natural/i.test(x.name));
-      if(premium)return premium;
-      // If text is Devanagari, must use hi-IN voice
-      const hasDevanagari=/[\u0900-\u097F]/.test(c);
-      if(hasDevanagari&&hiVoices.length>0)return hiVoices[0];
-      // For romanized Hindi/Hinglish responses, Rishi (en-IN) sounds great
-      const rishi=voices.find(x=>x.lang==='en-IN'&&/rishi/i.test(x.name));
-      if(rishi)return rishi;
-      const enIN=voices.find(x=>x.lang==='en-IN');
-      if(enIN)return enIN;
-      return hiVoices[0]||voices[0];
+      if(premium){console.log('[TTS] picked premium Hindi');return premium;}
+      // Lekha is the standard macOS Hindi voice
+      const lekha=hiVoices.find(x=>/lekha/i.test(x.name));
+      if(lekha){console.log('[TTS] picked Lekha');return lekha;}
+      if(hiVoices.length>0){console.log('[TTS] picked first hi voice: '+hiVoices[0].name);return hiVoices[0];}
+      // Last resort: any voice that can handle Hindi
+      console.warn('[TTS] NO Hindi voice found! Falling back.');
+      return voices.find(x=>x.lang==='en-IN')||voices[0];
     }
     if(useLang==='hinglish'){
       // Indian English accent is perfect for Hinglish
@@ -738,8 +738,10 @@ function speakOne(text,cb){
     const isUsingEnVoice=v&&v.lang&&v.lang.startsWith('en');
     const isUsingHiVoice=v&&v.lang&&v.lang.startsWith('hi');
     if(useLang==='hi'){
-      u.rate=isUsingHiVoice?0.82:0.92; // Lekha needs 0.82 to sound natural
-      u.pitch=isUsingHiVoice?1.1:1.05; // Slightly higher pitch for warmth
+      // Lekha on macOS: rate 0.78 sounds most natural for Hindi
+      // Lower = more careful pronunciation, sounds like a real Hindi speaker
+      u.rate=isUsingHiVoice?0.78:0.85;
+      u.pitch=isUsingHiVoice?0.95:1.0; // Slightly lower pitch for Lekha = less robotic
     } else if(useLang==='hinglish'){
       u.rate=0.95;u.pitch=1.0;
     } else {
