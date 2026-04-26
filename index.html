@@ -281,6 +281,21 @@ function makeRec(){
   const r=new SR();
   // continuous=true so full sentences are captured without premature cutoff
   r.continuous=true;r.interimResults=true;r.lang='en-IN';r.maxAlternatives=1;
+  let lastResultTime=0;
+
+  function startSilenceCountdown(ms){
+    clearTimeout(silenceTimer);
+    silenceTimer=setTimeout(()=>{
+      silenceTimer=null;
+      if(!voiceMode)return;
+      // Capture any remaining interim text
+      if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
+      if(finalTxt&&!busy){
+        try{r.abort();}catch(_){} // abort → triggers onend → voiceSend
+      }
+    },ms);
+  }
+
   r.onaudiostart=()=>{networkRetries=0;};
   r.onspeechstart=()=>{
     clearTimeout(silenceTimer);silenceTimer=null;
@@ -289,28 +304,17 @@ function makeRec(){
       speechQueue=[];
       if(window.speechSynthesis)speechSynthesis.cancel();
       speaking=false;
-      // Abort current stream so busy resets and next voiceSend can run
       if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
       busy=false;
       $('vo-status').textContent='LISTENING...';setOrb('listening');
     }
   };
   r.onspeechend=()=>{
-    // Start silence timer — if no more speech in SILENCE_MS, treat as end of utterance
-    clearTimeout(silenceTimer);
-    silenceTimer=setTimeout(()=>{
-      silenceTimer=null;
-      if(!voiceMode)return;
-      if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
-      if(finalTxt&&!busy){
-        // Commit: abort recognizer → onend fires → voiceSend
-        try{r.abort();}catch(_){}
-      }
-    },SILENCE_MS);
+    // Backup: start silence timer in case no more onresult events come
+    startSilenceCountdown(SILENCE_MS);
   };
   r.onresult=(e)=>{
-    // Reset silence timer on every new speech chunk
-    clearTimeout(silenceTimer);silenceTimer=null;
+    lastResultTime=Date.now();
     let interim='',final='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const t=e.results[i][0].transcript;
@@ -321,16 +325,23 @@ function makeRec(){
     const display=(finalTxt+(finalTxt&&interimTxt?' ':'')+interimTxt).trim();
     $('vo-transcript').textContent=display;
     $('vo-transcript').classList.toggle('interim',!final&&!!interim);
+    // KEY FIX: Always restart silence timer after every result.
+    // If we got a final result, use shorter timeout (sentence confirmed by Chrome).
+    // If interim only, use full SILENCE_MS.
+    startSilenceCountdown(final ? 800 : SILENCE_MS);
   };
   r.onend=()=>{
     clearTimeout(silenceTimer);silenceTimer=null;
+    // Ignore stale recognizer events (already replaced by a new one)
+    if(r!==voiceRec)return;
     if(!voiceMode)return;
     if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
     if(finalTxt&&!busy){voiceSend();}
-    else if(!speaking&&!busy){setTimeout(startListening,150);}
+    else if(!speaking&&!busy){setTimeout(startListening,100);}
   };
   r.onerror=(e)=>{
     clearTimeout(silenceTimer);silenceTimer=null;
+    if(r!==voiceRec)return;
     if(!voiceMode)return;
     if(e.error==='not-allowed'){
       const isMobile=/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
@@ -344,32 +355,34 @@ function makeRec(){
     else if(e.error==='network'){
       networkRetries++;
       if(networkRetries>=3){$('vo-status').textContent='NETWORK ERROR';setTimeout(endVoiceMode,3000);return;}
-      setTimeout(startListening,2000);return;
+      setTimeout(startListening,1500);return;
     }
-    else if(e.error!=='aborted'&&e.error!=='no-speech'){setTimeout(startListening,300);}
+    else if(e.error==='no-speech'){
+      // With continuous=true, Chrome fires no-speech after ~5s silence. Just restart.
+      if(!speaking&&!busy)setTimeout(startListening,100);
+    }
+    else if(e.error!=='aborted'){setTimeout(startListening,200);}
   };
   return r;
 }
 
 function startListening(){
-  if(!voiceMode||busy)return;
+  if(!voiceMode)return;
+  // Don't block on busy — we need background listener for interrupts during streaming
   try{if(voiceRec)voiceRec.abort();}catch(_){}
   voiceRec=makeRec();
   if(!voiceRec){$('vo-status').textContent='NOT SUPPORTED — USE CHROME';return;}
-  if(!speaking){$('vo-status').textContent='LISTENING...';setOrb('listening');}
+  if(!speaking&&!busy){$('vo-status').textContent='LISTENING...';setOrb('listening');}
   try{
-    // Chrome 135+: pass audioTrack from getUserMedia so both share same mic
     if(micStream){
       const track=micStream.getAudioTracks()[0];
       if(track){
-        try{voiceRec.start(track);vlog('start(audioTrack) OK — shared mic mode');return;}
-        catch(_){vlog('audioTrack param not supported, falling back');}
+        try{voiceRec.start(track);return;}
+        catch(_){}
       }
     }
     voiceRec.start();
-    vlog('start() OK — standalone mic mode');
   }catch(err){
-    vlog('❌ START FAILED: '+err.message);
     $('vo-status').textContent='MIC ERROR: '+err.message;
   }
 }
@@ -404,7 +417,8 @@ function endVoiceMode(){
   speechQueue=[];
   if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
   busy=false;
-  try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}
+  const oldR=voiceRec;voiceRec=null;
+  try{if(oldR){oldR.abort();}}catch(_){}
   if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
   if(window.speechSynthesis)speechSynthesis.cancel();
   $('voice-overlay').classList.remove('active');
@@ -423,7 +437,7 @@ function voiceOrbTap(){
     setTimeout(startListening,300);
   } else {
     if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
-    if(finalTxt){clearTimeout(silenceTimer);silenceTimer=null;try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}voiceSend();}
+    if(finalTxt){clearTimeout(silenceTimer);silenceTimer=null;const o=voiceRec;voiceRec=null;try{if(o)o.abort();}catch(_){}voiceSend();}
   }
 }
 
@@ -442,9 +456,9 @@ function setOrb(s){
 async function voiceSend(){
   if(!finalTxt||busy)return;
   const msg=finalTxt.trim();finalTxt='';interimTxt='';
-  // Clear old recognizer so drainQueue starts a fresh background interrupt listener
-  try{if(voiceRec){voiceRec.abort();}}catch(_){}
-  voiceRec=null;
+  // Clear old recognizer — null FIRST so stale onend is ignored
+  const oldRec=voiceRec;voiceRec=null;
+  try{if(oldRec)oldRec.abort();}catch(_){}
   $('vo-status').textContent='THINKING...';setOrb('thinking');
   $('vo-transcript').textContent=msg;$('vo-transcript').classList.remove('interim');
   appendMsg('user',msg);
@@ -486,8 +500,9 @@ async function voiceSend(){
         $('vo-status').textContent='LISTENING...';setOrb('listening');
         // Short settle delay, then resume listening
         setTimeout(()=>{
-          try{if(voiceRec)voiceRec.abort();}catch(_){}
-          voiceRec=null;
+          // Null first, then abort — prevents stale onend from restarting listener
+          const old=voiceRec;voiceRec=null;
+          try{if(old)old.abort();}catch(_){}
           voiceResume();
         },120);
       }
@@ -549,11 +564,11 @@ async function voiceSend(){
   if(voiceMode&&speechBuf.trim()){enqueueSentence(speechBuf);speechBuf='';
   } else if(voiceMode&&!speechActive&&!speechQueue.length){
     speaking=false;streamDone=true;
-    setTimeout(()=>{try{if(voiceRec)voiceRec.abort();}catch(_){}voiceRec=null;voiceResume();},120);
+    setTimeout(()=>{const o=voiceRec;voiceRec=null;try{if(o)o.abort();}catch(_){}voiceResume();},120);
     return;
   }
   streamDone=true;
-  if(!speechActive&&!speechQueue.length){speaking=false;setTimeout(()=>{try{if(voiceRec)voiceRec.abort();}catch(_){}voiceRec=null;voiceResume();},120);}
+  if(!speechActive&&!speechQueue.length){speaking=false;setTimeout(()=>{const o=voiceRec;voiceRec=null;try{if(o)o.abort();}catch(_){}voiceResume();},120);}
 }
 
 function speakOne(text,cb){
