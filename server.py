@@ -734,12 +734,24 @@ if __name__ == "__main__":
     workspace = Path(args.workspace).resolve()
     history   = load_history()
 
+    # Get local IP for mobile access
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        local_ip = "127.0.0.1"
+
     prov_label = f"Groq ({GROQ_MODEL})" if PROVIDER == "groq" else f"Ollama ({OLLAMA_MODEL})"
+    mobile_url = f"http://{local_ip}:{args.port}"
     print(f"\n  ╔══════════════════════════════════════════╗")
     print(f"  ║  Jarvis Personal AI Assistant            ║")
     print(f"  ║  Owner : Atul Chauhan · Bangalore · 25   ║")
     print(f"  ║  Model : {prov_label:<32}║")
-    print(f"  ║  Open  : http://localhost:{args.port:<15}║")
+    print(f"  ║  Local : http://localhost:{args.port:<15}║")
+    print(f"  ║  Mobile: {mobile_url:<32}║")
     print(f"  ╚══════════════════════════════════════════╝")
     print(f"  Workspace: {workspace}\n")
 
