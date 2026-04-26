@@ -262,7 +262,9 @@ let SR=null,micStream=null,audioTrackSupported=false,networkRetries=0;
 let speechQueue=[];
 let ttsPrimed=false;
 let ttsWorks=null;
-const SILENCE_MS=1300;
+const SILENCE_MS_EN=1300;
+const SILENCE_MS_HI=1800; // Hindi needs longer pauses
+function silenceMs(){return voiceLang==='hi'?SILENCE_MS_HI:SILENCE_MS_EN;}
 const IS_OPERA=navigator.userAgent.includes('OPR')||navigator.userAgent.includes('Opera');
 const IS_SAFARI=/^((?!chrome|android|crios|fxios|opr).)*safari/i.test(navigator.userAgent);
 
@@ -361,7 +363,7 @@ function makeRec(){
     }
   };
   r.onspeechend=()=>{
-    startSilenceCountdown(SILENCE_MS);
+    startSilenceCountdown(silenceMs());
   };
   r.onresult=(e)=>{
     // Rebuild full transcript from all results — prevents duplicates with continuous=true
@@ -376,8 +378,8 @@ function makeRec(){
     const display=(finalTxt+(finalTxt&&interimTxt?' ':'')+interimTxt).trim();
     $('vo-transcript').textContent=display;
     $('vo-transcript').classList.toggle('interim',!allFinal&&!!interim);
-    // After final result → shorter wait, interim → full SILENCE_MS
-    startSilenceCountdown(allFinal ? 700 : SILENCE_MS);
+    // After final result → shorter wait, interim → full silence timer
+    startSilenceCountdown(allFinal ? (voiceLang==='hi'?1000:700) : silenceMs());
   };
   r.onend=()=>{
     clearTimeout(silenceTimer);silenceTimer=null;
@@ -534,10 +536,16 @@ async function voiceSend(){
       .replace(/[\uFE00-\uFE0F]/gu,'')           // variation selectors (emoji modifiers)
       .replace(/[\u20D0-\u20FF]/gu,'')           // combining enclosing marks
       .replace(/https?:\/\/\S+/g,' ')            // urls
-      .replace(/[*_#`\[\]~>|]/g,'')             // markdown symbols
-      .replace(/!+/g,'.')                        // ! → .
-      .replace(/\?+/g,'?')                       // normalize ?
-      .replace(/\.{2,}/g,'.')                    // multiple dots → one
+      .replace(/[*_#`\[\]~>|{}()]/g,'')          // markdown + brackets
+      .replace(/\d+\/\d+/g,' ')                  // fractions like 4/10
+      .replace(/\//g,' ')                         // stray slashes
+      .replace(/,/g,' ')                          // commas — TTS handles pauses naturally
+      .replace(/;/g,'.')                          // semicolons to periods
+      .replace(/:/g,' ')                          // colons
+      .replace(/!+/g,'.')                         // ! → .
+      .replace(/\?+/g,'?')                        // normalize ?
+      .replace(/\.{2,}/g,'.')                     // multiple dots → one
+      .replace(/-{2,}/g,' ')                      // dashes
       .replace(/\s+/g,' ')
       .trim();
   }
@@ -618,17 +626,20 @@ async function voiceSend(){
             // Don't overwrite captions — they're managed by enqueueSentence now
           }
           scrollDown();
-          // Stream speech: flush on sentence/clause boundaries or after 50 chars
+          // Stream speech: flush on sentence/clause boundaries
           if(voiceMode){
             speechBuf+=ev.content;
-            const m=speechBuf.match(/^([\s\S]*?[.!?;:\n])\s*/);
-            if(m){
+            // Hindi danda (।) and standard sentence endings — NOT comma
+            const m=speechBuf.match(/^([\s\S]*?[.!?\n।])\s*/);
+            // Hindi: require longer chunks for natural flow
+            const minLen=voiceLang==='hi'?15:3;
+            if(m&&m[1].replace(/[^\w\u0900-\u097F]/g,'').length>minLen){
               enqueueSentence(m[1]);
               speechBuf=speechBuf.slice(m[0].length);
-            } else if(speechBuf.length>50){
-              // Flush long buffers even without punctuation
+            } else if(speechBuf.length>(voiceLang==='hi'?150:60)){
+              // Flush long buffers — much higher threshold for Hindi for natural phrasing
               const sp=speechBuf.lastIndexOf(' ');
-              if(sp>20){enqueueSentence(speechBuf.slice(0,sp));speechBuf=speechBuf.slice(sp+1);}
+              if(sp>30){enqueueSentence(speechBuf.slice(0,sp));speechBuf=speechBuf.slice(sp+1);}
             }
           }
         } else if(ev.type==='error'){
@@ -658,12 +669,20 @@ async function voiceSend(){
 function speakOne(text,cb){
   if(!window.speechSynthesis||!text||!speaking){cb();return;}
   if(!ttsPrimed)primeTTS();
-  // Strip ALL emojis and symbols before TTS
+  // Strip ALL emojis, symbols, and problematic chars before TTS
   let c=text
     .replace(/\p{Extended_Pictographic}/gu,'')
     .replace(/[\u2600-\u27BF]/gu,'')
     .replace(/[\uFE00-\uFE0F]/gu,'')
-    .replace(/[*_#`\[\]~>|]/g,'').replace(/!+/g,'.').replace(/https?:\/\/\S+/g,' ')
+    .replace(/[*_#`\[\]~>|{}()]/g,'')
+    .replace(/\d+\/\d+/g,' ')       // fractions like 4/10
+    .replace(/\//g,' ')              // stray slashes
+    .replace(/,/g,' ')               // commas — avoid TTS saying "comma"
+    .replace(/;/g,'.')               // semicolons
+    .replace(/:/g,' ')               // colons
+    .replace(/-{2,}/g,' ')           // dashes
+    .replace(/!+/g,'.').replace(/https?:\/\/\S+/g,' ')
+    .replace(/\.{2,}/g,'.')
     .replace(/\s+/g,' ').trim();
   if(!c||c.length<2){cb();return;}
   const isHindi=/[\u0900-\u097F]/.test(c);
@@ -674,15 +693,29 @@ function speakOne(text,cb){
   function pickVoice(voices){
     if(!voices||!voices.length)return null;
     if(useLang==='hi'){
-      return voices.find(x=>x.lang==='hi-IN')
-        ||voices.find(x=>x.name&&/lekha|hindi/i.test(x.name))
-        ||voices.find(x=>x.lang&&x.lang.startsWith('hi'))
-        ||voices.find(x=>x.lang==='en-IN')
-        ||voices[0];
+      // For Devanagari text, we MUST use a hi-IN voice — English voices skip Hindi script entirely
+      // Lekha (macOS) works for Devanagari even though it sounds robotic
+      // Google Hindi (Chrome) is best if available
+      const google=voices.find(x=>/google.*hindi/i.test(x.name));
+      if(google)return google;
+      const hiVoices=voices.filter(x=>x.lang&&(x.lang==='hi-IN'||x.lang.startsWith('hi')));
+      const premium=hiVoices.find(x=>/premium|enhanced|natural/i.test(x.name));
+      if(premium)return premium;
+      // If text is Devanagari, must use hi-IN voice
+      const hasDevanagari=/[\u0900-\u097F]/.test(c);
+      if(hasDevanagari&&hiVoices.length>0)return hiVoices[0];
+      // For romanized Hindi/Hinglish responses, Rishi (en-IN) sounds great
+      const rishi=voices.find(x=>x.lang==='en-IN'&&/rishi/i.test(x.name));
+      if(rishi)return rishi;
+      const enIN=voices.find(x=>x.lang==='en-IN');
+      if(enIN)return enIN;
+      return hiVoices[0]||voices[0];
     }
     if(useLang==='hinglish'){
-      return voices.find(x=>x.lang==='en-IN')
-        ||voices.find(x=>x.name&&/rishi|indian/i.test(x.name))
+      // Indian English accent is perfect for Hinglish
+      const rishi=voices.find(x=>x.lang==='en-IN'&&/rishi/i.test(x.name));
+      return rishi
+        ||voices.find(x=>x.lang==='en-IN')
         ||voices.find(x=>x.lang&&x.lang.startsWith('en'))
         ||voices[0];
     }
@@ -698,15 +731,30 @@ function speakOne(text,cb){
     if(!speaking){cb();return;}
 
     const u=new SpeechSynthesisUtterance(c);
-    u.rate=1.05;u.pitch=1.0;u.volume=1.0;
-    u.lang=useLang==='hi'?'hi-IN':'en-IN';
     const v=pickVoice(voices);
     if(v)u.voice=v;
+    // Hindi TTS tuning: Lekha (hi-IN) needs much slower rate for fluency
+    // Lower rate = more natural pronunciation, less robotic
+    const isUsingEnVoice=v&&v.lang&&v.lang.startsWith('en');
+    const isUsingHiVoice=v&&v.lang&&v.lang.startsWith('hi');
+    if(useLang==='hi'){
+      u.rate=isUsingHiVoice?0.82:0.92; // Lekha needs 0.82 to sound natural
+      u.pitch=isUsingHiVoice?1.1:1.05; // Slightly higher pitch for warmth
+    } else if(useLang==='hinglish'){
+      u.rate=0.95;u.pitch=1.0;
+    } else {
+      u.rate=1.05;u.pitch=1.0;
+    }
+    u.volume=1.0;
+    // Set lang to match content — Devanagari MUST have hi-IN or TTS is silent
+    const hasDevanagari=/[\u0900-\u097F]/.test(c);
+    u.lang=hasDevanagari?'hi-IN':(v&&v.lang)||'en-IN';
 
     let done=false;
     const finish=()=>{if(done)return;done=true;clearInterval(keepAlive);clearTimeout(safetyT);cb();};
-    // Safety timeout — generous to avoid cutting off mid-sentence
-    const safetyMs=Math.min(4000+c.length*100,20000);
+    // Safety timeout — extra generous for Hindi (slower TTS rate, longer text)
+    const hiBoost=useLang==='hi'?2.0:useLang==='hinglish'?1.3:1;
+    const safetyMs=Math.min(Math.round((5000+c.length*150)*hiBoost),45000);
     const safetyT=setTimeout(finish,safetyMs);
 
     u.onend=finish;
