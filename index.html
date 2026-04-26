@@ -247,33 +247,49 @@ let voiceMode=false,voiceRec=null,speaking=false,silenceTimer=null,finalTxt='',i
 let SR=null,micStream=null,audioTrackSupported=false,networkRetries=0;
 let speechQueue=[];
 let ttsPrimed=false;
-const SILENCE_MS=1300; // ms of silence before treating as end-of-utterance
+let ttsWorks=null; // null=unknown, true/false after first test
+const SILENCE_MS=1300;
+const IS_OPERA=navigator.userAgent.includes('OPR')||navigator.userAgent.includes('Opera');
+const IS_SAFARI=/^((?!chrome|android|crios|fxios|opr).)*safari/i.test(navigator.userAgent);
 
 function vlog(){}
 
 function initVoice(){
   SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(SR){try{const t=new SR();audioTrackSupported='start' in t && t.start.length>=0;}catch(_){}}
-  // Eagerly load TTS voices — some browsers (Opera, Firefox) load async
+  // Eagerly load TTS voices — Opera/Firefox load async and need polling
   if(window.speechSynthesis){
-    const load=()=>speechSynthesis.getVoices();
-    load();
-    speechSynthesis.onvoiceschanged=load;
-    // Retry a few times for slow loaders
-    setTimeout(load,500);setTimeout(load,1500);
+    let voiceLoadAttempts=0;
+    function tryLoadVoices(){
+      const v=speechSynthesis.getVoices();
+      if(v.length>0||voiceLoadAttempts>10)return;
+      voiceLoadAttempts++;
+      setTimeout(tryLoadVoices,300);
+    }
+    speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
+    tryLoadVoices();
+    // Extra retries for Opera which is very slow
+    [200,500,1000,2000,3500].forEach(d=>setTimeout(()=>speechSynthesis.getVoices(),d));
   }
 }
 
 function primeTTS(){
   if(!window.speechSynthesis||ttsPrimed)return;
   try{
+    // Cancel any stuck state first
+    speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(' ');
-    u.volume=0;u.rate=1;u.pitch=1;
+    u.volume=0.01;u.rate=1;u.pitch=1;
     u.onend=()=>{ttsPrimed=true;};
-    u.onerror=()=>{};
-    speechSynthesis.speak(u);
-    setTimeout(()=>{speechSynthesis.cancel();ttsPrimed=true;},180);
-  }catch(_){ }
+    u.onerror=()=>{ttsPrimed=true;}; // Even on error, mark primed so we don't loop
+    u.onstart=()=>{ttsPrimed=true;};
+    // Small delay after cancel for Opera
+    setTimeout(()=>{
+      try{speechSynthesis.speak(u);}catch(_){ttsPrimed=true;}
+      // Force-mark primed after 500ms regardless
+      setTimeout(()=>{ttsPrimed=true;try{speechSynthesis.cancel();}catch(_){}},500);
+    },IS_OPERA?100:30);
+  }catch(_){ttsPrimed=true;}
 }
 
 function makeRec(){
@@ -474,12 +490,13 @@ async function voiceSend(){
     return s
       .replace(/```[\s\S]*?```/g,' ')           // code blocks
       .replace(/<[^>]+>/g,'')                    // html tags
-      .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')    // emojis (supplementary)
-      .replace(/[\u2600-\u27BF]/gu,'')           // misc symbols/emojis
-      .replace(/[\u{1F300}-\u{1F9FF}]/gu,'')    // more emojis
+      .replace(/\p{Extended_Pictographic}/gu,'') // ALL emojis (comprehensive)
+      .replace(/[\u2600-\u27BF]/gu,'')           // misc symbols not in Extended_Pictographic
+      .replace(/[\uFE00-\uFE0F]/gu,'')           // variation selectors (emoji modifiers)
+      .replace(/[\u20D0-\u20FF]/gu,'')           // combining enclosing marks
       .replace(/https?:\/\/\S+/g,' ')            // urls
       .replace(/[*_#`\[\]~>|]/g,'')             // markdown symbols
-      .replace(/!+/g,'.')                        // ! → . (avoid "exclamation mark")
+      .replace(/!+/g,'.')                        // ! → .
       .replace(/\?+/g,'?')                       // normalize ?
       .replace(/\.{2,}/g,'.')                    // multiple dots → one
       .replace(/\s+/g,' ')
@@ -573,54 +590,98 @@ async function voiceSend(){
 
 function speakOne(text,cb){
   if(!window.speechSynthesis||!text||!speaking){cb();return;}
+  if(ttsWorks===false){cb();return;} // TTS confirmed broken in this browser
   if(!ttsPrimed)primeTTS();
-  // Strip emojis, symbols, markdown from TTS input
+  // Strip ALL emojis and symbols before TTS
   let c=text
-    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'').replace(/[\u{1F300}-\u{1F9FF}]/gu,'')
+    .replace(/\p{Extended_Pictographic}/gu,'')
     .replace(/[\u2600-\u27BF]/gu,'')
+    .replace(/[\uFE00-\uFE0F]/gu,'')
     .replace(/[*_#`\[\]~>|]/g,'').replace(/!+/g,'.').replace(/https?:\/\/\S+/g,' ')
     .replace(/\s+/g,' ').trim();
   if(!c||c.length<2){cb();return;}
   const isHindi=/[\u0900-\u097F]/.test(c);
 
-  function doSpeak(voices){
-    if(!speaking){cb();return;}
-    const u=new SpeechSynthesisUtterance(c);
-    u.rate=1.0;u.pitch=1.0;u.volume=1.0;
-    u.lang=isHindi?'hi-IN':'en-IN';
-    let v=null;
+  function pickVoice(voices){
+    if(!voices||!voices.length)return null;
     if(isHindi){
-      v=voices.find(x=>x.lang&&x.lang.startsWith('hi'))
+      return voices.find(x=>x.lang&&x.lang.startsWith('hi'))
         ||voices.find(x=>x.name&&/hindi/i.test(x.name))
         ||voices.find(x=>x.lang&&x.lang.startsWith('en'))
         ||voices[0];
-    } else {
-      const femaleNames=/female|girl|woman|samantha|siri|victoria|karen|moira|tessa|fiona|veena|rishi/i;
-      const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David','Microsoft Mark','Fred','Tom','Ralph'];
-      const enVoices=voices.filter(x=>x.lang&&x.lang.startsWith('en'));
-      const maleOnly=enVoices.filter(x=>!femaleNames.test(x.name));
-      v=maleOnly.find(x=>preferred.some(p=>x.name.includes(p)))||maleOnly[0]||enVoices[0]||voices[0];
     }
-    if(v)u.voice=v;
-    let done=false;
-    const finish=()=>{if(!done){done=true;cb();}};
-    // Safety timeout — if TTS never fires onend (Opera bug), move on after 8s per sentence
-    const safetyT=setTimeout(finish,8000);
-    const keepAlive=setInterval(()=>{try{if(speechSynthesis.paused)speechSynthesis.resume();}catch(_){}},400);
-    u.onend=()=>{clearInterval(keepAlive);clearTimeout(safetyT);finish();};
-    u.onerror=(e)=>{clearInterval(keepAlive);clearTimeout(safetyT);finish();};
-    try{speechSynthesis.cancel();speechSynthesis.resume();}catch(_){}
-    setTimeout(()=>{ try{speechSynthesis.speak(u);}catch(_){finish();} },50);
+    const femaleNames=/female|girl|woman|samantha|siri|victoria|karen|moira|tessa|fiona|veena|rishi/i;
+    const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David','Microsoft Mark','Fred','Tom','Ralph'];
+    const enVoices=voices.filter(x=>x.lang&&x.lang.startsWith('en'));
+    const maleOnly=enVoices.filter(x=>!femaleNames.test(x.name));
+    return maleOnly.find(x=>preferred.some(p=>x.name.includes(p)))||maleOnly[0]||enVoices[0]||voices[0];
   }
 
-  // Voices may not be ready yet (Opera/Android loads them async)
+  function doSpeak(voices){
+    if(!speaking){cb();return;}
+    // Full reset before creating new utterance
+    try{speechSynthesis.cancel();}catch(_){}
+
+    const u=new SpeechSynthesisUtterance(c);
+    u.rate=1.05;u.pitch=1.0;u.volume=1.0;
+    u.lang=isHindi?'hi-IN':'en-IN';
+    const v=pickVoice(voices);
+    if(v)u.voice=v;
+
+    let done=false,spoke=false;
+    const finish=(didSpeak)=>{
+      if(done)return;done=true;
+      clearInterval(keepAlive);clearTimeout(safetyT);clearTimeout(startCheck);
+      // Track if TTS actually worked (first time only)
+      if(ttsWorks===null&&didSpeak!==undefined)ttsWorks=didSpeak;
+      cb();
+    };
+    // Safety timeout — proportional to text
+    const safetyMs=Math.min(3000+c.length*80,15000);
+    const safetyT=setTimeout(()=>finish(spoke),safetyMs);
+
+    u.onstart=()=>{spoke=true;};
+    u.onend=()=>finish(true);
+    u.onerror=(e)=>{
+      if(e.error==='interrupted')return; // cancel() triggers this, not a real error
+      finish(false);
+    };
+
+    // Keep alive — resume paused speech, detect Opera stuck state
+    const keepAlive=setInterval(()=>{
+      try{
+        if(speechSynthesis.paused)speechSynthesis.resume();
+      }catch(_){}
+    },250);
+
+    // Opera/Chrome need a small gap after cancel() before speak()
+    const speakDelay=IS_OPERA?150:30;
+    setTimeout(()=>{
+      try{
+        speechSynthesis.resume();
+        speechSynthesis.speak(u);
+      }catch(_){finish(false);}
+    },speakDelay);
+
+    // Check after 1.5s if speak actually started — if not, TTS is broken in this browser
+    const startCheck=setTimeout(()=>{
+      if(!spoke&&!speechSynthesis.speaking&&!speechSynthesis.pending){
+        // TTS didn't start — mark as broken and skip
+        ttsWorks=false;
+        console.warn('TTS did not start — disabling voice output for this session. Try Safari or Chrome.');
+        finish(false);
+      }
+    },1500);
+  }
+
+  // Get voices — poll aggressively for Opera
   let voices=speechSynthesis.getVoices();
   if(voices.length>0){doSpeak(voices);return;}
-  // Wait for voices to load — max 1s then proceed anyway
   let resolved=false;
-  const onVoices=()=>{ if(resolved)return;resolved=true;doSpeak(speechSynthesis.getVoices()); };
-  speechSynthesis.onvoiceschanged=onVoices;
-  setTimeout(()=>{ if(!resolved){resolved=true;doSpeak([]);} },1000);
+  const resolveVoices=()=>{if(resolved)return;resolved=true;speechSynthesis.onvoiceschanged=null;clearInterval(pollV);doSpeak(speechSynthesis.getVoices());};
+  speechSynthesis.onvoiceschanged=resolveVoices;
+  const pollV=setInterval(()=>{if(speechSynthesis.getVoices().length>0)resolveVoices();},150);
+  setTimeout(resolveVoices,2500);
 }
 
 function voiceResume(){

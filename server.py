@@ -14,6 +14,29 @@ import argparse
 from pathlib import Path
 from collections import Counter
 
+# Regex to strip ALL emojis/symbols that TTS reads aloud
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F600-\U0001F64F"  # emoticons
+    "\U0001F300-\U0001F5FF"  # symbols & pictographs
+    "\U0001F680-\U0001F6FF"  # transport & map
+    "\U0001F700-\U0001F77F"  # alchemical
+    "\U0001F780-\U0001F7FF"  # geometric extended
+    "\U0001F800-\U0001F8FF"  # supplemental arrows-C
+    "\U0001F900-\U0001F9FF"  # supplemental symbols
+    "\U0001FA00-\U0001FA6F"  # chess symbols
+    "\U0001FA70-\U0001FAFF"  # symbols extended-A
+    "\U00002600-\U000027BF"  # misc symbols
+    "\U0000FE00-\U0000FE0F"  # variation selectors
+    "\U0000200D"             # ZWJ
+    "\U00002702-\U000027B0"  # dingbats
+    "\U000024C2-\U0001F251"  # enclosed characters
+    "]+",
+    flags=re.UNICODE
+)
+def strip_emoji(text: str) -> str:
+    return _EMOJI_RE.sub('', text)
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 import uvicorn
@@ -57,7 +80,7 @@ ABOUT BOSS — ATUL CHAUHAN:
 
 RULES:
 - Match the user's language. Hindi → Hindi. English → English.
-- Do NOT use emojis. Spoken responses should be clean plain text.
+- NEVER use emojis, emoticons, or Unicode symbols in responses. No 😀👍✅🚀 etc. Plain text only. This is critical — responses are spoken aloud by TTS.
 - Help with code (in code blocks), debugging, knowledge, startup advice, etc.
 - Short follow-ups like "in js", "now in python" refer to the previous topic. Just do it.
 - Always remember: the person chatting is Atul. boss. Treat every message as coming from him.
@@ -534,6 +557,9 @@ async def chat(request: Request):
                     token = delta.content or ""
                     if not token:
                         continue
+                    token = strip_emoji(token)
+                    if not token:
+                        continue
                     full_response += token
                     yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
 
@@ -556,7 +582,9 @@ async def chat(request: Request):
                         "top_p": 0.9,
                     },
                 ):
-                    token = chunk["message"]["content"]
+                    token = strip_emoji(chunk["message"]["content"])
+                    if not token:
+                        continue
                     full_response += token
                     yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
 
