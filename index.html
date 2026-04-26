@@ -336,18 +336,20 @@ function makeRec(){
     startSilenceCountdown(SILENCE_MS);
   };
   r.onresult=(e)=>{
-    let interim='',final='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
+    // Rebuild full transcript from all results — prevents duplicates with continuous=true
+    let allFinal='',interim='';
+    for(let i=0;i<e.results.length;i++){
       const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal)final+=t;else interim+=t;
+      if(e.results[i].isFinal)allFinal+=(allFinal?' ':'')+t.trim();
+      else interim+=t;
     }
-    if(final){finalTxt+=(finalTxt?' ':'')+final.trim();interimTxt='';}
-    else{interimTxt=interim.trim();}
+    finalTxt=allFinal;
+    interimTxt=interim.trim();
     const display=(finalTxt+(finalTxt&&interimTxt?' ':'')+interimTxt).trim();
     $('vo-transcript').textContent=display;
-    $('vo-transcript').classList.toggle('interim',!final&&!!interim);
+    $('vo-transcript').classList.toggle('interim',!allFinal&&!!interim);
     // After final result → shorter wait, interim → full SILENCE_MS
-    startSilenceCountdown(final ? 700 : SILENCE_MS);
+    startSilenceCountdown(allFinal ? 700 : SILENCE_MS);
   };
   r.onend=()=>{
     clearTimeout(silenceTimer);silenceTimer=null;
