@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>Jarvis</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -13,8 +16,8 @@
   --mono:'Fira Code',Consolas,monospace;
   --warn:#e87e7e;--ok:#4caf50;
 }
-html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font)}
-.layout{display:flex;height:100vh;overflow:hidden}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font);overflow:hidden}
+.layout{display:flex;height:100vh;height:100dvh;overflow:hidden}
 
 /* sidebar */
 .sidebar{width:260px;min-width:260px;background:var(--sb);display:flex;flex-direction:column;border-right:1px solid var(--bdr);padding:14px}
@@ -130,7 +133,28 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .mic-dot{width:8px;height:8px;border-radius:50%;background:#10a37f;animation:mic-blink 1.2s ease-in-out infinite}
 @keyframes mic-blink{0%,100%{opacity:1;box-shadow:0 0 6px #10a37f}50%{opacity:.4;box-shadow:0 0 2px #10a37f}}
 
-@media(max-width:768px){.sidebar{display:none}.msg{padding:6px 12px}}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .layout{height:100vh;height:100dvh}
+  .msg{padding:6px 12px}
+  .msg .av{width:26px;height:26px;font-size:11px}
+  .bbl .txt{font-size:13px}
+  .hdr{padding:8px 12px}
+  .hdr-title{font-size:14px}
+  .inp-area{padding:6px 10px 10px}
+  .inp-box{border-radius:12px;padding:8px 8px 8px 12px}
+  #userinput{font-size:16px}
+  .inp-hint{display:none}
+  .empty-h{font-size:18px}
+  .empty-s{font-size:12px}
+  .chips{gap:6px}
+  .chip{padding:6px 12px;font-size:11px}
+  .vo-orb-wrap{width:140px;height:140px}
+  .vo-orb{width:100px;height:100px}
+  .vo-transcript{font-size:15px;padding:0 12px}
+  .vo-response{font-size:12px;padding:0 12px}
+  .stop-btn{font-size:12px;padding:6px}
+}
 </style>
 </head>
 <body>
