@@ -198,7 +198,6 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   </div>
   <div class="vo-response" id="vo-response"></div>
   <div class="vo-bottom"><button class="vo-btn end" onclick="endVoiceMode()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-  <div id="vo-debug" style="position:absolute;bottom:10px;left:10px;right:10px;font-size:11px;color:#555;font-family:monospace;max-height:120px;overflow-y:auto;white-space:pre-wrap;pointer-events:none"></div>
 </div>
 
 <script>
@@ -210,13 +209,9 @@ let busy=false,abortCtrl=null;
 // Chrome 135+: pass audioTrack directly to SpeechRecognition.start(audioTrack)
 // Older Chrome: SpeechRecognition uses its own mic handle (getUserMedia released first)
 let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
-let SR=null,micStream=null,audioTrackSupported=false;
+let SR=null,micStream=null,audioTrackSupported=false,networkRetries=0;
 
-function vlog(msg){
-  console.log('[Voice]',msg);
-  const d=document.getElementById('vo-debug');
-  if(d){d.textContent+='['+new Date().toLocaleTimeString()+'] '+msg+'\n';d.scrollTop=d.scrollHeight;}
-}
+function vlog(){}
 
 function initVoice(){
   SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -230,7 +225,7 @@ function makeRec(){
   if(!SR)return null;
   const r=new SR();
   r.continuous=false;r.interimResults=true;r.lang='en-US';r.maxAlternatives=1;
-  r.onaudiostart=()=>{vlog('✅ AUDIO STARTED — mic is live, listening for speech');};
+  r.onaudiostart=()=>{networkRetries=0;vlog('✅ AUDIO STARTED — mic is live, listening for speech');};
   r.onsoundstart=()=>{vlog('🔊 Sound detected');};
   r.onspeechstart=()=>{vlog('🗣️ Speech detected — transcribing...');};
   r.onspeechend=()=>{vlog('🗣️ Speech ended');};
@@ -271,9 +266,14 @@ function makeRec(){
       setTimeout(endVoiceMode,5000);
     }
     else if(e.error==='network'){
-      $('vo-status').textContent='NETWORK ERROR — SPEECH NEEDS INTERNET';
-      vlog('Chrome sends audio to Google servers — needs internet connection');
-      setTimeout(endVoiceMode,5000);
+      networkRetries++;
+      if(networkRetries>=3){
+        $('vo-status').textContent='NETWORK ERROR — CHECK INTERNET';
+        vlog('3 network failures — stopping. Chrome speech needs internet.');
+        setTimeout(endVoiceMode,3000);return;
+      }
+      vlog('Network error ('+networkRetries+'/3) — retrying in 2s...');
+      setTimeout(startListening,2000);return;
     }
     else if(e.error!=='aborted'){setTimeout(startListening,500);}
   };
@@ -301,16 +301,6 @@ function startListening(){
     vlog('❌ START FAILED: '+err.message);
     $('vo-status').textContent='MIC ERROR: '+err.message;
   }
-  // Diagnostic: if no audiostart within 3s, something is wrong
-  setTimeout(()=>{
-    if(voiceMode&&!speaking&&!busy&&$('vo-status').textContent==='LISTENING...'){
-      const dbg=document.getElementById('vo-debug');
-      if(dbg&&!dbg.textContent.includes('AUDIO STARTED')){
-        vlog('⚠️ 3s with no audio — mic may not be working');
-        vlog('Try: Chrome → Settings → Privacy → Site Settings → Microphone → Allow localhost:5173');
-      }
-    }
-  },3000);
 }
 
 async function startVoiceMode(){
@@ -319,7 +309,6 @@ async function startVoiceMode(){
   $('voice-overlay').classList.add('active');
   $('vo-transcript').textContent='';$('vo-response').textContent='';
   $('mic-indicator').classList.add('active');
-  const dbg=document.getElementById('vo-debug');if(dbg)dbg.textContent='';
   vlog('Voice mode ON');
 
   // Try getUserMedia for green indicator + audioTrack sharing
@@ -415,12 +404,15 @@ function speak(text,cb){
   const u=new SpeechSynthesisUtterance(c);
   u.rate=1.0;u.pitch=1.0;u.volume=1.0;
   const voices=speechSynthesis.getVoices();
-  const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David'];
-  const v=voices.find(v=>preferred.some(p=>v.name.includes(p)))
-    ||voices.find(v=>v.lang.startsWith('en')&&!/female/i.test(v.name))
-    ||voices.find(v=>v.lang.startsWith('en'))
+  // Strictly male voice — exclude anything with female/girl/woman/Samantha/Siri/Victoria/Karen/Moira/Tessa
+  const femaleNames=/female|girl|woman|samantha|siri|victoria|karen|moira|tessa|fiona|veena|rishi/i;
+  const preferred=['Daniel','Aaron','Alex','Google UK English Male','Microsoft David','Microsoft Mark','Fred','Tom','Ralph'];
+  const maleOnly=voices.filter(v=>v.lang.startsWith('en')&&!femaleNames.test(v.name));
+  const v=maleOnly.find(v=>preferred.some(p=>v.name.includes(p)))
+    ||maleOnly[0]
+    ||voices.find(v=>v.lang.startsWith('en')&&!femaleNames.test(v.name))
     ||voices[0];
-  if(v)u.voice=v;
+  if(v){u.voice=v;vlog('🔈 Voice: '+v.name);}
   let done=false;
   const finish=()=>{if(!done){done=true;cb();}};
   // Chrome bug: TTS can pause silently — check every 500ms and resume if paused
