@@ -125,7 +125,11 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .vo-btn:hover{background:rgba(255,255,255,.12);color:#fff;border-color:#555}
 .vo-btn.end{background:#e74c3c;border-color:#e74c3c;color:#fff}
 .vo-btn.end:hover{background:#c0392b}
-.vo-response{font-size:14px;color:#aaa;max-width:600px;text-align:center;line-height:1.6;padding:0 20px;max-height:200px;overflow-y:auto;word-break:break-word}
+.vo-response{font-size:15px;color:#555;max-width:600px;text-align:center;line-height:1.8;padding:0 20px;max-height:220px;overflow-y:auto;word-break:break-word;scroll-behavior:smooth}
+.vo-response .cap-sentence{transition:color .3s,opacity .3s}
+.vo-response .cap-spoken{color:#888;opacity:.5}
+.vo-response .cap-active{color:#fff;font-weight:500;text-shadow:0 0 8px rgba(16,163,127,.3)}
+.vo-response .cap-upcoming{color:#555}
 /* Green mic indicator — like ChatGPT's green dot */
 .mic-indicator{display:none;align-items:center;gap:6px;padding:4px 10px;border-radius:16px;background:rgba(16,163,127,.15);font-size:12px;color:#10a37f;font-weight:600;letter-spacing:.3px}
 .mic-indicator.active{display:flex}
@@ -152,7 +156,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .vo-orb-wrap{width:140px;height:140px}
   .vo-orb{width:100px;height:100px}
   .vo-transcript{font-size:15px;padding:0 12px}
-  .vo-response{font-size:12px;padding:0 12px}
+  .vo-response{font-size:13px;padding:0 12px;max-height:150px}
   .stop-btn{font-size:12px;padding:6px}
 }
 </style>
@@ -251,6 +255,10 @@ let ttsWorks=null; // null=unknown, true/false after first test
 const SILENCE_MS=1300;
 const IS_OPERA=navigator.userAgent.includes('OPR')||navigator.userAgent.includes('Opera');
 const IS_SAFARI=/^((?!chrome|android|crios|fxios|opr).)*safari/i.test(navigator.userAgent);
+
+// Caption tracking for voice overlay
+let captionSentences=[];  // [{text, el}]
+let captionIdx=-1;        // index of currently speaking sentence
 
 function vlog(){}
 
@@ -406,7 +414,7 @@ async function startVoiceMode(){
   if(!SR){alert('Speech recognition not supported. Use Chrome or Edge.');return;}
   voiceMode=true;finalTxt='';interimTxt='';speaking=false;
   $('voice-overlay').classList.add('active');
-  $('vo-transcript').textContent='';$('vo-response').textContent='';
+  $('vo-transcript').textContent='';$('vo-response').innerHTML='';
   $('mic-indicator').classList.add('active');
   // Mobile browsers require TTS to be unlocked from a direct user gesture.
   primeTTS();
@@ -447,7 +455,7 @@ function voiceOrbTap(){
     speechQueue=[];speechSynthesis.cancel();speaking=false;busy=false;
     if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
     finalTxt='';interimTxt='';
-    $('vo-transcript').textContent='';$('vo-response').textContent='';
+    $('vo-transcript').textContent='';$('vo-response').innerHTML='';
     $('vo-status').textContent='LISTENING...';setOrb('listening');
     setTimeout(startListening,300);
   } else {
@@ -483,6 +491,8 @@ async function voiceSend(){
   // Streaming speech state
   let speechBuf='',speechActive=false,streamDone=false;
   speechQueue=[];
+  captionSentences=[];captionIdx=-1;
+  $('vo-response').innerHTML='';
   if(voiceMode){speaking=true;}
 
   function cleanForSpeech(s){
@@ -503,7 +513,15 @@ async function voiceSend(){
   }
   function enqueueSentence(s){
     const c=cleanForSpeech(s);
-    if(c&&c.length>=2)speechQueue.push(c);
+    if(c&&c.length>=2){
+      speechQueue.push(c);
+      // Add caption sentence to overlay
+      const el=document.createElement('span');
+      el.className='cap-sentence cap-upcoming';
+      el.textContent=c+' ';
+      $('vo-response').appendChild(el);
+      captionSentences.push({text:c,el});
+    }
     if(!speechActive)drainQueue();
   }
   function drainQueue(){
@@ -529,7 +547,24 @@ async function voiceSend(){
     $('vo-status').textContent='SPEAKING...';setOrb('speaking');
     // Start background interrupt listener if not already running
     if(!voiceRec)startListening();
-    speakOne(speechQueue.shift(),drainQueue);
+    // Advance caption highlight
+    captionIdx++;
+    if(captionIdx<captionSentences.length){
+      const s=captionSentences[captionIdx];
+      s.el.classList.remove('cap-upcoming');
+      s.el.classList.add('cap-active');
+      // Auto-scroll caption into view
+      s.el.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    speakOne(speechQueue.shift(),()=>{
+      // Mark current caption as spoken
+      if(captionIdx>=0&&captionIdx<captionSentences.length){
+        const s=captionSentences[captionIdx];
+        s.el.classList.remove('cap-active');
+        s.el.classList.add('cap-spoken');
+      }
+      drainQueue();
+    });
   }
 
   try{
@@ -548,7 +583,9 @@ async function voiceSend(){
           raw+=ev.content;
           txt.innerHTML=renderMd(raw)+'<span class="cur"></span>';
           const c=raw.replace(/```[\s\S]*?```/g,'').replace(/[*_#`\[\]]/g,'').trim();
-          if(c)$('vo-response').textContent=c.slice(-400);
+          if(c){
+            // Don't overwrite captions — they're managed by enqueueSentence now
+          }
           scrollDown();
           // Stream speech: flush on sentence/clause boundaries or after 50 chars
           if(voiceMode){
@@ -664,7 +701,8 @@ function speakOne(text,cb){
 function voiceResume(){
   if(!voiceMode)return;
   finalTxt='';interimTxt='';
-  $('vo-transcript').textContent='';$('vo-response').textContent='';
+  captionSentences=[];captionIdx=-1;
+  $('vo-transcript').textContent='';$('vo-response').innerHTML='';
   startListening();
 }
 
