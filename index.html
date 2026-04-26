@@ -207,7 +207,7 @@ let busy=false,abortCtrl=null;
 
 // ── Voice ──────────────────────────────────────────────────────────────────
 let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
-let SR=null,micStream=null;
+let SR=null;
 
 // On-screen debug log visible on voice overlay
 function vlog(msg){
@@ -225,6 +225,10 @@ function makeRec(){
   if(!SR)return null;
   const r=new SR();
   r.continuous=false;r.interimResults=true;r.lang='en-US';r.maxAlternatives=1;
+  r.onaudiostart=()=>{vlog('🎙️ AUDIO STARTED — mic is capturing sound');};
+  r.onsoundstart=()=>{vlog('🔊 SOUND DETECTED');};
+  r.onspeechstart=()=>{vlog('🗣️ SPEECH DETECTED');};
+  r.onspeechend=()=>{vlog('🗣️ SPEECH ENDED');};
   r.onresult=(e)=>{
     clearTimeout(silenceT);
     let interim='',final='';
@@ -242,16 +246,16 @@ function makeRec(){
   r.onend=()=>{
     clearTimeout(silenceT);
     vlog('onend — finalTxt:"'+finalTxt+'" interimTxt:"'+interimTxt+'" voiceMode:'+voiceMode+' speaking:'+speaking+' busy:'+busy);
-    if(!voiceMode)return; // voice mode was closed, ignore
+    if(!voiceMode)return;
     if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
     if(finalTxt&&!speaking&&!busy){vlog('→ voiceSend()');voiceSend();}
-    else if(!speaking&&!busy){vlog('→ restart listening');setTimeout(startListening,300);}
+    else if(!speaking&&!busy){vlog('→ restart listening in 300ms');setTimeout(startListening,300);}
   };
   r.onerror=(e)=>{
     vlog('ERROR: '+e.error);
     if(!voiceMode)return;
-    if(e.error==='not-allowed'){$('vo-status').textContent='MIC BLOCKED — CHECK BROWSER PERMISSIONS';setTimeout(endVoiceMode,3000);}
-    else if(e.error==='no-speech'){vlog('no-speech, restarting...');if(!speaking&&!busy)setTimeout(startListening,300);}
+    if(e.error==='not-allowed'){$('vo-status').textContent='MIC BLOCKED — ALLOW IN BROWSER';setTimeout(endVoiceMode,3000);}
+    else if(e.error==='no-speech'){vlog('no-speech → restarting');if(!speaking&&!busy)setTimeout(startListening,300);}
     else if(e.error==='audio-capture'){$('vo-status').textContent='NO MIC FOUND';setTimeout(endVoiceMode,3000);}
     else if(e.error!=='aborted'){setTimeout(startListening,500);}
   };
@@ -264,47 +268,30 @@ function startListening(){
   voiceRec=makeRec();
   if(!voiceRec){$('vo-status').textContent='NOT SUPPORTED — USE CHROME/EDGE';return;}
   $('vo-status').textContent='LISTENING...';setOrb('listening');
-  try{voiceRec.start();vlog('SpeechRecognition.start() OK');}catch(err){vlog('MIC ERROR: '+err.message);$('vo-status').textContent='MIC ERROR: '+err.message;}
+  try{voiceRec.start();vlog('SpeechRecognition.start() OK');}catch(err){vlog('START FAILED: '+err.message);$('vo-status').textContent='MIC ERROR: '+err.message;}
 }
 
-// How ChatGPT does it: getUserMedia grabs mic hardware → green indicator appears.
-// We keep the stream alive (but don't consume audio via AudioContext — that starves
-// SpeechRecognition). After a 500ms delay for the OS audio subsystem to settle
-// (especially important for USB mics like Jabra), we start SpeechRecognition which
-// gets its own internal mic access alongside the existing getUserMedia stream.
-async function startVoiceMode(){
-  if(!SR){alert('Speech recognition not supported. Please use Chrome or Edge.');return;}
+// Pure SpeechRecognition — no getUserMedia (conflicts with USB mics on macOS).
+// Green mic indicator shown via CSS in the header bar instead.
+function startVoiceMode(){
+  if(!SR){alert('Speech recognition not supported. Use Chrome or Edge.');return;}
   voiceMode=true;finalTxt='';interimTxt='';speaking=false;
   $('voice-overlay').classList.add('active');
   $('vo-transcript').textContent='';$('vo-response').textContent='';
+  $('mic-indicator').classList.add('active');
   const dbg=document.getElementById('vo-debug');if(dbg)dbg.textContent='';
-  // Step 1: Grab mic via getUserMedia — shows Chrome green indicator
-  try{
-    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    vlog('Mic acquired: '+micStream.getAudioTracks().map(t=>t.label+' state='+t.readyState).join(', '));
-  }catch(err){
-    vlog('getUserMedia DENIED: '+err.message);
-    alert('Microphone access denied.\n\n'+err.message);
-    voiceMode=false;$('voice-overlay').classList.remove('active');
-    return;
-  }
-  // Step 2: Wait 500ms for OS audio subsystem to stabilize (USB mics need this)
-  vlog('Waiting 500ms for mic to stabilize...');
-  await new Promise(r=>setTimeout(r,500));
-  if(!voiceMode)return; // user may have closed during wait
-  // Step 3: Start SpeechRecognition — it gets its own mic handle from the OS
-  vlog('Starting SpeechRecognition...');
+  vlog('Voice mode ON — starting listener');
   startListening();
 }
 
 function endVoiceMode(){
   voiceMode=false;speaking=false;clearTimeout(silenceT);
   try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}
-  // Release getUserMedia stream — turns off green indicator
-  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;vlog('Mic stream released');}
   if(window.speechSynthesis)speechSynthesis.cancel();
-  $('voice-overlay').classList.remove('active');setOrb('idle');
-  vlog('Voice mode ended');
+  $('voice-overlay').classList.remove('active');
+  $('mic-indicator').classList.remove('active');
+  setOrb('idle');
+  vlog('Voice mode OFF');
 }
 
 function voiceOrbTap(){
