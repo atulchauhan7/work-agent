@@ -513,15 +513,16 @@ async function voiceSend(){
   }
   function enqueueSentence(s){
     const c=cleanForSpeech(s);
-    if(c&&c.length>=2){
-      speechQueue.push(c);
-      // Add caption sentence to overlay
-      const el=document.createElement('span');
-      el.className='cap-sentence cap-upcoming';
-      el.textContent=c+' ';
-      $('vo-response').appendChild(el);
-      captionSentences.push({text:c,el});
-    }
+    if(!c||c.length<2)return;
+    // Dedup: skip if same as last caption sentence
+    if(captionSentences.length>0&&captionSentences[captionSentences.length-1].text===c)return;
+    speechQueue.push(c);
+    // Add caption sentence to overlay
+    const el=document.createElement('span');
+    el.className='cap-sentence cap-upcoming';
+    el.textContent=c+' ';
+    $('vo-response').appendChild(el);
+    captionSentences.push({text:c,el});
     if(!speechActive)drainQueue();
   }
   function drainQueue(){
