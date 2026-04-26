@@ -221,6 +221,7 @@ let busy=false,abortCtrl=null;
 // Older Chrome: SpeechRecognition uses its own mic handle (getUserMedia released first)
 let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
 let SR=null,micStream=null,audioTrackSupported=false,networkRetries=0;
+let speechQueue=[];
 
 function vlog(){}
 
@@ -337,7 +338,7 @@ async function startVoiceMode(){
 }
 
 function endVoiceMode(){
-  voiceMode=false;speaking=false;clearTimeout(silenceT);
+  voiceMode=false;speaking=false;clearTimeout(silenceT);speechQueue=[];
   try{if(voiceRec){voiceRec.abort();voiceRec=null;}}catch(_){}
   if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
   if(window.speechSynthesis)speechSynthesis.cancel();
@@ -349,7 +350,7 @@ function endVoiceMode(){
 
 function voiceOrbTap(){
   if(speaking){
-    speechSynthesis.cancel();speaking=false;
+    speechQueue=[];speechSynthesis.cancel();speaking=false;
     finalTxt='';interimTxt='';
     $('vo-transcript').textContent='';$('vo-response').textContent='';
     startListening();
@@ -379,9 +380,35 @@ async function voiceSend(){
   appendMsg('user',msg);
   const{bbl,txt}=appendMsg('agent','',true);
   busy=true;let raw='',first=true;
+
+  // Streaming speech state
+  let speechBuf='',speechActive=false,streamDone=false;
+  speechQueue=[];
+  if(voiceMode){speaking=true;}
+
+  function cleanForSpeech(s){
+    return s.replace(/```[\s\S]*?```/g,' code block ').replace(/<[^>]+>/g,'').replace(/[*_#`\[\]]/g,'').replace(/https?:\/\/\S+/g,' link ').replace(/\s+/g,' ').trim();
+  }
+  function enqueueSentence(s){
+    const c=cleanForSpeech(s);
+    if(c&&c.length>=2)speechQueue.push(c);
+    if(!speechActive)drainQueue();
+  }
+  function drainQueue(){
+    if(!speechQueue.length){
+      speechActive=false;
+      if(streamDone){speaking=false;$('vo-status').textContent='LISTENING...';setOrb('listening');voiceResume();}
+      return;
+    }
+    speechActive=true;
+    if(!speaking){speaking=true;}
+    $('vo-status').textContent='SPEAKING...';setOrb('speaking');
+    speakOne(speechQueue.shift(),drainQueue);
+  }
+
   try{
     const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
-    if(!res.ok){txt.textContent='Error: '+res.status;busy=false;voiceResume();return;}
+    if(!res.ok){txt.textContent='Error: '+res.status;busy=false;speaking=false;voiceResume();return;}
     const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
     while(true){
       const{done,value}=await reader.read();if(done)break;
@@ -396,6 +423,15 @@ async function voiceSend(){
           const c=raw.replace(/```[\s\S]*?```/g,'').replace(/[*_#`\[\]]/g,'').trim();
           if(c)$('vo-response').textContent=c.slice(-400);
           scrollDown();
+          // Stream speech: buffer tokens and flush on sentence boundaries
+          if(voiceMode){
+            speechBuf+=ev.content;
+            const m=speechBuf.match(/^([\s\S]*?[.!?\n])\s*/);
+            if(m){
+              enqueueSentence(m[1]);
+              speechBuf=speechBuf.slice(m[0].length);
+            }
+          }
         } else if(ev.type==='error'){
           txt.innerHTML='<span style="color:var(--warn)">Error: '+esc(ev.content)+'</span>';
         } else if(ev.type==='done'){
@@ -407,21 +443,16 @@ async function voiceSend(){
     }
   }catch(err){txt.textContent='Error: '+err.message;}
   busy=false;
-  if(raw&&voiceMode){speaking=true;$('vo-status').textContent='SPEAKING...';setOrb('speaking');speak(raw,()=>{speaking=false;voiceResume();});}
-  else voiceResume();
+  // Flush remaining speech buffer
+  if(voiceMode&&speechBuf.trim()){enqueueSentence(speechBuf);speechBuf='';}
+  streamDone=true;
+  if(!speechActive&&!speechQueue.length){speaking=false;voiceResume();}
 }
 
-function speak(text,cb){
-  if(!window.speechSynthesis){cb();return;}
-  speechSynthesis.cancel();
-  let c=text
-    .replace(/```[\s\S]*?```/g,' code block ')
-    .replace(/<[^>]+>/g,'')
-    .replace(/[*_#`\[\]]/g,'')
-    .replace(/https?:\/\/\S+/g,' link ')
-    .replace(/\s+/g,' ').trim();
-  if(!c||c.length<3){cb();return;}
-  if(c.length>600)c=c.slice(0,600)+'...';
+function speakOne(text,cb){
+  if(!window.speechSynthesis||!text){cb();return;}
+  const c=text.replace(/\s+/g,' ').trim();
+  if(!c||c.length<2){cb();return;}
   const u=new SpeechSynthesisUtterance(c);
   u.rate=1.0;u.pitch=1.0;u.volume=1.0;
   const voices=speechSynthesis.getVoices();
