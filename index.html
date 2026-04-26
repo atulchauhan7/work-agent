@@ -246,6 +246,7 @@ let busy=false,abortCtrl=null;
 let voiceMode=false,voiceRec=null,speaking=false,silenceT=null,finalTxt='',interimTxt='';
 let SR=null,micStream=null,audioTrackSupported=false,networkRetries=0;
 let speechQueue=[];
+let ttsPrimed=false;
 
 function vlog(){}
 
@@ -255,6 +256,18 @@ function initVoice(){
   if(SR){try{const t=new SR();audioTrackSupported='start' in t && t.start.length>=0;/* will test properly on use */}catch(_){}}
   if(window.speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
   vlog('initVoice: SR='+(SR?'yes':'NO')+' audioTrackSupported='+audioTrackSupported);
+}
+
+function primeTTS(){
+  if(!window.speechSynthesis||ttsPrimed)return;
+  try{
+    const u=new SpeechSynthesisUtterance(' ');
+    u.volume=0;u.rate=1;u.pitch=1;
+    u.onend=()=>{ttsPrimed=true;};
+    u.onerror=()=>{};
+    speechSynthesis.speak(u);
+    setTimeout(()=>{speechSynthesis.cancel();ttsPrimed=true;},180);
+  }catch(_){ }
 }
 
 function makeRec(){
@@ -352,6 +365,8 @@ async function startVoiceMode(){
   $('voice-overlay').classList.add('active');
   $('vo-transcript').textContent='';$('vo-response').textContent='';
   $('mic-indicator').classList.add('active');
+  // Mobile browsers require TTS to be unlocked from a direct user gesture.
+  primeTTS();
   vlog('Voice mode ON');
 
   // Try getUserMedia for green indicator + audioTrack sharing
@@ -493,6 +508,7 @@ async function voiceSend(){
 
 function speakOne(text,cb){
   if(!window.speechSynthesis||!text||!speaking){cb();return;}
+  if(!ttsPrimed)primeTTS();
   const c=text.replace(/\s+/g,' ').trim();
   if(!c||c.length<2){cb();return;}
   const u=new SpeechSynthesisUtterance(c);
@@ -520,10 +536,12 @@ function speakOne(text,cb){
   let done=false;
   const finish=()=>{if(!done){done=true;cb();}};
   if(isHindi)u.lang='hi-IN';
+  else u.lang='en-IN';
   // Chrome bug: TTS can pause silently — check every 500ms and resume if paused
   const keepAlive=setInterval(()=>{if(speechSynthesis.paused)speechSynthesis.resume();},500);
   u.onend=()=>{clearInterval(keepAlive);finish();};
   u.onerror=()=>{clearInterval(keepAlive);finish();};
+  try{speechSynthesis.resume();}catch(_){ }
   speechSynthesis.speak(u);
 }
 

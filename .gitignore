@@ -24,3 +24,7 @@ chat_history.json
 # OS
 .DS_Store
 Desktop/
+
+# SSL certs
+cert.pem
+key.pem

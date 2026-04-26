@@ -745,14 +745,22 @@ if __name__ == "__main__":
         local_ip = "127.0.0.1"
 
     prov_label = f"Groq ({GROQ_MODEL})" if PROVIDER == "groq" else f"Ollama ({OLLAMA_MODEL})"
-    mobile_url = f"http://{local_ip}:{args.port}"
+    mobile_url = f"https://{local_ip}:{args.port}"
     print(f"\n  ╔══════════════════════════════════════════╗")
     print(f"  ║  Jarvis Personal AI Assistant            ║")
     print(f"  ║  Owner : Atul Chauhan · Bangalore · 25   ║")
     print(f"  ║  Model : {prov_label:<32}║")
-    print(f"  ║  Local : http://localhost:{args.port:<15}║")
+    print(f"  ║  Local : https://localhost:{args.port:<14}║")
     print(f"  ║  Mobile: {mobile_url:<32}║")
     print(f"  ╚══════════════════════════════════════════╝")
     print(f"  Workspace: {workspace}\n")
 
-    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="warning")
+    # Use HTTPS for mobile mic/voice support
+    cert_file = Path(__file__).parent / "cert.pem"
+    key_file = Path(__file__).parent / "key.pem"
+    if cert_file.exists() and key_file.exists():
+        uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="warning",
+                    ssl_certfile=str(cert_file), ssl_keyfile=str(key_file))
+    else:
+        print("  ⚠ No cert.pem/key.pem found — running HTTP only (mic won't work on mobile)")
+        uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="warning")
