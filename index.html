@@ -16,8 +16,8 @@
   --mono:'Fira Code',Consolas,monospace;
   --warn:#e87e7e;--ok:#4caf50;
 }
-html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font);overflow:hidden}
-.layout{display:flex;height:100vh;height:100dvh;overflow:hidden}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font);overflow:hidden;-webkit-text-size-adjust:100%}
+.layout{display:flex;height:100vh;height:var(--vh,100dvh);overflow:hidden}
 
 /* sidebar */
 .sidebar{width:260px;min-width:260px;background:var(--sb);display:flex;flex-direction:column;border-right:1px solid var(--bdr);padding:14px}
@@ -538,13 +538,20 @@ function voiceResume(){
 const $=id=>document.getElementById(id);
 document.addEventListener('DOMContentLoaded',async()=>{
   initVoice();
-  // Do NOT load history into UI on refresh — always start with empty chat
-  // (Server still maintains history for context window)
   $('sbtn').addEventListener('click',send);
   $('voicemodebtn').addEventListener('click',startVoiceMode);
   $('userinput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
   $('userinput').addEventListener('input',autoResize);
-  $('userinput').focus();
+  // Mobile: keep input visible when keyboard opens
+  $('userinput').addEventListener('focus',()=>{setTimeout(scrollDown,300);});
+  // Use visualViewport to handle mobile keyboard resize
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',()=>{
+      document.documentElement.style.setProperty('--vh',window.visualViewport.height+'px');
+      scrollDown();
+    });
+    document.documentElement.style.setProperty('--vh',window.visualViewport.height+'px');
+  }
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
