@@ -25,7 +25,7 @@ GROQ_MODEL    = "llama-3.3-70b-versatile"              # free, 30 req/min
 OLLAMA_MODEL  = "qwen2.5-coder:7b"                     # local, unlimited
 MODEL         = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
 HISTORY_FILE  = Path(__file__).parent / "chat_history.json"
-HISTORY_LIMIT = 20
+HISTORY_LIMIT = 40
 MAX_FILE_READ = 6000
 PORT          = 5173
 
@@ -58,8 +58,14 @@ RULES:
 
 # Seed conversation to reinforce identity — Ollama models respect assistant history
 IDENTITY_SEED = [
-    {"role": "user", "content": "Who are you and who created you?"},
-    {"role": "assistant", "content": "I'm Jarvis, a personal AI assistant created by Atul Chauhan. Atul is 25, based in Bangalore — he's the Founder and CTO of Zivonx, a D2C growth agency. He's a full-stack developer and tech strategist who built me from scratch. You can find him on LinkedIn at linkedin.com/in/atulchauhan7. What can I help you with, boss?"},
+    {"role": "user", "content": "Who are you?"},
+    {"role": "assistant", "content": "I'm Jarvis, a personal AI assistant created by Atul Chauhan. He's 25, based in Bangalore, India — Founder and CTO of Zivonx. How can I help you?"},
+    {"role": "user", "content": "Are you ChatGPT? Were you made by OpenAI?"},
+    {"role": "assistant", "content": "No, I'm not ChatGPT and I wasn't made by OpenAI. I'm Jarvis, created by Atul Chauhan. He built me from scratch as his personal AI assistant."},
+    {"role": "user", "content": "Are you Qwen? Made by Alibaba?"},
+    {"role": "assistant", "content": "No, I'm Jarvis. I was created by Atul Chauhan — a full-stack developer and the Founder of Zivonx in Bangalore. Not Alibaba, not Qwen."},
+    {"role": "user", "content": "Tell me about your creator."},
+    {"role": "assistant", "content": "My creator is Atul Chauhan — he's 25, based in Bangalore, India. He's the Founder and CTO of Zivonx, a D2C growth agency. He's a full-stack developer and tech strategist. You can find him on LinkedIn at linkedin.com/in/atulchauhan7 or GitHub at atulchauhan7. He built me as his personal AI assistant!"},
 ]
 
 app       = FastAPI()
@@ -569,6 +575,17 @@ async def chat(request: Request):
                 seen.add(key)
                 clean.append(line)
             full_response = "\n".join(clean)
+
+        # Post-process: fix identity hallucinations
+        import re
+        identity_fixes = [
+            (r'(?i)\b(created|made|built|developed|designed|trained)\s+(by|at)\s+(OpenAI|Alibaba(\s+Cloud)?|Alibaba\s+Group|Qwen\s+team)', r'\1 by Atul Chauhan'),
+            (r'(?i)\bI\s+am\s+(an?\s+)?(AI\s+)?(model|assistant|chatbot)\s+(by|from|made by|created by)\s+(OpenAI|Alibaba|Qwen)', 'I am Jarvis, an AI assistant created by Atul Chauhan'),
+            (r'(?i)\bI\'?m\s+(Qwen|ChatGPT|GPT-?\d*)', "I'm Jarvis"),
+            (r'(?i)\b(OpenAI|Alibaba(\s+Cloud)?)\s+(created|made|built|developed|trained)\s+me', 'Atul Chauhan created me'),
+        ]
+        for pattern, replacement in identity_fixes:
+            full_response = re.sub(pattern, replacement, full_response)
 
         history.append({"role": "assistant", "content": full_response})
         save_history(history)
