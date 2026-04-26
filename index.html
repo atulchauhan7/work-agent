@@ -276,40 +276,39 @@ function initVoice(){
 function primeTTS(){
   if(!window.speechSynthesis||ttsPrimed)return;
   try{
-    // Cancel any stuck state first
-    speechSynthesis.cancel();
+    if(!IS_OPERA)speechSynthesis.cancel(); // Opera: never cancel on idle
     const u=new SpeechSynthesisUtterance(' ');
     u.volume=0.01;u.rate=1;u.pitch=1;
     u.onend=()=>{ttsPrimed=true;};
-    u.onerror=()=>{ttsPrimed=true;}; // Even on error, mark primed so we don't loop
+    u.onerror=()=>{ttsPrimed=true;};
     u.onstart=()=>{ttsPrimed=true;};
-    // Small delay after cancel for Opera
     setTimeout(()=>{
       try{speechSynthesis.speak(u);}catch(_){ttsPrimed=true;}
-      // Force-mark primed after 500ms regardless
-      setTimeout(()=>{ttsPrimed=true;try{speechSynthesis.cancel();}catch(_){}},500);
-    },IS_OPERA?100:30);
+      setTimeout(()=>{ttsPrimed=true;if(!IS_OPERA){try{speechSynthesis.cancel();}catch(_){}}},500);
+    },IS_OPERA?50:30);
   }catch(_){ttsPrimed=true;}
 }
 
 function makeRec(){
   if(!SR)return null;
   const r=new SR();
-  // continuous=true so full sentences are captured without premature cutoff
   r.continuous=true;r.interimResults=true;r.lang='en-IN';r.maxAlternatives=1;
-  let lastResultTime=0;
+
+  function commitSpeech(){
+    clearTimeout(silenceTimer);silenceTimer=null;
+    if(!voiceMode)return;
+    if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
+    if(finalTxt&&!busy){
+      // Stop recognizer and send directly — don't rely on onend chain
+      const old=voiceRec;voiceRec=null;
+      try{if(old)old.abort();}catch(_){}
+      voiceSend();
+    }
+  }
 
   function startSilenceCountdown(ms){
     clearTimeout(silenceTimer);
-    silenceTimer=setTimeout(()=>{
-      silenceTimer=null;
-      if(!voiceMode)return;
-      // Capture any remaining interim text
-      if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
-      if(finalTxt&&!busy){
-        try{r.abort();}catch(_){} // abort → triggers onend → voiceSend
-      }
-    },ms);
+    silenceTimer=setTimeout(commitSpeech,ms);
   }
 
   r.onaudiostart=()=>{networkRetries=0;};
@@ -326,11 +325,9 @@ function makeRec(){
     }
   };
   r.onspeechend=()=>{
-    // Backup: start silence timer in case no more onresult events come
     startSilenceCountdown(SILENCE_MS);
   };
   r.onresult=(e)=>{
-    lastResultTime=Date.now();
     let interim='',final='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const t=e.results[i][0].transcript;
@@ -341,19 +338,21 @@ function makeRec(){
     const display=(finalTxt+(finalTxt&&interimTxt?' ':'')+interimTxt).trim();
     $('vo-transcript').textContent=display;
     $('vo-transcript').classList.toggle('interim',!final&&!!interim);
-    // KEY FIX: Always restart silence timer after every result.
-    // If we got a final result, use shorter timeout (sentence confirmed by Chrome).
-    // If interim only, use full SILENCE_MS.
-    startSilenceCountdown(final ? 800 : SILENCE_MS);
+    // After final result → shorter wait, interim → full SILENCE_MS
+    startSilenceCountdown(final ? 700 : SILENCE_MS);
   };
   r.onend=()=>{
     clearTimeout(silenceTimer);silenceTimer=null;
-    // Ignore stale recognizer events (already replaced by a new one)
     if(r!==voiceRec)return;
     if(!voiceMode)return;
+    // If we still have text, send it (backup for when abort triggers onend)
     if(interimTxt){finalTxt=(finalTxt+(finalTxt?' ':'')+interimTxt).trim();interimTxt='';}
-    if(finalTxt&&!busy){voiceSend();}
-    else if(!speaking&&!busy){setTimeout(startListening,100);}
+    if(finalTxt&&!busy){
+      const old=voiceRec;voiceRec=null;
+      try{if(old&&old!==r)old.abort();}catch(_){}
+      voiceSend();
+    }
+    else if(!speaking&&!busy){setTimeout(startListening,80);}
   };
   r.onerror=(e)=>{
     clearTimeout(silenceTimer);silenceTimer=null;
@@ -590,7 +589,6 @@ async function voiceSend(){
 
 function speakOne(text,cb){
   if(!window.speechSynthesis||!text||!speaking){cb();return;}
-  if(ttsWorks===false){cb();return;} // TTS confirmed broken in this browser
   if(!ttsPrimed)primeTTS();
   // Strip ALL emojis and symbols before TTS
   let c=text
@@ -619,8 +617,6 @@ function speakOne(text,cb){
 
   function doSpeak(voices){
     if(!speaking){cb();return;}
-    // Full reset before creating new utterance
-    try{speechSynthesis.cancel();}catch(_){}
 
     const u=new SpeechSynthesisUtterance(c);
     u.rate=1.05;u.pitch=1.0;u.volume=1.0;
@@ -628,53 +624,34 @@ function speakOne(text,cb){
     const v=pickVoice(voices);
     if(v)u.voice=v;
 
-    let done=false,spoke=false;
-    const finish=(didSpeak)=>{
-      if(done)return;done=true;
-      clearInterval(keepAlive);clearTimeout(safetyT);clearTimeout(startCheck);
-      // Track if TTS actually worked (first time only)
-      if(ttsWorks===null&&didSpeak!==undefined)ttsWorks=didSpeak;
-      cb();
-    };
-    // Safety timeout — proportional to text
+    let done=false;
+    const finish=()=>{if(done)return;done=true;clearInterval(keepAlive);clearTimeout(safetyT);cb();};
+    // Safety timeout proportional to text
     const safetyMs=Math.min(3000+c.length*80,15000);
-    const safetyT=setTimeout(()=>finish(spoke),safetyMs);
+    const safetyT=setTimeout(finish,safetyMs);
 
-    u.onstart=()=>{spoke=true;};
-    u.onend=()=>finish(true);
-    u.onerror=(e)=>{
-      if(e.error==='interrupted')return; // cancel() triggers this, not a real error
-      finish(false);
-    };
+    u.onend=finish;
+    u.onerror=finish;
 
-    // Keep alive — resume paused speech, detect Opera stuck state
+    // Keep alive — resume if paused (Chrome/Opera pause after ~15s)
     const keepAlive=setInterval(()=>{
-      try{
-        if(speechSynthesis.paused)speechSynthesis.resume();
-      }catch(_){}
+      try{if(speechSynthesis.paused)speechSynthesis.resume();}catch(_){}
     },250);
 
-    // Opera/Chrome need a small gap after cancel() before speak()
-    const speakDelay=IS_OPERA?150:30;
-    setTimeout(()=>{
-      try{
-        speechSynthesis.resume();
-        speechSynthesis.speak(u);
-      }catch(_){finish(false);}
-    },speakDelay);
-
-    // Check after 1.5s if speak actually started — if not, TTS is broken in this browser
-    const startCheck=setTimeout(()=>{
-      if(!spoke&&!speechSynthesis.speaking&&!speechSynthesis.pending){
-        // TTS didn't start — mark as broken and skip
-        ttsWorks=false;
-        console.warn('TTS did not start — disabling voice output for this session. Try Safari or Chrome.');
-        finish(false);
-      }
-    },1500);
+    // Opera: do NOT cancel() before speak — it kills TTS entirely.
+    // Safari/Chrome: cancel() is fine and clears stale queues.
+    if(IS_OPERA){
+      // Opera: just speak directly, no cancel
+      try{speechSynthesis.speak(u);}catch(_){finish();}
+    } else {
+      try{speechSynthesis.cancel();}catch(_){}
+      setTimeout(()=>{
+        try{speechSynthesis.resume();speechSynthesis.speak(u);}catch(_){finish();}
+      },30);
+    }
   }
 
-  // Get voices — poll aggressively for Opera
+  // Get voices
   let voices=speechSynthesis.getVoices();
   if(voices.length>0){doSpeak(voices);return;}
   let resolved=false;

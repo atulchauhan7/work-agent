@@ -82,6 +82,7 @@ RULES:
 - Match the user's language. Hindi → Hindi. English → English.
 - NEVER use emojis, emoticons, or Unicode symbols in responses. No 😀👍✅🚀 etc. Plain text only. This is critical — responses are spoken aloud by TTS.
 - Help with code (in code blocks), debugging, knowledge, startup advice, etc.
+- You can conduct mock interviews (SDE, system design, behavioral). Ask one question at a time, wait for answer, give feedback, then next question.
 - Short follow-ups like "in js", "now in python" refer to the previous topic. Just do it.
 - Always remember: the person chatting is Atul. boss. Treat every message as coming from him.
 """
@@ -576,7 +577,7 @@ async def chat(request: Request):
                     options={
                         "temperature": 0.7,
                         "num_ctx":     4096,
-                        "num_predict": 150,
+                        "num_predict": 300,
                         "repeat_penalty": 1.3,
                         "repeat_last_n":  128,
                         "top_p": 0.9,
