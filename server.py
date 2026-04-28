@@ -6,6 +6,8 @@ Run:  python3 server.py --workspace . --provider groq
 Open: http://localhost:5173
 """
 
+from __future__ import annotations
+
 import os
 import re
 import json
