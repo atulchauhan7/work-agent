@@ -50,7 +50,7 @@ GROQ_MODEL    = "llama-3.3-70b-versatile"              # free, 30 req/min
 OLLAMA_MODEL  = "qwen2.5-coder:7b"                     # local, unlimited
 MODEL         = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
 HISTORY_FILE  = Path(__file__).parent / "chat_history.json"
-HISTORY_LIMIT = 40
+HISTORY_LIMIT = 31  # 1 system prompt + 30 conversation messages (15 exchanges)
 MAX_FILE_READ = 6000
 PORT          = 5173
 
