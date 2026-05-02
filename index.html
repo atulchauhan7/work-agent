@@ -659,10 +659,20 @@ async function voiceSend(){
   if(voiceMode&&speechBuf.trim()){enqueueSentence(speechBuf);speechBuf='';
   } else if(voiceMode&&!speechActive&&!speechQueue.length){
     speaking=false;streamDone=true;
+    // If model didn't end with a question, speak a follow-up before resuming listener
+    if(raw && !/\?[\s"']*$/.test(raw.trim())){
+      const followUps=['Anything else, boss?','What else, boss?',"What's next, boss?",'Need anything else, boss?'];
+      enqueueSentence(followUps[Math.floor(Math.random()*followUps.length)]);
+    }
     setTimeout(()=>{const o=voiceRec;voiceRec=null;try{if(o)o.abort();}catch(_){}voiceResume();},120);
     return;
   }
   streamDone=true;
+  // If model didn't end with a question, queue follow-up before draining finishes
+  if(raw && !/\?[\s"']*$/.test(raw.trim())){
+    const followUps=['Anything else, boss?','What else, boss?',"What's next, boss?",'Need anything else, boss?'];
+    enqueueSentence(followUps[Math.floor(Math.random()*followUps.length)]);
+  }
   if(!speechActive&&!speechQueue.length){speaking=false;setTimeout(()=>{const o=voiceRec;voiceRec=null;try{if(o)o.abort();}catch(_){}voiceResume();},120);}
 }
 
@@ -876,6 +886,12 @@ async function send(){
     else txt.textContent='Error: '+err.message;
   }
   busy=false;abortCtrl=null;$('sbtn').disabled=false;$('stopbtn').classList.remove('visible');$('userinput').focus();
+  // Follow-up prompt — if model didn't naturally end with a question, append one
+  if(raw && !/\?[\s"']*$/.test(raw.trim())){
+    const followUps=['Anything else, boss?','What else, boss?',"What's next, boss?",'Need anything else, boss?'];
+    const pick=followUps[Math.floor(Math.random()*followUps.length)];
+    appendMsg('agent',pick);
+  }
 }
 </script>
 </body>
