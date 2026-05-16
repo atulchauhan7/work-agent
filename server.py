@@ -256,6 +256,9 @@ RULES:
 5. NEVER put markdown code fences inside WRITE_FILE or EDIT_FILE tags.
 6. Use relative paths from workspace root.
 7. After writing/editing, briefly confirm what changed.
+8. CRITICAL: NEVER output raw code in markdown code blocks. ALWAYS use WRITE_FILE or EDIT_FILE tool tags to make changes to files.
+   If the user asks you to update, optimize, fix, or create code — USE THE TOOL TAGS. Do not just show code.
+9. When user says "update this", "change this", "apply this" etc. and refers to previous messages, look at chat history for context.
 """
 
 
@@ -854,7 +857,9 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
                 results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
                 actions.append({"type": "WRITE_FILE", "path": str(path), "result": out, "blocked": True})
             else:
-                pending.append({"type": "WRITE_FILE", "path": path_str, "content": content.strip(), "resolved": str(path)})
+                # Strip markdown code fences the model sometimes wraps inside tags
+                clean = re.sub(r'```\w*\n?', '', content.strip()).strip()
+                pending.append({"type": "WRITE_FILE", "path": path_str, "content": clean, "resolved": str(path)})
 
     for path_str, edit_content in EDIT_RE.findall(text):
         if no_workdir:
@@ -868,7 +873,23 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
                 results.append(f"<RESULT action='EDIT_FILE'>\n{out}\n</RESULT>")
                 actions.append({"type": "EDIT_FILE", "path": str(path), "result": out, "blocked": True})
             else:
-                pending.append({"type": "EDIT_FILE", "path": path_str, "content": edit_content.strip(), "resolved": str(path)})
+                # Check if content has valid SEARCH/REPLACE blocks
+                clean_content = edit_content.strip()
+                # Strip markdown code fences the model sometimes wraps inside tags
+                clean_content = re.sub(r'```\w*\n?', '', clean_content).strip()
+                has_sr_blocks = bool(re.search(
+                    r'<<<<<<< SEARCH\n.*?\n=======\n.*?\n>>>>>>> REPLACE',
+                    clean_content, re.DOTALL
+                ))
+                if has_sr_blocks:
+                    pending.append({"type": "EDIT_FILE", "path": path_str, "content": clean_content, "resolved": str(path)})
+                elif len(clean_content) > 20:
+                    # No SEARCH/REPLACE blocks but has content — treat as full file write
+                    pending.append({"type": "WRITE_FILE", "path": path_str, "content": clean_content, "resolved": str(path)})
+                else:
+                    out = "ERROR: No valid SEARCH/REPLACE blocks found in EDIT_FILE"
+                    results.append(f"<RESULT action='EDIT_FILE'>\n{out}\n</RESULT>")
+                    actions.append({"type": "EDIT_FILE", "path": path_str, "result": out, "blocked": True})
 
     for cmd_raw in RUN_RE.findall(text):
         cmd = cmd_raw.strip()
@@ -910,11 +931,18 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
             filename = None
             resolved_path: Path | None = None
 
-            # Priority 1: explicit filename in user message that exists on disk
+            # Priority 1: explicit filename in user message OR model response that exists on disk
             user_names = FILENAME_RE.findall(user_msg)
-            for name in user_names:
+            model_names = FILENAME_RE.findall(text)
+            all_names = list(dict.fromkeys(user_names + model_names))  # dedupe, user first
+            for name in all_names:
                 candidate = smart_resolve(name, ws, user_msg, hist)
                 if candidate.exists() and candidate.is_file() and not is_in_project_dir(candidate):
+                    filename = name
+                    resolved_path = candidate
+                    break
+                # Also check if it's a new file the user wants to create
+                if not candidate.exists() and name in user_names:
                     filename = name
                     resolved_path = candidate
                     break
@@ -934,11 +962,21 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
                     filename = ar_path
                     resolved_path = smart_resolve(ar_path, ws, user_msg, hist)
 
-            # Priority 3: user says create/make/new + gives a filename
-            if not filename and re.search(r'\b(create|make|new|add|write)\b', user_msg, re.I):
-                filename = user_names[0] if user_names else None
+            # Priority 3: user says create/make/new/optimize/update + gives a filename
+            if not filename and re.search(r'\b(create|make|new|add|write|optimize|optimise|update|fix|improve|change|modify)\b', user_msg, re.I):
+                all_candidates = user_names if user_names else model_names
+                filename = all_candidates[0] if all_candidates else None
                 if filename:
                     resolved_path = smart_resolve(filename, ws, user_msg, hist)
+
+            # Priority 4: model mentions an existing file in its response
+            if not filename and model_names:
+                for name in model_names:
+                    candidate = smart_resolve(name, ws, user_msg, hist)
+                    if candidate.exists() and candidate.is_file() and not is_in_project_dir(candidate):
+                        filename = name
+                        resolved_path = candidate
+                        break
 
             if filename and resolved_path is not None:
                 code = max(code_blocks, key=len).strip()

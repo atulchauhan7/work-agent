@@ -1067,6 +1067,7 @@ async function voiceSend(){
 
   // Streaming speech state
   let speechBuf='',speechActive=false,streamDone=false;
+  let inCodeBlock=false; // track fenced code blocks across streaming chunks
   speechQueue=[];
   captionSentences=[];captionIdx=-1;
   $('vo-response').innerHTML='';
@@ -1074,8 +1075,16 @@ async function voiceSend(){
 
   function cleanForSpeech(s){
     return s
-      .replace(/```[\s\S]*?```/g,' ')           // code blocks
+      .replace(/```[\s\S]*?```/g,' ')           // fenced code blocks
+      .replace(/`[^`]+`/g,' ')                   // inline code
       .replace(/<[^>]+>/g,'')                    // html tags
+      .replace(/\{[^}]*\}/g,' ')                 // CSS/JS braces content
+      .replace(/\w+\s*:\s*[^;,\n]+;/g,' ')      // CSS properties (e.g. "color: red;")
+      .replace(/\w+\([^)]*\)/g,' ')              // function calls (e.g. "rgba(0,0,0)")
+      .replace(/\.\w+[\s{]/g,' ')                // CSS selectors (.container {)
+      .replace(/#[0-9a-fA-F]{3,8}\b/g,' ')      // hex colors
+      .replace(/\d+px\b/g,' ')                   // pixel values
+      .replace(/\d+vh\b|\d+vw\b|\d+rem\b|\d+em\b/g,' ') // CSS units
       .replace(/\p{Extended_Pictographic}/gu,'') // ALL emojis (comprehensive)
       .replace(/[\u2600-\u27BF]/gu,'')           // misc symbols not in Extended_Pictographic
       .replace(/[\uFE00-\uFE0F]/gu,'')           // variation selectors (emoji modifiers)
@@ -1173,18 +1182,44 @@ async function voiceSend(){
           scrollDown();
           // Stream speech: flush on sentence/clause boundaries
           if(voiceMode){
-            speechBuf+=ev.content;
-            // Hindi danda (।) and standard sentence endings — NOT comma
-            const m=speechBuf.match(/^([\s\S]*?[.!?\n।])\s*/);
-            // Hindi: require longer chunks for natural flow
-            const minLen=voiceLang==='hi'?15:3;
-            if(m&&m[1].replace(/[^\w\u0900-\u097F]/g,'').length>minLen){
-              enqueueSentence(m[1]);
-              speechBuf=speechBuf.slice(m[0].length);
-            } else if(speechBuf.length>(voiceLang==='hi'?150:60)){
-              // Flush long buffers — much higher threshold for Hindi for natural phrasing
-              const sp=speechBuf.lastIndexOf(' ');
-              if(sp>30){enqueueSentence(speechBuf.slice(0,sp));speechBuf=speechBuf.slice(sp+1);}
+            // ── Code block detection: toggle on ``` fence lines ──
+            const tok=ev.content;
+            let skipSpeech=false;
+            // Check for ``` fences within this token (may contain newlines)
+            const fences=(tok.match(/```/g)||[]).length;
+            if(fences>0){
+              // Each ``` toggles in/out of code block
+              for(let i=0;i<fences;i++) inCodeBlock=!inCodeBlock;
+              // If we just entered a code block, flush pre-fence text as speech
+              if(inCodeBlock&&speechBuf.trim()){
+                const preFence=speechBuf.split('```')[0];
+                if(preFence.trim())enqueueSentence(preFence);
+                speechBuf='';
+              }
+              // If we just exited, discard the code block content and announce
+              if(!inCodeBlock){
+                speechBuf='';
+                enqueueSentence('I\'ve written the code for you. Check the chat.');
+              }
+              skipSpeech=true;
+            }
+            // Skip tokens inside code blocks entirely — don't speak code
+            if(inCodeBlock) skipSpeech=true;
+
+            if(!skipSpeech){
+              speechBuf+=tok;
+              // Hindi danda (।) and standard sentence endings — NOT comma
+              const m=speechBuf.match(/^([\s\S]*?[.!?\n।])\s*/);
+              // Hindi: require longer chunks for natural flow
+              const minLen=voiceLang==='hi'?15:3;
+              if(m&&m[1].replace(/[^\w\u0900-\u097F]/g,'').length>minLen){
+                enqueueSentence(m[1]);
+                speechBuf=speechBuf.slice(m[0].length);
+              } else if(speechBuf.length>(voiceLang==='hi'?150:60)){
+                // Flush long buffers — much higher threshold for Hindi for natural phrasing
+                const sp=speechBuf.lastIndexOf(' ');
+                if(sp>30){enqueueSentence(speechBuf.slice(0,sp));speechBuf=speechBuf.slice(sp+1);}
+              }
             }
           }
         } else if(ev.type==='agent_step'){
@@ -1227,8 +1262,8 @@ async function voiceSend(){
   busy=false;abortCtrl=null;
   // Log AI response to voice panel
   if(voiceMode&&raw)addVoiceLog('ai',raw.replace(/[*_#`\[\]]/g,'').trim());
-  // Flush remaining speech buffer
-  if(voiceMode&&speechBuf.trim()){enqueueSentence(speechBuf);speechBuf='';
+  // Flush remaining speech buffer (skip if still inside a code block)
+  if(voiceMode&&speechBuf.trim()&&!inCodeBlock){enqueueSentence(speechBuf);speechBuf='';
   } else if(voiceMode&&!speechActive&&!speechQueue.length){
     speaking=false;streamDone=true;
     // If model didn't end with a question, speak a follow-up before resuming listener
