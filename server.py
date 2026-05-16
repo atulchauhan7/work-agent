@@ -1327,6 +1327,8 @@ async def system_status():
         "weather": None,
         "cpu": None,
         "ram": None,
+        "disk": None,
+        "uptime_hours": None,
     }
 
     # Time
@@ -1363,6 +1365,13 @@ async def system_status():
     try:
         info["cpu"] = round(float(psutil.cpu_percent(interval=0.1)), 1)
         info["ram"] = int(round(psutil.virtual_memory().percent))
+    except Exception:
+        pass
+
+    # Disk / uptime
+    try:
+        info["disk"] = int(round(psutil.disk_usage('/').percent))
+        info["uptime_hours"] = int((datetime.datetime.now().timestamp() - psutil.boot_time()) // 3600)
     except Exception:
         pass
 

@@ -216,50 +216,63 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .inp-hint kbd{background:#333;padding:1px 5px;border-radius:3px;font-size:10px;font-family:var(--mono);border:1px solid #444}
 
 /* Voice Mode Overlay */
-.voice-overlay{position:fixed;inset:0;z-index:2000;background:#08080c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;opacity:0;pointer-events:none;transition:opacity .3s ease;overflow:hidden}
-.voice-overlay::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,rgba(16,163,127,.06) 0%,transparent 55%);pointer-events:none}
+.voice-overlay{position:fixed;inset:0;z-index:2000;background:#04050a;display:flex;opacity:0;pointer-events:none;transition:opacity .3s ease;overflow:hidden}
+.voice-overlay::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(circle at 15% 20%,rgba(13,110,253,.08),transparent 38%),
+  radial-gradient(circle at 85% 25%,rgba(16,163,127,.07),transparent 35%),
+  radial-gradient(circle at 50% 50%,rgba(16,163,127,.06),transparent 45%);
+  pointer-events:none}
 .voice-overlay.active{opacity:1;pointer-events:all}
-.vo-top-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;z-index:1}
+.vo-top-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;z-index:3}
 .vo-top-left{display:flex;align-items:center;gap:12px}
-.vo-top-title{font-size:13px;font-weight:600;color:#444;letter-spacing:1.5px}
-.vo-top-time{font-size:12px;color:#333;font-weight:500;font-family:var(--mono)}
-.vo-close-btn{width:40px;height:40px;border-radius:50%;border:1px solid #1a1a1a;background:rgba(255,255,255,.03);color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.vo-close-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:#444}
-/* Voice system info cards */
-.vo-sys-cards{position:absolute;bottom:100px;left:0;right:0;display:flex;justify-content:center;gap:12px;padding:0 20px;z-index:1}
-.vo-sys-card{padding:8px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:11px;color:#444;display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px)}
-.vo-sys-card .vo-sc-val{color:#666;font-weight:600;font-family:var(--mono)}
-.vo-sys-card svg{opacity:.4;width:14px;height:14px}
-.vo-status{font-size:12px;color:#555;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;min-height:18px;margin-bottom:16px}
-.vo-transcript{font-size:22px;color:var(--tx);max-width:640px;text-align:center;min-height:40px;line-height:1.5;padding:0 24px;word-break:break-word;font-weight:300;margin-bottom:24px}
-.vo-transcript.interim{color:#444;font-style:italic;font-weight:300}
-.vo-orb-wrap{position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:16px 0}
-.vo-orb{width:130px;height:130px;border-radius:50%;background:linear-gradient(135deg,#10a37f 0%,#0d6efd 100%);box-shadow:0 0 80px rgba(16,163,127,.2),0 0 160px rgba(13,110,253,.1);transition:transform .3s,box-shadow .3s;display:flex;align-items:center;justify-content:center}
+.vo-top-title{font-size:13px;font-weight:700;color:#6fd6c1;letter-spacing:2px}
+.vo-top-time{font-size:12px;color:#7f93b2;font-weight:500;font-family:var(--mono)}
+.vo-close-btn{width:40px;height:40px;border-radius:50%;border:1px solid #1a2638;background:rgba(255,255,255,.03);color:#6f7f98;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.vo-close-btn:hover{background:rgba(255,255,255,.08);color:#d6e2f0;border-color:#335078}
+
+.vo-side{position:absolute;top:70px;bottom:18px;width:320px;padding:16px 14px;display:flex;flex-direction:column;gap:10px;z-index:2}
+.vo-side.left{left:12px}
+.vo-side.right{right:12px}
+.vo-panel{background:linear-gradient(145deg,rgba(12,18,30,.8),rgba(8,12,22,.72));border:1px solid rgba(92,133,184,.22);border-radius:12px;padding:11px 12px;backdrop-filter:blur(6px)}
+.vo-panel h4{font-size:10px;color:#7aa3d6;letter-spacing:1.2px;margin-bottom:8px}
+.vo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vo-metric{padding:7px 8px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
+.vo-metric .k{font-size:9px;color:#6b7890;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.vo-metric .v{font-size:12px;color:#d8e6f6;font-family:var(--mono);font-weight:600}
+.vo-tip{font-size:11px;color:#8ea3bf;line-height:1.45}
+
+.vo-center{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(52vw,760px);display:flex;flex-direction:column;align-items:center;z-index:2}
+.vo-status{font-size:12px;color:#78a6d1;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;min-height:18px;margin-bottom:12px}
+.vo-transcript{font-size:24px;color:#e5f0ff;max-width:720px;text-align:center;min-height:42px;line-height:1.45;padding:0 20px;word-break:break-word;font-weight:300;margin-bottom:20px}
+.vo-transcript.interim{color:#7f92ad;font-style:italic;font-weight:300}
+.vo-orb-wrap{position:relative;width:240px;height:240px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:6px 0}
+.vo-orb{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#8cf7e4 0%,#16c5b4 34%,#0a7ccf 72%,#072a56 100%);box-shadow:0 0 80px rgba(41,188,226,.28),0 0 170px rgba(6,74,162,.2),inset 0 0 30px rgba(255,255,255,.2);transition:transform .3s,box-shadow .3s;display:flex;align-items:center;justify-content:center;border:1px solid rgba(150,232,255,.45)}
 .vo-orb-wrap:hover .vo-orb{transform:scale(1.05)}
 .vo-orb.listening{animation:orb-pulse 1.5s ease-in-out infinite}
-.vo-orb.speaking{animation:orb-speak .8s ease-in-out infinite;background:linear-gradient(135deg,#8b5cf6 0%,#6d28d9 100%);box-shadow:0 0 80px rgba(139,92,246,.25),0 0 160px rgba(109,40,217,.1)}
-.vo-orb.thinking{animation:orb-think 2s linear infinite;opacity:.6;background:linear-gradient(135deg,#666 0%,#444 100%);box-shadow:0 0 40px rgba(100,100,100,.15)}
-@keyframes orb-pulse{0%,100%{transform:scale(1);box-shadow:0 0 80px rgba(16,163,127,.2)}50%{transform:scale(1.15);box-shadow:0 0 120px rgba(16,163,127,.4)}}
-@keyframes orb-speak{0%,100%{transform:scale(1);box-shadow:0 0 80px rgba(139,92,246,.25)}50%{transform:scale(1.1);box-shadow:0 0 120px rgba(139,92,246,.45)}}
-@keyframes orb-think{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(.92)}100%{transform:rotate(360deg) scale(1)}}
-.vo-rings{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(16,163,127,.12);animation:ring-expand 2.5s ease-out infinite;pointer-events:none}
-.vo-rings:nth-child(2){animation-delay:.7s}
-.vo-rings:nth-child(3){animation-delay:1.4s}
-@keyframes ring-expand{0%{transform:scale(.7);opacity:.5}100%{transform:scale(2);opacity:0}}
+.vo-orb.speaking{animation:orb-speak .8s ease-in-out infinite;background:radial-gradient(circle at 50% 50%,#d4b0ff 0%,#8b5cf6 40%,#5b2bcf 100%)}
+.vo-orb.thinking{animation:orb-think 2.2s linear infinite;opacity:.75}
+@keyframes orb-pulse{0%,100%{transform:scale(1);box-shadow:0 0 85px rgba(52,196,226,.28)}50%{transform:scale(1.16);box-shadow:0 0 132px rgba(52,196,226,.5)}}
+@keyframes orb-speak{0%,100%{transform:scale(1);box-shadow:0 0 88px rgba(145,95,255,.35)}50%{transform:scale(1.1);box-shadow:0 0 122px rgba(145,95,255,.58)}}
+@keyframes orb-think{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(.9)}100%{transform:rotate(360deg) scale(1)}}
+.vo-rings{position:absolute;inset:0;border-radius:50%;border:1.2px solid rgba(101,170,255,.2);animation:ring-expand 2.8s ease-out infinite;pointer-events:none}
+.vo-rings:nth-child(2){animation-delay:.8s}
+.vo-rings:nth-child(3){animation-delay:1.6s}
+@keyframes ring-expand{0%{transform:scale(.72);opacity:.55}100%{transform:scale(2.15);opacity:0}}
 .vo-orb-wrap:not(.is-listening) .vo-rings{display:none}
-/* Audio bars visualizer */
-.vo-bars{display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:8px 0 20px;opacity:0;transition:opacity .3s}
+.vo-reactor-mark{position:absolute;width:188px;height:188px;border-radius:50%;border:1px dashed rgba(116,193,255,.26);pointer-events:none}
+
+.vo-bars{display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:8px 0 12px;opacity:0;transition:opacity .3s}
 .vo-bars.active{opacity:1}
-.vo-bar{width:4px;border-radius:2px;background:var(--acc);height:8px;transition:height .1s ease;min-height:4px}
-.vo-bars.speaking .vo-bar{background:#8b5cf6}
-.vo-response{font-size:15px;color:#555;max-width:640px;text-align:center;line-height:1.8;padding:0 24px;max-height:200px;overflow-y:auto;word-break:break-word;scroll-behavior:smooth}
+.vo-bar{width:4px;border-radius:2px;background:#4fd6de;height:8px;transition:height .1s ease;min-height:4px}
+.vo-bars.speaking .vo-bar{background:#b08dff}
+.vo-response{font-size:15px;color:#8ea3bf;max-width:680px;text-align:center;line-height:1.75;padding:0 22px;max-height:160px;overflow-y:auto;word-break:break-word;scroll-behavior:smooth}
 .vo-response::-webkit-scrollbar{width:3px}
-.vo-response::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.vo-response::-webkit-scrollbar-thumb{background:#284769;border-radius:2px}
 .vo-response .cap-sentence{transition:color .3s,opacity .3s}
-.vo-response .cap-spoken{color:#666;opacity:.5}
-.vo-response .cap-active{color:#fff;font-weight:400;text-shadow:0 0 12px rgba(16,163,127,.3)}
-.vo-response .cap-upcoming{color:#444}
-.vo-bottom{display:flex;gap:12px;align-items:center;margin-top:24px}
+.vo-response .cap-spoken{color:#667995;opacity:.55}
+.vo-response .cap-active{color:#eff6ff;font-weight:500;text-shadow:0 0 12px rgba(98,190,255,.38)}
+.vo-response .cap-upcoming{color:#4d607b}
+.vo-bottom{display:flex;gap:12px;align-items:center;margin-top:14px}
 .vo-btn{width:50px;height:50px;border-radius:50%;border:1px solid #2a2a2a;background:rgba(255,255,255,.04);color:#777;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:18px}
 .vo-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:#555}
 .vo-btn.end{width:56px;height:56px;background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.3);color:#e74c3c}
@@ -294,14 +307,15 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .empty-s{font-size:12px}
   .chips{gap:6px}
   .chip{padding:6px 12px;font-size:11px}
-  .vo-orb-wrap{width:160px;height:160px}
-  .vo-orb{width:100px;height:100px}
-  .vo-transcript{font-size:17px;padding:0 16px}
-  .vo-response{font-size:13px;padding:0 16px;max-height:150px}
+  .vo-side{display:none}
+  .vo-center{width:92vw}
+  .vo-orb-wrap{width:170px;height:170px}
+  .vo-orb{width:108px;height:108px}
+  .vo-reactor-mark{width:138px;height:138px}
+  .vo-transcript{font-size:18px;padding:0 16px}
+  .vo-response{font-size:13px;padding:0 16px;max-height:140px}
   .vo-top-bar{padding:12px 16px}
-  .vo-bars{margin:4px 0 16px}
-  .vo-sys-cards{bottom:80px;gap:8px;flex-wrap:wrap;justify-content:center}
-  .vo-sys-card{padding:6px 10px;font-size:10px}
+  .vo-bars{margin:4px 0 10px}
   .stop-btn{font-size:12px;padding:6px}
 }
 </style>
@@ -421,32 +435,64 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 <div class="voice-overlay" id="voice-overlay">
   <div class="vo-top-bar">
     <div class="vo-top-left">
-      <div class="vo-top-title">JARVIS</div>
+      <div class="vo-top-title">JARVIS CORE</div>
       <div class="vo-top-time" id="vo-top-time"></div>
     </div>
     <button class="vo-close-btn" onclick="endVoiceMode()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
-  <div class="vo-status" id="vo-status">TAP TO START</div>
-  <div class="vo-transcript" id="vo-transcript"></div>
-  <div class="vo-orb-wrap" id="vo-orb-wrap" onclick="voiceOrbTap()">
-    <div class="vo-rings"></div><div class="vo-rings"></div><div class="vo-rings"></div>
-    <div class="vo-orb" id="vo-orb"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+
+  <aside class="vo-side left">
+    <div class="vo-panel">
+      <h4>SYSTEM HEALTH</h4>
+      <div class="vo-grid">
+        <div class="vo-metric"><div class="k">Battery</div><div class="v" id="vo-bat-val">--%</div></div>
+        <div class="vo-metric"><div class="k">CPU</div><div class="v" id="vo-cpu-val">--%</div></div>
+        <div class="vo-metric"><div class="k">RAM</div><div class="v" id="vo-ram-val">--%</div></div>
+        <div class="vo-metric"><div class="k">Disk</div><div class="v" id="vo-disk-val">--%</div></div>
+      </div>
+    </div>
+    <div class="vo-panel">
+      <h4>SESSION</h4>
+      <div class="vo-grid">
+        <div class="vo-metric"><div class="k">Uptime</div><div class="v" id="vo-uptime-val">--h</div></div>
+        <div class="vo-metric"><div class="k">Status</div><div class="v" id="vo-state-val">Idle</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="vo-center">
+    <div class="vo-status" id="vo-status">TAP TO START</div>
+    <div class="vo-transcript" id="vo-transcript"></div>
+    <div class="vo-orb-wrap" id="vo-orb-wrap" onclick="voiceOrbTap()">
+      <div class="vo-rings"></div><div class="vo-rings"></div><div class="vo-rings"></div>
+      <div class="vo-reactor-mark"></div>
+      <div class="vo-orb" id="vo-orb"><svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v4"/><path d="M21 12h-4"/><path d="M12 21v-4"/><path d="M3 12h4"/><path d="M5.6 5.6l2.8 2.8"/><path d="M18.4 5.6l-2.8 2.8"/><path d="M18.4 18.4l-2.8-2.8"/><path d="M5.6 18.4l2.8-2.8"/></svg></div>
+    </div>
+    <div class="vo-bars" id="vo-bars"></div>
+    <div class="vo-response" id="vo-response"></div>
+    <div class="vo-lang" id="vo-lang">
+      <button class="vo-lang-btn active" data-lang="en" onclick="setVoiceLang('en')">EN</button>
+      <button class="vo-lang-btn" data-lang="hi" onclick="setVoiceLang('hi')">HI</button>
+      <button class="vo-lang-btn" data-lang="auto" onclick="setVoiceLang('auto')">AUTO</button>
+    </div>
+    <div class="vo-bottom"><button class="vo-btn end" onclick="endVoiceMode()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
   </div>
-  <div class="vo-bars" id="vo-bars"></div>
-  <div class="vo-response" id="vo-response"></div>
-  <div class="vo-lang" id="vo-lang">
-    <button class="vo-lang-btn active" data-lang="en" onclick="setVoiceLang('en')">EN</button>
-    <button class="vo-lang-btn" data-lang="hi" onclick="setVoiceLang('hi')">HI</button>
-    <button class="vo-lang-btn" data-lang="auto" onclick="setVoiceLang('auto')">AUTO</button>
-  </div>
-  <div class="vo-sys-cards" id="vo-sys-cards">
-    <div class="vo-sys-card" id="vo-card-bat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="10" x2="23" y2="14"/></svg><span class="vo-sc-val" id="vo-bat-val">--%</span></div>
-    <div class="vo-sys-card" id="vo-card-weather"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="19" x2="8.01" y2="19"/><line x1="12" y1="19" x2="12.01" y2="19"/><line x1="16" y1="19" x2="16.01" y2="19"/></svg><span class="vo-sc-val" id="vo-weather-val">--</span></div>
-    <div class="vo-sys-card" id="vo-card-wifi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg><span class="vo-sc-val" id="vo-wifi-val">--</span></div>
-    <div class="vo-sys-card" id="vo-card-cpu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/></svg><span class="vo-sc-val" id="vo-cpu-val">--%</span></div>
-    <div class="vo-sys-card" id="vo-card-ram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="6" y2="12.01"/><line x1="10" y1="12" x2="10" y2="12.01"/><line x1="14" y1="12" x2="14" y2="12.01"/><line x1="18" y1="12" x2="18" y2="12.01"/></svg><span class="vo-sc-val" id="vo-ram-val">--%</span></div>
-  </div>
-  <div class="vo-bottom"><button class="vo-btn end" onclick="endVoiceMode()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+
+  <aside class="vo-side right">
+    <div class="vo-panel">
+      <h4>NETWORK + WEATHER</h4>
+      <div class="vo-grid">
+        <div class="vo-metric"><div class="k">Weather</div><div class="v" id="vo-weather-val">--</div></div>
+        <div class="vo-metric"><div class="k">Wi-Fi</div><div class="v" id="vo-wifi-val">--</div></div>
+        <div class="vo-metric"><div class="k">Date</div><div class="v" id="vo-date-val">--</div></div>
+        <div class="vo-metric"><div class="k">Clock</div><div class="v" id="vo-clock-val">--</div></div>
+      </div>
+    </div>
+    <div class="vo-panel">
+      <h4>ASSIST</h4>
+      <div class="vo-tip">Tap the reactor core to interrupt, resume listening, or send the current query. Real-time metrics refresh automatically.</div>
+    </div>
+  </aside>
 </div>
 
 <script>
@@ -775,6 +821,8 @@ function voiceOrbTap(){
 function setOrb(s){
   $('vo-orb').className='vo-orb'+(s!=='idle'?' '+s:'');
   $('vo-orb-wrap').classList.toggle('is-listening',s==='listening');
+  const st=$('vo-state-val');
+  if(st)st.textContent=s==='idle'?'Idle':s.charAt(0).toUpperCase()+s.slice(1);
   // Update audio bars
   if(s==='listening')setBarsMode('listening');
   else if(s==='speaking')setBarsMode('speaking');
@@ -1118,6 +1166,10 @@ async function fetchSystemStatus(){
     $('vo-wifi-val').textContent=d.wifi||'N/A';
     $('vo-cpu-val').textContent=(d.cpu!=null)?(d.cpu+'%'):'N/A';
     $('vo-ram-val').textContent=(d.ram!=null)?(d.ram+'%'):'N/A';
+    $('vo-disk-val').textContent=(d.disk!=null)?(d.disk+'%'):'N/A';
+    $('vo-uptime-val').textContent=(d.uptime_hours!=null)?(d.uptime_hours+'h'):'N/A';
+    if(d.date)$('vo-date-val').textContent=d.date;
+    if(d.time)$('vo-clock-val').textContent=d.time;
     // Voice time
     if(d.time&&d.date)$('vo-top-time').textContent=d.date+' • '+d.time;
     // Update greeting
@@ -1133,6 +1185,10 @@ async function fetchSystemStatus(){
     $('vo-wifi-val').textContent='N/A';
     $('vo-cpu-val').textContent='N/A';
     $('vo-ram-val').textContent='N/A';
+    $('vo-disk-val').textContent='N/A';
+    $('vo-uptime-val').textContent='N/A';
+    $('vo-date-val').textContent='--';
+    $('vo-clock-val').textContent='--';
   }
 }
 
