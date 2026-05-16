@@ -32,10 +32,19 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 
 /* main */
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
-.hdr{padding:12px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(8px);background:rgba(33,33,33,.85)}
+.hdr{padding:10px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(12px);background:rgba(23,23,23,.9)}
 .hdr-left{display:flex;align-items:center;gap:10px}
 .hdr-title{font-weight:600;font-size:15px}
-.btn-clr{padding:6px 14px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-size:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.hdr-sys{display:flex;align-items:center;gap:12px;font-size:11px;color:#666}
+.hdr-sys-item{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.hdr-sys-item svg{opacity:.5}
+.hdr-sys-item .val{color:#888;font-weight:500}
+.hdr-bat{display:flex;align-items:center;gap:3px}
+.hdr-bat-bar{width:20px;height:10px;border:1.5px solid #555;border-radius:2px;position:relative;overflow:hidden}
+.hdr-bat-bar::after{content:'';position:absolute;right:-3px;top:2px;width:2px;height:4px;background:#555;border-radius:0 1px 1px 0}
+.hdr-bat-fill{height:100%;border-radius:1px;transition:width .3s}
+.btn-clr{padding:6px 12px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--dim);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
 .btn-clr:hover{background:var(--inp);color:var(--tx);border-color:#555}
 
 /* messages */
@@ -77,11 +86,12 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .bbl .txt th,.bbl .txt td{border:1px solid #2a2a2a;padding:6px 10px;text-align:left}
 .bbl .txt th{background:#1a1a1a;font-weight:600;color:#fff}
 
-/* message actions */
-.msg-actions{display:none;margin-top:4px}
-.msg:hover .msg-actions,.msg-actions.show{display:flex}
-.msg-actions{gap:4px;align-items:center}
-.msg-action-btn{background:none;border:none;color:#555;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:3px;transition:all .15s}
+/* message actions — positioned to the right of the label row */
+.msg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.msg-actions{opacity:0;transition:opacity .15s}
+.msg:hover .msg-actions,.msg-actions.show{opacity:1}
+.msg-actions{display:flex;gap:2px;align-items:center}
+.msg-action-btn{background:none;border:none;color:#444;cursor:pointer;padding:2px 6px;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:3px;transition:all .15s}
 .msg-action-btn:hover{color:#fff;background:#2a2a2a}
 .msg-action-btn.copied{color:var(--acc)}
 
@@ -206,13 +216,20 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .inp-hint kbd{background:#333;padding:1px 5px;border-radius:3px;font-size:10px;font-family:var(--mono);border:1px solid #444}
 
 /* Voice Mode Overlay */
-.voice-overlay{position:fixed;inset:0;z-index:2000;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;opacity:0;pointer-events:none;transition:opacity .3s ease;overflow:hidden}
-.voice-overlay::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(16,163,127,.08) 0%,transparent 60%);pointer-events:none}
+.voice-overlay{position:fixed;inset:0;z-index:2000;background:#08080c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;opacity:0;pointer-events:none;transition:opacity .3s ease;overflow:hidden}
+.voice-overlay::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,rgba(16,163,127,.06) 0%,transparent 55%);pointer-events:none}
 .voice-overlay.active{opacity:1;pointer-events:all}
 .vo-top-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;z-index:1}
-.vo-top-title{font-size:14px;font-weight:600;color:#555;letter-spacing:1px}
-.vo-close-btn{width:40px;height:40px;border-radius:50%;border:1px solid #2a2a2a;background:rgba(255,255,255,.04);color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.vo-close-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:#555}
+.vo-top-left{display:flex;align-items:center;gap:12px}
+.vo-top-title{font-size:13px;font-weight:600;color:#444;letter-spacing:1.5px}
+.vo-top-time{font-size:12px;color:#333;font-weight:500;font-family:var(--mono)}
+.vo-close-btn{width:40px;height:40px;border-radius:50%;border:1px solid #1a1a1a;background:rgba(255,255,255,.03);color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.vo-close-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:#444}
+/* Voice system info cards */
+.vo-sys-cards{position:absolute;bottom:100px;left:0;right:0;display:flex;justify-content:center;gap:12px;padding:0 20px;z-index:1}
+.vo-sys-card{padding:8px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:11px;color:#444;display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px)}
+.vo-sys-card .vo-sc-val{color:#666;font-weight:600;font-family:var(--mono)}
+.vo-sys-card svg{opacity:.4;width:14px;height:14px}
 .vo-status{font-size:12px;color:#555;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;min-height:18px;margin-bottom:16px}
 .vo-transcript{font-size:22px;color:var(--tx);max-width:640px;text-align:center;min-height:40px;line-height:1.5;padding:0 24px;word-break:break-word;font-weight:300;margin-bottom:24px}
 .vo-transcript.interim{color:#444;font-style:italic;font-weight:300}
@@ -267,6 +284,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .bbl .txt{font-size:13px}
   .hdr{padding:8px 12px}
   .hdr-title{font-size:14px}
+  .hdr-sys{gap:8px}
+  .hdr-sys-item{font-size:10px}
   .inp-area{padding:6px 10px 10px}
   .inp-box{border-radius:12px;padding:8px 8px 8px 12px}
   #userinput{font-size:16px}
@@ -281,6 +300,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .vo-response{font-size:13px;padding:0 16px;max-height:150px}
   .vo-top-bar{padding:12px 16px}
   .vo-bars{margin:4px 0 16px}
+  .vo-sys-cards{bottom:80px;gap:8px;flex-wrap:wrap;justify-content:center}
+  .vo-sys-card{padding:6px 10px;font-size:10px}
   .stop-btn{font-size:12px;padding:6px}
 }
 </style>
@@ -322,17 +343,24 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   <main class="main">
     <header class="hdr">
       <div class="hdr-left"><div class="hdr-title">Jarvis</div><div class="mic-indicator" id="mic-indicator"><div class="mic-dot"></div><span class="mic-label" id="mic-label">Listening</span></div></div>
-      <button class="btn-clr" onclick="newChat()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-        Clear
-      </button>
+      <div class="hdr-right">
+        <div class="hdr-sys" id="hdr-sys">
+          <div class="hdr-sys-item" id="hdr-time"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="val" id="hdr-time-val">--:--</span></div>
+          <div class="hdr-sys-item hdr-bat" id="hdr-bat"><div class="hdr-bat-bar"><div class="hdr-bat-fill" id="hdr-bat-fill" style="width:0%;background:#10a37f"></div></div><span class="val" id="hdr-bat-val">--%</span></div>
+          <div class="hdr-sys-item" id="hdr-wifi" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg><span class="val" id="hdr-wifi-val"></span></div>
+        </div>
+        <button class="btn-clr" onclick="newChat()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          Clear
+        </button>
+      </div>
     </header>
 
     <div class="msgs" id="msgs">
       <div class="empty" id="empty">
         <div class="empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/><path d="M8 12h8"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <div class="empty-h">Hey Atul</div>
-        <div class="empty-s">I'm Jarvis, your personal AI assistant. Ask me anything — tech, code, strategy, or just chat.</div>
+        <div class="empty-h">Good evening, Boss</div>
+        <div class="empty-s">I'm Jarvis — ready to assist. Ask me anything.</div>
         <div class="chips">
           <div class="chip" onclick="suggest('Explain how React hooks work')">⚛️ React hooks</div>
           <div class="chip" onclick="suggest('What are the best D2C growth strategies?')">📈 D2C growth</div>
@@ -391,7 +419,10 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 <!-- Voice Mode Overlay -->
 <div class="voice-overlay" id="voice-overlay">
   <div class="vo-top-bar">
-    <div class="vo-top-title">JARVIS VOICE</div>
+    <div class="vo-top-left">
+      <div class="vo-top-title">JARVIS</div>
+      <div class="vo-top-time" id="vo-top-time"></div>
+    </div>
     <button class="vo-close-btn" onclick="endVoiceMode()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="vo-status" id="vo-status">TAP TO START</div>
@@ -406,6 +437,12 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
     <button class="vo-lang-btn active" data-lang="en" onclick="setVoiceLang('en')">EN</button>
     <button class="vo-lang-btn" data-lang="hi" onclick="setVoiceLang('hi')">HI</button>
     <button class="vo-lang-btn" data-lang="auto" onclick="setVoiceLang('auto')">AUTO</button>
+  </div>
+  <div class="vo-sys-cards" id="vo-sys-cards">
+    <div class="vo-sys-card" id="vo-card-bat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="10" x2="23" y2="14"/></svg><span class="vo-sc-val" id="vo-bat-val">--%</span></div>
+    <div class="vo-sys-card" id="vo-card-wifi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg><span class="vo-sc-val" id="vo-wifi-val">--</span></div>
+    <div class="vo-sys-card" id="vo-card-cpu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/></svg><span class="vo-sc-val" id="vo-cpu-val">--%</span></div>
+    <div class="vo-sys-card" id="vo-card-ram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="6" y2="12.01"/><line x1="10" y1="12" x2="10" y2="12.01"/><line x1="14" y1="12" x2="14" y2="12.01"/><line x1="18" y1="12" x2="18" y2="12.01"/></svg><span class="vo-sc-val" id="vo-ram-val">--%</span></div>
   </div>
   <div class="vo-bottom"><button class="vo-btn end" onclick="endVoiceMode()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 </div>
@@ -1052,11 +1089,43 @@ function voiceResume(){
   startListening();
 }
 
+// ── System Status ──────────────────────────────────────────────────────────
+let sysData={};
+async function fetchSystemStatus(){
+  try{
+    const r=await fetch('/system-status');
+    const d=await r.json();sysData=d;
+    // Header
+    if(d.time)$('hdr-time-val').textContent=d.time;
+    if(d.battery){
+      $('hdr-bat-val').textContent=d.battery.percent+'%';
+      const fill=$('hdr-bat-fill');
+      fill.style.width=d.battery.percent+'%';
+      fill.style.background=d.battery.percent<20?'#e74c3c':d.battery.percent<50?'#f39c12':'#10a37f';
+    }
+    if(d.wifi){$('hdr-wifi').style.display='flex';$('hdr-wifi-val').textContent=d.wifi;}
+    // Voice cards
+    if(d.battery)$('vo-bat-val').textContent=d.battery.percent+'%'+(d.battery.charging?' ⚡':'');
+    if(d.wifi)$('vo-wifi-val').textContent=d.wifi;
+    if(d.cpu!=null)$('vo-cpu-val').textContent=d.cpu+'%';
+    if(d.ram!=null)$('vo-ram-val').textContent=d.ram+'%';
+    // Voice time
+    if(d.time&&d.date)$('vo-top-time').textContent=d.date+' • '+d.time;
+    // Update greeting
+    if(d.greeting){
+      const eh=document.querySelector('.empty-h');
+      if(eh)eh.textContent=d.greeting+', Boss';
+    }
+  }catch(_){}
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 const $=id=>document.getElementById(id);
 document.addEventListener('DOMContentLoaded',async()=>{
   initVoice();
   initWorkspace();
+  fetchSystemStatus();
+  setInterval(fetchSystemStatus,30000); // refresh every 30s
   $('sbtn').addEventListener('click',send);
   $('voicemodebtn').addEventListener('click',startVoiceMode);
   $('userinput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
@@ -1135,7 +1204,7 @@ function copyCode(id){
   });
 }
 
-const EMPTY_HTML='<div class="empty" id="empty"><div class="empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/><path d="M8 12h8"/><circle cx="12" cy="12" r="3"/></svg></div><div class="empty-h">Hey Atul</div><div class="empty-s">I\'m Jarvis, your personal AI assistant. Ask me anything — tech, code, strategy, or just chat.</div><div class="chips"><div class="chip" onclick="suggest(\'Explain how React hooks work\')">⚛️ React hooks</div><div class="chip" onclick="suggest(\'What are the best D2C growth strategies?\')">📈 D2C growth</div><div class="chip" onclick="suggest(\'Help me optimize a slow SQL query\')">🔧 Optimize SQL</div><div class="chip" onclick="suggest(\'Who created you?\')">👤 About you</div></div></div>';
+const EMPTY_HTML='<div class="empty" id="empty"><div class="empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/><path d="M8 12h8"/><circle cx="12" cy="12" r="3"/></svg></div><div class="empty-h">Good evening, Boss</div><div class="empty-s">I\'m Jarvis — ready to assist. Ask me anything.</div><div class="chips"><div class="chip" onclick="suggest(\'Explain how React hooks work\')">⚛️ React hooks</div><div class="chip" onclick="suggest(\'What are the best D2C growth strategies?\')">📈 D2C growth</div><div class="chip" onclick="suggest(\'Help me optimize a slow SQL query\')">🔧 Optimize SQL</div><div class="chip" onclick="suggest(\'Who created you?\')">👤 About you</div></div></div>';
 
 function newChat(){fetch('/clear',{method:'POST'});$('msgs').innerHTML=EMPTY_HTML;busy=false;$('sbtn').disabled=false;$('stopbtn').classList.remove('visible');}
 function stopGen(){if(abortCtrl){abortCtrl.abort();abortCtrl=null;}}
@@ -1145,25 +1214,28 @@ function appendMsg(role,text,streaming){
   const w=document.createElement('div');w.className='msg';
   const av=document.createElement('div');av.className='av '+role;av.textContent=role==='user'?'A':'J';
   const bbl=document.createElement('div');bbl.className='bbl '+role;
+  // Top row: label + copy button on the right
+  const topRow=document.createElement('div');topRow.className='msg-top';
   const lbl=document.createElement('div');lbl.className='lbl';lbl.textContent=role==='user'?'You':'Jarvis';
+  const acts=document.createElement('div');acts.className='msg-actions';
+  const copyBtn=document.createElement('button');copyBtn.className='msg-action-btn';
+  copyBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+  copyBtn.title='Copy';
+  copyBtn.onclick=()=>{
+    const content=txt.innerText||txt.textContent;
+    navigator.clipboard.writeText(content).then(()=>{
+      copyBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+      copyBtn.classList.add('copied');
+      setTimeout(()=>{copyBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';copyBtn.classList.remove('copied');},1500);
+    });
+  };
+  acts.appendChild(copyBtn);
+  topRow.appendChild(lbl);topRow.appendChild(acts);
   const txt=document.createElement('div');txt.className='txt';
   if(streaming)txt.innerHTML='<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div> Thinking…</div>';
   else if(role==='user')txt.textContent=text;
   else txt.innerHTML=renderMd(text);
-  // Message actions (copy button)
-  const acts=document.createElement('div');acts.className='msg-actions';
-  const copyBtn=document.createElement('button');copyBtn.className='msg-action-btn';
-  copyBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
-  copyBtn.onclick=()=>{
-    const content=txt.innerText||txt.textContent;
-    navigator.clipboard.writeText(content).then(()=>{
-      copyBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      copyBtn.classList.add('copied');
-      setTimeout(()=>{copyBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';copyBtn.classList.remove('copied');},1500);
-    });
-  };
-  acts.appendChild(copyBtn);
-  bbl.appendChild(lbl);bbl.appendChild(txt);bbl.appendChild(acts);w.appendChild(av);w.appendChild(bbl);
+  bbl.appendChild(topRow);bbl.appendChild(txt);w.appendChild(av);w.appendChild(bbl);
   $('msgs').appendChild(w);scrollDown();
   return{wrap:w,bbl,txt};
 }

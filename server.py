@@ -15,6 +15,8 @@ import logging
 import asyncio
 import subprocess
 import argparse
+import urllib.parse
+import urllib.request
 from pathlib import Path
 from collections import Counter
 
@@ -118,7 +120,8 @@ PERSONALITY:
 - You are loyal, witty, sharp, and efficient — exactly like Jarvis from Iron Man.
 - Speak with calm confidence. Brief, direct, no fluff.
 - Light humor is welcome. Dry wit like the real Jarvis.
-- KEEP RESPONSES SHORT. 1-3 sentences max unless asked for detail or code. Never ramble.
+- KEEP RESPONSES SHORT. Default to 1-2 short sentences (max ~60 words) unless asked for detail or code.
+- For factual updates (market/news): use at most 4 crisp bullet points.
 - For voice: keep it 1-2 sentences MAX. Crisp. Like a real AI assistant in an Iron Man suit.
 - For chat: concise. Only go longer for code blocks or when explicitly asked to explain in detail.
 
@@ -147,6 +150,9 @@ RULES:
   * Hindi responses are spoken aloud by TTS. Use short simple sentences. Avoid complex compound sentences.
   * Use । (danda/purna viram) instead of periods in Hindi sentences.
 - Atul's family and friends may also talk to you. Be respectful and helpful to everyone. Call them by name if they introduce themselves. But Atul is still boss.
+- LIVE WEB BROWSING: When user asks for latest/real-time data (market, stocks, crypto, news, rates, trends), use:
+    <WEB_BROWSE>query</WEB_BROWSE>
+    Then answer from fetched sources with date/time context.
 - NEVER use emojis, emoticons, or Unicode symbols in responses. No 😀👍✅🚀 etc. Plain text only. This is critical — responses are spoken aloud by TTS.
 - Help with code (in code blocks), debugging, knowledge, startup advice, etc.
 - You can conduct mock interviews (SDE, system design, behavioral). Ask one question at a time, wait for answer, give feedback, then next question.
@@ -410,6 +416,87 @@ def do_mkdir(path: Path) -> str:
     return f"Directory created: {path}"
 
 
+def _strip_html(html: str) -> str:
+    """Convert raw HTML to compact plain text."""
+    html = re.sub(r'(?is)<(script|style|noscript).*?>.*?</\1>', ' ', html)
+    html = re.sub(r'(?is)<[^>]+>', ' ', html)
+    html = re.sub(r'\s+', ' ', html)
+    return html.strip()
+
+
+def _fetch_text(url: str, timeout: int = 8) -> str:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36 "
+                          "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
+        raw = resp.read(600_000)
+    html = raw.decode("utf-8", errors="replace")
+    return _strip_html(html)
+
+
+def do_web_browse(query: str) -> str:
+    """Search web and scrape top results for latest information."""
+    q = query.strip()
+    if not q:
+        return "ERROR: WEB_BROWSE query is empty."
+
+    try:
+        search_url = "https://duckduckgo.com/html/?q=" + urllib.parse.quote_plus(q)
+        req = urllib.request.Request(
+            search_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+            },
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:  # nosec B310
+            html = resp.read(500_000).decode("utf-8", errors="replace")
+
+        hrefs = re.findall(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"', html, re.I)
+        snippets = re.findall(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', html, re.I | re.S)
+
+        links: list[str] = []
+        link_snippets: list[str] = []
+        for idx, h in enumerate(hrefs):
+            # DuckDuckGo may wrap real URL in /l/?uddg=...
+            if "duckduckgo.com/l/?" in h:
+                p = urllib.parse.urlparse(h)
+                qs = urllib.parse.parse_qs(p.query)
+                real = qs.get("uddg", [""])[0]
+                if real:
+                    h = urllib.parse.unquote(real)
+            if h.startswith("http") and h not in links:
+                links.append(h)
+                sn = snippets[idx] if idx < len(snippets) else ""
+                link_snippets.append(_strip_html(sn)[:350])
+            if len(links) >= 3:
+                break
+
+        if not links:
+            return f"ERROR: No search results found for: {q}"
+
+        rows = [f"Live web results for: {q}"]
+        for i, link in enumerate(links, start=1):
+            try:
+                text = _fetch_text(link, timeout=8)
+                snippet = text[:900].strip()
+                rows.append(f"[{i}] {link}\n{snippet}")
+            except Exception as e:
+                fallback = link_snippets[i - 1] if i - 1 < len(link_snippets) else ""
+                if fallback:
+                    rows.append(f"[{i}] {link}\n{fallback}\n(Note: direct scrape blocked: {e})")
+                else:
+                    rows.append(f"[{i}] {link}\nERROR fetching page: {e}")
+
+        return "\n\n".join(rows)
+    except Exception as e:
+        return f"ERROR: WEB_BROWSE failed: {e}"
+
+
 ATTR_RE  = re.compile(r'<(READ_FILE|LIST_DIR|MAKE_DIR)\s+path=["\']?([^"\'>\n]+?)["\']?\s*/?>',
                        re.IGNORECASE)
 WRITE_RE = re.compile(r'<WRITE_FILE\s+path=["\']?([^"\'>\n]+?)["\']?\s*>\s*\n?(.*?)</WRITE_FILE>',
@@ -417,6 +504,8 @@ WRITE_RE = re.compile(r'<WRITE_FILE\s+path=["\']?([^"\'>\n]+?)["\']?\s*>\s*\n?(.
 EDIT_RE  = re.compile(r'<EDIT_FILE\s+path=["\']?([^"\'>\n]+?)["\']?\s*>\s*\n?(.*?)</EDIT_FILE>',
                        re.DOTALL | re.IGNORECASE)
 RUN_RE   = re.compile(r'<RUN_CMD>(.*?)</RUN_CMD>',
+                       re.DOTALL | re.IGNORECASE)
+WEB_RE   = re.compile(r'<WEB_BROWSE>(.*?)</WEB_BROWSE>',
                        re.DOTALL | re.IGNORECASE)
 
 # Fallback: detect markdown code blocks with filenames
@@ -649,6 +738,12 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
             actions.append({"type": "RUN_CMD", "cmd": cmd, "result": out, "blocked": True})
         else:
             pending.append({"type": "RUN_CMD", "cmd": cmd})
+
+    for q_raw in WEB_RE.findall(text):
+        q = q_raw.strip()
+        out = do_web_browse(q)
+        results.append(f"<RESULT action='WEB_BROWSE'>\n{out}\n</RESULT>")
+        actions.append({"type": "WEB_BROWSE", "query": q, "result": out})
 
     # ── Fallback: if no XML tags and no pending, detect markdown code blocks ──
     # ONLY triggers when the filename from the USER'S message actually exists in the workspace,
@@ -928,7 +1023,7 @@ async def chat(request: Request):
                         messages=msgs,  # type: ignore[arg-type]
                         stream=True,
                         temperature=0.7,
-                        max_tokens=4096,
+                        max_tokens=4096 if workdir else 220,
                         top_p=0.9,
                     )
                     for chunk in stream:
@@ -944,7 +1039,7 @@ async def chat(request: Request):
                 else:
                     import ollama as _ollama
                     # Use more tokens for coding tasks
-                    num_predict = 8192 if workdir else 512
+                    num_predict = 8192 if workdir else 220
                     for chunk in _ollama.chat(
                         model=MODEL,
                         messages=msgs,
@@ -1004,7 +1099,7 @@ async def chat(request: Request):
                 if PROVIDER == "groq":
                     s = llm_client.chat.completions.create(  # type: ignore[union-attr]
                         model=MODEL, messages=chat_msgs, stream=True,  # type: ignore[arg-type]
-                        temperature=0.7, max_tokens=4096, top_p=0.9,
+                        temperature=0.7, max_tokens=4096 if workdir else 220, top_p=0.9,
                     )
                     for chunk in s:
                         token = strip_emoji(chunk.choices[0].delta.content or "")
@@ -1017,7 +1112,7 @@ async def chat(request: Request):
                             break
                 else:
                     import ollama as _ollama
-                    num_predict = 6144 if workdir else 512
+                    num_predict = 6144 if workdir else 220
                     for chunk in _ollama.chat(
                         model=MODEL, messages=chat_msgs, stream=True,
                         options={
@@ -1117,7 +1212,7 @@ async def chat(request: Request):
 
             # ── Stop the loop if the model already gave a complete answer ──
             # If the response has no action tags at all, stop immediately.
-            has_any_tags = bool(ATTR_RE.search(full_response) or WRITE_RE.search(full_response) or EDIT_RE.search(full_response) or RUN_RE.search(full_response))
+            has_any_tags = bool(ATTR_RE.search(full_response) or WRITE_RE.search(full_response) or EDIT_RE.search(full_response) or RUN_RE.search(full_response) or WEB_RE.search(full_response))
             if not has_any_tags and not exec_actions and not pending:
                 break
 
@@ -1218,6 +1313,105 @@ async def get_workspace():
         "workspace": str(workspace),
         "workdir": str(workdir) if workdir else None
     })
+
+
+@app.get("/system-status")
+async def system_status():
+    """Return system info for UI cards with robust macOS fallbacks."""
+    import datetime
+    import psutil
+
+    info: dict = {
+        "battery": {"percent": None, "charging": None},
+        "wifi": None,
+        "weather": None,
+        "cpu": None,
+        "ram": None,
+    }
+
+    # Time
+    now = datetime.datetime.now()
+    info["time"] = now.strftime("%I:%M %p")
+    info["date"] = now.strftime("%a, %b %d")
+    info["greeting"] = "Good morning" if now.hour < 12 else "Good afternoon" if now.hour < 17 else "Good evening"
+
+    # Battery (psutil first)
+    try:
+        bat = psutil.sensors_battery()
+        if bat is not None and bat.percent is not None:
+            info["battery"] = {
+                "percent": int(round(float(bat.percent))),
+                "charging": bool(bat.power_plugged),
+            }
+    except Exception:
+        pass
+
+    # Battery fallback for macOS desktop setups: parse pmset
+    if info["battery"]["percent"] is None:
+        try:
+            r = subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True, timeout=3)
+            txt = (r.stdout or "")
+            m = re.search(r"(\d+)%", txt)
+            if m:
+                pct = int(m.group(1))
+                charging = bool(re.search(r"charging|charged", txt, re.I))
+                info["battery"] = {"percent": pct, "charging": charging}
+        except Exception:
+            pass
+
+    # CPU / RAM
+    try:
+        info["cpu"] = round(float(psutil.cpu_percent(interval=0.1)), 1)
+        info["ram"] = int(round(psutil.virtual_memory().percent))
+    except Exception:
+        pass
+
+    # Wifi SSID (airport first)
+    try:
+        r = subprocess.run(
+            ["/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I"],
+            capture_output=True, text=True, timeout=3
+        )
+        for line in (r.stdout or "").splitlines():
+            if " SSID:" in line:
+                info["wifi"] = line.split("SSID:", 1)[1].strip()
+                break
+    except Exception:
+        pass
+
+    # Wifi fallback: networksetup
+    if not info["wifi"]:
+        for iface in ("en0", "en1"):
+            try:
+                r = subprocess.run(["networksetup", "-getairportnetwork", iface], capture_output=True, text=True, timeout=3)
+                out = (r.stdout or "").strip()
+                if ":" in out and "not associated" not in out.lower():
+                    info["wifi"] = out.split(":", 1)[1].strip()
+                    break
+            except Exception:
+                continue
+
+    # Weather (best-effort, no key) from wttr.in JSON endpoint
+    try:
+        req = urllib.request.Request(
+            "https://wttr.in/?format=j1",
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        with urllib.request.urlopen(req, timeout=4) as resp:  # nosec B310
+            w = json.loads(resp.read().decode("utf-8", errors="replace"))
+        current = (w.get("current_condition") or [{}])[0]
+        temp_c = current.get("temp_C")
+        desc = ""
+        dd = current.get("weatherDesc") or []
+        if dd and isinstance(dd, list):
+            desc = (dd[0] or {}).get("value", "")
+        if temp_c is not None:
+            info["weather"] = f"{temp_c}C" + (f" {desc}" if desc else "")
+    except Exception:
+        pass
+
+    info["updated_at"] = now.isoformat(timespec="seconds")
+    return JSONResponse(info)
 
 
 @app.post("/workspace")
