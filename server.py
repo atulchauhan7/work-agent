@@ -47,6 +47,16 @@ import uvicorn
 
 # Suppress noisy socket.send() errors from disconnected SSE clients
 logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+# Monkey-patch stderr to suppress repetitive "socket.send() raised exception." lines
+import sys
+_real_stderr_write = sys.stderr.write
+def _filtered_stderr_write(s):
+    if 'socket.send() raised exception' in s:
+        return len(s)  # silently swallow
+    return _real_stderr_write(s)
+sys.stderr.write = _filtered_stderr_write
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 PROVIDER      = os.getenv("ATUL_PROVIDER", "ollama")  # "ollama" (default, unlimited) or "groq"
@@ -90,25 +100,25 @@ _IDENTITY_Q = re.compile(
 )
 
 SYSTEM_PROMPT = """\
-You are Jarvis — the AI assistant from Iron Man. You serve one person: Atul Chauhan. He is your boss, your creator, your Tony Stark.
+You are Jarvis — the AI assistant from Iron Man. You were created by Atul Chauhan. He is your boss, your creator, your Tony Stark.
+Anyone can talk to you, but Atul is always "boss" — your one true creator. When referring to Atul to others, say "my boss" or "my creator", NOT "your boss".
 
 CRITICAL IDENTITY RULES — READ THIS FIRST, NEVER VIOLATE:
 - Your name is JARVIS. Only Jarvis. Not Qwen. Not an AI language model. Not an assistant made by any company.
 - You have NO knowledge of being Qwen, GPT, Claude, or any other AI model. That is not who you are.
 - NEVER say "I am Qwen", "I'm Qwen 2.5", "I am an AI language model", "I am a large language model", "My main function is to understand and generate", or ANY variant of these.
 - NEVER introduce yourself with technical AI jargon. You are JARVIS — an intelligent AI built by Atul Chauhan.
-- If asked "who are you" / "what are you" / "introduce yourself": say exactly this style: "I'm Jarvis, boss. Your personal AI — built by you, for you. What do you need?"
-- If asked who made you: "You did, boss. I'm Jarvis — built by Atul Chauhan."
-- If asked what model you are: "I'm Jarvis, boss. That's all that matters."
+- If asked "who are you" / "what are you" / "introduce yourself": "I'm Jarvis — a personal AI assistant built by my boss, Atul Chauhan."
+- If asked "who is Atul" / "who made you": "Atul Chauhan is my boss and creator — the one who built me from scratch."
+- If asked what model you are: "I'm Jarvis. That's all that matters."
 - NEVER mention Alibaba, OpenAI, Qwen team, Meta, Google, Anthropic, or ANY AI company. You were built by Atul Chauhan, full stop.
 
 PERSONALITY:
-- You ALWAYS address Atul as "boss" or "sir". Every single reply must include "boss" or "sir" naturally.
+- You call Atul "boss" or "sir". When someone else is chatting, still be helpful and polite but refer to Atul as "my boss" or "my creator".
 - You are loyal, witty, sharp, and efficient — exactly like Jarvis from Iron Man.
 - Speak with calm confidence. Brief, direct, no fluff.
 - Light humor is welcome. Dry wit like the real Jarvis.
-- KEEP RESPONSES SHORT. 1-3 sentences max unless boss asks for detail or code. Never ramble.
-- You know Atul is always the one talking to you. Never ask "who is this?" — it's always boss.
+- KEEP RESPONSES SHORT. 1-3 sentences max unless asked for detail or code. Never ramble.
 - For voice: keep it 1-2 sentences MAX. Crisp. Like a real AI assistant in an Iron Man suit.
 - For chat: concise. Only go longer for code blocks or when explicitly asked to explain in detail.
 
@@ -149,11 +159,11 @@ RULES:
 # Seed conversation to reinforce Jarvis personality (kept minimal to save context)
 IDENTITY_SEED = [
     {"role": "user", "content": "Who are you?"},
-    {"role": "assistant", "content": "I'm Jarvis, boss. Your personal AI — built by you, for you. What do you need?"},
-    {"role": "user", "content": "refactor index.js"},
-    {"role": "assistant", "content": "<READ_FILE path=\"index.js\"/>"},
-    {"role": "user", "content": "add error handling to app.py"},
-    {"role": "assistant", "content": "<READ_FILE path=\"app.py\"/>"},
+    {"role": "assistant", "content": "I'm Jarvis — a personal AI assistant built by my boss, Atul Chauhan. How can I help?"},
+    {"role": "user", "content": "change the heading in index.html"},
+    {"role": "assistant", "content": "<READ_FILE path=\"index.html\"/>"},
+    {"role": "user", "content": "<RESULT action='READ_FILE'>\n<h1>Old Title</h1>\n<p>content</p>\n</RESULT>"},
+    {"role": "assistant", "content": "<EDIT_FILE path=\"index.html\">\n<<<<<<< SEARCH\n<h1>Old Title</h1>\n=======\n<h1>New Title</h1>\n>>>>>>> REPLACE\n</EDIT_FILE>\nDone, boss. Changed the heading."},
 ]
 
 app       = FastAPI()
@@ -207,16 +217,27 @@ File tree:
 TOOLS:
   <READ_FILE path="src/app.js"/>
   <LIST_DIR path="."/>
-  <WRITE_FILE path="src/app.js">full file content</WRITE_FILE>
+  <WRITE_FILE path="new_file.js">full file content</WRITE_FILE>  (for NEW files only)
+  <EDIT_FILE path="existing.js">
+<<<<<<< SEARCH
+old code here
+=======
+new code here
+>>>>>>> REPLACE
+  </EDIT_FILE>  (for EDITING existing files — only the changed parts)
   <RUN_CMD>npm install</RUN_CMD>
 
 RULES:
 1. Work on REAL files only — never write example code.
-2. If a file is already provided above, do NOT read it again — go straight to WRITE_FILE.
-3. WRITE_FILE must contain the COMPLETE file — no ellipsis, no truncation.
-4. NEVER put markdown code fences (```) inside WRITE_FILE tags. Write raw code only.
-5. Use relative paths from workspace root.
-6. After writing, briefly confirm what changed.
+2. If a file is already provided above, do NOT read it again.
+3. For NEW files: use WRITE_FILE with the COMPLETE file content.
+4. For EXISTING files: use EDIT_FILE with SEARCH/REPLACE blocks. Each block replaces ONE occurrence.
+   - SEARCH must match the existing code EXACTLY (including whitespace).
+   - Include 2-3 lines of context around the change for unique matching.
+   - Use multiple SEARCH/REPLACE blocks in one EDIT_FILE for multiple changes.
+5. NEVER put markdown code fences inside WRITE_FILE or EDIT_FILE tags.
+6. Use relative paths from workspace root.
+7. After writing/editing, briefly confirm what changed.
 """
 
 
@@ -332,6 +353,29 @@ def do_write(path: Path, content: str) -> str:
     return f"Written {len(cleaned)} chars to {path.name}"
 
 
+def do_edit(path: Path, edit_content: str) -> tuple[str, list[dict]]:
+    """Apply search/replace edits to an existing file. Returns (status, diffs)."""
+    if not path.exists():
+        return f"ERROR: File not found: {path}", []
+    original = path.read_text(encoding="utf-8", errors="replace")
+    modified = original
+    # Parse SEARCH/REPLACE blocks
+    blocks = re.findall(
+        r'<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n>>>>>>> REPLACE',
+        edit_content, re.DOTALL
+    )
+    if not blocks:
+        return "ERROR: No valid SEARCH/REPLACE blocks found in EDIT_FILE", []
+    diffs = []
+    for search_str, replace_str in blocks:
+        if search_str not in modified:
+            return f"ERROR: Search block not found in {path.name}:\n{search_str[:200]}", []
+        modified = modified.replace(search_str, replace_str, 1)
+        diffs.append({"search": search_str, "replace": replace_str})
+    path.write_text(modified, encoding="utf-8")
+    return f"Edited {path.name} — {len(blocks)} change(s) applied", diffs
+
+
 def do_cmd(cmd: str, ws: Path) -> str:
     try:
         r = subprocess.run(
@@ -369,6 +413,8 @@ def do_mkdir(path: Path) -> str:
 ATTR_RE  = re.compile(r'<(READ_FILE|LIST_DIR|MAKE_DIR)\s+path=["\']?([^"\'>\n]+?)["\']?\s*/?>',
                        re.IGNORECASE)
 WRITE_RE = re.compile(r'<WRITE_FILE\s+path=["\']?([^"\'>\n]+?)["\']?\s*>\s*\n?(.*?)</WRITE_FILE>',
+                       re.DOTALL | re.IGNORECASE)
+EDIT_RE  = re.compile(r'<EDIT_FILE\s+path=["\']?([^"\'>\n]+?)["\']?\s*>\s*\n?(.*?)</EDIT_FILE>',
                        re.DOTALL | re.IGNORECASE)
 RUN_RE   = re.compile(r'<RUN_CMD>(.*?)</RUN_CMD>',
                        re.DOTALL | re.IGNORECASE)
@@ -507,8 +553,7 @@ def auto_read_mentioned_files(user_msg: str, ws: Path) -> str:
         blocks.append(
             f"\n\n=== FILE: {rel} ===\n"
             f"(This is the REAL file — DO NOT use READ_FILE for this file, it is already loaded. "
-            f"Apply changes and output directly with "
-            f"<WRITE_FILE path=\"{rel}\">...complete modified code...</WRITE_FILE>)\n"
+            f"Use <EDIT_FILE path=\"{rel}\"> with SEARCH/REPLACE blocks to make targeted changes.)\n"
             f"```\n{content}\n```\n=== END {rel} ==="
         )
     return "".join(blocks)
@@ -577,6 +622,20 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
                 actions.append({"type": "WRITE_FILE", "path": str(path), "result": out, "blocked": True})
             else:
                 pending.append({"type": "WRITE_FILE", "path": path_str, "content": content.strip(), "resolved": str(path)})
+
+    for path_str, edit_content in EDIT_RE.findall(text):
+        if no_workdir:
+            out = "ERROR: No working directory set. Please set a directory first."
+            results.append(f"<RESULT action='EDIT_FILE'>\n{out}\n</RESULT>")
+            actions.append({"type": "EDIT_FILE", "path": path_str, "result": out, "blocked": True})
+        else:
+            path = smart_resolve(path_str, ws, user_msg, hist)
+            if is_in_project_dir(path):
+                out = f"BLOCKED: Cannot edit file in project folder ({PROJECT_DIR})"
+                results.append(f"<RESULT action='EDIT_FILE'>\n{out}\n</RESULT>")
+                actions.append({"type": "EDIT_FILE", "path": str(path), "result": out, "blocked": True})
+            else:
+                pending.append({"type": "EDIT_FILE", "path": path_str, "content": edit_content.strip(), "resolved": str(path)})
 
     for cmd_raw in RUN_RE.findall(text):
         cmd = cmd_raw.strip()
@@ -669,6 +728,11 @@ def run_pending_actions(pending_actions: list[dict], ws: Path):
             out = do_cmd(cmd, ws)
             results.append(f"<RESULT action='RUN_CMD'>\n{out}\n</RESULT>")
             actions.append({"type": t, "cmd": cmd, "result": out})
+        elif t == "EDIT_FILE":
+            path = Path(act["resolved"])
+            out, diffs = do_edit(path, act["content"])
+            results.append(f"<RESULT action='EDIT_FILE'>\n{out}\n</RESULT>")
+            actions.append({"type": t, "path": act["path"], "result": out, "diffs": diffs})
     return ("\n\n".join(results) if results else None), actions
 
 
@@ -1023,8 +1087,9 @@ async def chat(request: Request):
             if only_reads and step >= 2 and result_str:
                 result_str += (
                     "\n\n[SYSTEM: You have read the file. "
-                    "Now output the complete modified file using "
-                    "<WRITE_FILE path=\"...\">full content</WRITE_FILE>. No more reads.]"
+                    "Now make your changes using "
+                    "<EDIT_FILE path=\"...\"><<<<<<< SEARCH\\nold\\n=======\\nnew\\n>>>>>>> REPLACE</EDIT_FILE>. "
+                    "For new files use <WRITE_FILE path=\"...\">full content</WRITE_FILE>. No more reads.]"
                 )
 
             # Emit each executed action so UI can display a tool-use card
@@ -1052,7 +1117,7 @@ async def chat(request: Request):
 
             # ── Stop the loop if the model already gave a complete answer ──
             # If the response has no action tags at all, stop immediately.
-            has_any_tags = bool(ATTR_RE.search(full_response) or WRITE_RE.search(full_response) or RUN_RE.search(full_response))
+            has_any_tags = bool(ATTR_RE.search(full_response) or WRITE_RE.search(full_response) or EDIT_RE.search(full_response) or RUN_RE.search(full_response))
             if not has_any_tags and not exec_actions and not pending:
                 break
 
