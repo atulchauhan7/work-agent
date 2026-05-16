@@ -15,6 +15,7 @@ import logging
 import asyncio
 import subprocess
 import argparse
+import shutil
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -73,13 +74,14 @@ PORT            = 5173
 MAX_AGENT_STEPS = 8   # max tool-use iterations per request
 TREE_MAX_DEPTH  = 3
 TREE_MAX_FILES  = 80
+JS_TEMP_DIR     = Path(__file__).parent / ".js_sandbox"  # ephemeral JS execution dir
 
 # Directories to skip when building the project tree
 TREE_IGNORE = {
     '.git', 'node_modules', '__pycache__', '.venv', 'venv', 'env',
     'dist', 'build', '.next', '.nuxt', 'coverage', '.cache',
     '.idea', '.vscode', 'target', 'out', '.gradle', '.mypy_cache',
-    'vendor', '.DS_Store', 'Thumbs.db',
+    'vendor', '.DS_Store', 'Thumbs.db', '.js_sandbox',
 }
 
 # ── LLM client setup ───────────────────────────────────────────────────────────
@@ -153,6 +155,14 @@ RULES:
 - LIVE WEB BROWSING: When user asks for latest/real-time data (market, stocks, crypto, news, rates, trends), use:
     <WEB_BROWSE>query</WEB_BROWSE>
     Then answer from fetched sources with date/time context.
+- JAVASCRIPT EXECUTION: When you need to compute something, fetch data programmatically, or run any JS code:
+    <RUN_JS>
+    console.log("Hello from Node.js");
+    </RUN_JS>
+    This runs via Node.js locally. Use it to calculate, parse data, make API calls with fetch, etc.
+- WEB SCRAPING: To scrape a specific URL for its content:
+    <SCRAPE_URL>https://example.com</SCRAPE_URL>
+    Returns the text content of that page. Use this when you need content from a known URL.
 - NEVER use emojis, emoticons, or Unicode symbols in responses. No 😀👍✅🚀 etc. Plain text only. This is critical — responses are spoken aloud by TTS.
 - Help with code (in code blocks), debugging, knowledge, startup advice, etc.
 - You can conduct mock interviews (SDE, system design, behavioral). Ask one question at a time, wait for answer, give feedback, then next question.
@@ -232,6 +242,8 @@ new code here
 >>>>>>> REPLACE
   </EDIT_FILE>  (for EDITING existing files — only the changed parts)
   <RUN_CMD>npm install</RUN_CMD>
+  <RUN_JS>console.log(2+2)</RUN_JS>  (execute JavaScript via Node.js)
+  <SCRAPE_URL>https://example.com</SCRAPE_URL>  (scrape a specific URL)
 
 RULES:
 1. Work on REAL files only — never write example code.
@@ -577,6 +589,54 @@ def do_web_browse(query: str) -> str:
         return f"ERROR: WEB_BROWSE failed: {e}"
 
 
+def do_run_js(code: str) -> str:
+    """Execute JavaScript code via Node.js in an ephemeral sandbox. Returns stdout/stderr."""
+    code = code.strip()
+    if not code:
+        return "ERROR: RUN_JS code is empty."
+    # Ensure temp dir exists
+    JS_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    script = JS_TEMP_DIR / f"run_{os.getpid()}_{id(code) & 0xFFFF:04x}.js"
+    try:
+        script.write_text(code, encoding="utf-8")
+        r = subprocess.run(
+            ["node", str(script)],
+            capture_output=True, text=True,
+            cwd=str(JS_TEMP_DIR), timeout=15,
+            env={**os.environ, "NODE_NO_WARNINGS": "1"},
+        )
+        out = (r.stdout + r.stderr).strip()
+        return out[:4000] if out else "(no output)"
+    except FileNotFoundError:
+        return "ERROR: Node.js is not installed. Install it with: brew install node"
+    except subprocess.TimeoutExpired:
+        return "ERROR: JS execution timed out after 15s."
+    except Exception as e:
+        return f"ERROR: RUN_JS failed: {e}"
+    finally:
+        try:
+            script.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+def do_scrape_url(url: str) -> str:
+    """Fetch and extract text content from a specific URL."""
+    url = url.strip()
+    if not url:
+        return "ERROR: SCRAPE_URL is empty."
+    if not url.startswith("http"):
+        url = "https://" + url
+    try:
+        text = _fetch_text(url, timeout=10)
+        if not text:
+            return f"ERROR: No text content found at {url}"
+        # Return first 3000 chars (enough for LLM context)
+        return f"Content from {url}:\n{text[:3000]}"
+    except Exception as e:
+        return f"ERROR: Failed to scrape {url}: {e}"
+
+
 ATTR_RE  = re.compile(r'<(READ_FILE|LIST_DIR|MAKE_DIR)\s+path=["\']?([^"\'>\n]+?)["\']?\s*/?>',
                        re.IGNORECASE)
 WRITE_RE = re.compile(r'<WRITE_FILE\s+path=["\']?([^"\'>\n]+?)["\']?\s*>\s*\n?(.*?)</WRITE_FILE>',
@@ -587,6 +647,10 @@ RUN_RE   = re.compile(r'<RUN_CMD>(.*?)</RUN_CMD>',
                        re.DOTALL | re.IGNORECASE)
 WEB_RE   = re.compile(r'<WEB_BROWSE>(.*?)</WEB_BROWSE>',
                        re.DOTALL | re.IGNORECASE)
+JS_RE    = re.compile(r'<RUN_JS>(.*?)</RUN_JS>',
+                       re.DOTALL | re.IGNORECASE)
+SCRAPE_RE = re.compile(r'<SCRAPE_URL>(.*?)</SCRAPE_URL>',
+                        re.DOTALL | re.IGNORECASE)
 
 # Fallback: detect markdown code blocks with filenames
 # Matches patterns like:  ```javascript\n...code...\n```  when preceded by a filename mention
@@ -824,6 +888,18 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
         out = do_web_browse(q)
         results.append(f"<RESULT action='WEB_BROWSE'>\n{out}\n</RESULT>")
         actions.append({"type": "WEB_BROWSE", "query": q, "result": out})
+
+    for js_raw in JS_RE.findall(text):
+        js_code = js_raw.strip()
+        out = do_run_js(js_code)
+        results.append(f"<RESULT action='RUN_JS'>\n{out}\n</RESULT>")
+        actions.append({"type": "RUN_JS", "cmd": js_code[:80] + ("..." if len(js_code) > 80 else ""), "result": out})
+
+    for url_raw in SCRAPE_RE.findall(text):
+        url = url_raw.strip()
+        out = do_scrape_url(url)
+        results.append(f"<RESULT action='SCRAPE_URL'>\n{out}\n</RESULT>")
+        actions.append({"type": "SCRAPE_URL", "query": url, "result": out})
 
     # ── Fallback: if no XML tags and no pending, detect markdown code blocks ──
     # ONLY triggers when the filename from the USER'S message actually exists in the workspace,
@@ -1652,6 +1728,12 @@ if __name__ == "__main__":
         llm_client = None  # ollama uses module-level calls
 
     workspace = Path(args.workspace).resolve()
+
+    # ── Clean slate on restart ──────────────────────────────────────────────
+    HISTORY_FILE.unlink(missing_ok=True)       # clear chat history
+    if JS_TEMP_DIR.exists():
+        shutil.rmtree(JS_TEMP_DIR, ignore_errors=True)  # clear JS sandbox
+
     history   = load_history()
 
     # Get local IP for mobile access

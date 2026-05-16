@@ -120,10 +120,12 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .action-inner:hover{border-color:#333}
 .action-inner.write{border-color:rgba(16,163,127,.2);background:rgba(16,163,127,.04)}
 .action-inner.run{border-color:rgba(13,110,253,.2);background:rgba(13,110,253,.04)}
+.action-inner.browse{border-color:rgba(168,85,247,.2);background:rgba(168,85,247,.04)}
 .action-inner.error{border-color:rgba(239,107,107,.2);background:rgba(239,107,107,.04);color:var(--warn)}
 .action-badge{font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;background:rgba(255,255,255,.06);color:#888;white-space:nowrap;flex-shrink:0;letter-spacing:.5px}
 .action-badge.write{background:rgba(16,163,127,.12);color:#34d399}
 .action-badge.run{background:rgba(13,110,253,.12);color:#60a5fa}
+.action-badge.browse{background:rgba(168,85,247,.12);color:#c084fc}
 .action-badge.edit{background:rgba(229,192,123,.12);color:#e5c07b}
 .action-path{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .action-inner.edit{border-color:rgba(229,192,123,.2);background:rgba(229,192,123,.04)}
@@ -1719,9 +1721,9 @@ function showPendingActions(actions){
     item.className='pending-file';
     item.style.flexDirection='column';item.style.alignItems='flex-start';
     const isEdit=act.type==='EDIT_FILE';
-    const typeLabel=act.type==='WRITE_FILE'?'CREATE':act.type==='MAKE_DIR'?'MKDIR':isEdit?'EDIT':'RUN';
-    const typeClass=act.type==='RUN_CMD'?'run':isEdit?'edit':'';
-    const display=act.type==='RUN_CMD'?esc(act.cmd||''):esc(act.path||act.resolved||'');
+    const typeLabel=act.type==='WRITE_FILE'?'CREATE':act.type==='MAKE_DIR'?'MKDIR':isEdit?'EDIT':act.type==='RUN_JS'?'JS':act.type==='SCRAPE_URL'?'SCRAPE':'RUN';
+    const typeClass=act.type==='RUN_CMD'||act.type==='RUN_JS'?'run':act.type==='SCRAPE_URL'?'browse':isEdit?'edit':'';
+    const display=act.type==='RUN_CMD'?esc(act.cmd||''):act.type==='RUN_JS'?esc(act.cmd||''):act.type==='SCRAPE_URL'?esc(act.query||''):esc(act.path||act.resolved||'');
     const row=document.createElement('div');
     row.style.cssText='display:flex;align-items:center;gap:8px;width:100%';
     row.innerHTML=`<span class="pf-type ${typeClass}">${typeLabel}</span><span class="pf-path">${display}</span>`;
@@ -1781,8 +1783,8 @@ async function approveActions(){
       const ok=!act.result?.startsWith('ERROR')&&!act.result?.startsWith('BLOCKED');
       const icon=ok?'&#10003;':'&#9888;';
       const color=ok?'var(--ok)':'var(--warn)';
-      const display=act.type==='RUN_CMD'?esc(act.cmd||''):esc(act.path||'');
-      const label=act.type==='EDIT_FILE'?'EDIT':act.type==='WRITE_FILE'?'CREATE':act.type;
+      const display=act.type==='RUN_CMD'||act.type==='RUN_JS'?esc(act.cmd||''):act.type==='WEB_BROWSE'||act.type==='SCRAPE_URL'?esc(act.query||''):esc(act.path||'');
+      const label=act.type==='EDIT_FILE'?'EDIT':act.type==='WRITE_FILE'?'CREATE':act.type==='RUN_JS'?'JS':act.type==='SCRAPE_URL'?'SCRAPE':act.type;
       html+=`<div style="font-size:12px;margin:3px 0;color:${color}">${icon} ${label}: <code>${display}</code></div>`;
       if(act.result){html+=`<div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-left:16px">${esc(act.result)}</div>`;}
       // Show diff for EDIT_FILE results
@@ -1815,14 +1817,14 @@ function appendActionCard(act){
   wrapper.className='action-card';
   const inner=document.createElement('div');
   const isEdit=act.type==='EDIT_FILE';
-  const typeClass=act.type==='WRITE_FILE'||act.type==='MAKE_DIR'?'write':act.type==='RUN_CMD'?'run':isEdit?'edit':(act.result&&act.result.startsWith('ERROR')?'error':'');
+  const typeClass=act.type==='WRITE_FILE'||act.type==='MAKE_DIR'?'write':act.type==='RUN_CMD'||act.type==='RUN_JS'?'run':act.type==='WEB_BROWSE'||act.type==='SCRAPE_URL'?'browse':isEdit?'edit':(act.result&&act.result.startsWith('ERROR')?'error':'');
   inner.className='action-inner '+typeClass;
   const badge=document.createElement('span');
   badge.className='action-badge '+typeClass;
-  badge.textContent=act.type==='READ_FILE'?'READ':act.type==='LIST_DIR'?'LIST':act.type==='WRITE_FILE'?'CREATE':isEdit?'EDIT':act.type==='RUN_CMD'?'RUN':'DIR';
+  badge.textContent=act.type==='READ_FILE'?'READ':act.type==='LIST_DIR'?'LIST':act.type==='WRITE_FILE'?'CREATE':isEdit?'EDIT':act.type==='RUN_CMD'?'RUN':act.type==='RUN_JS'?'JS':act.type==='WEB_BROWSE'?'WEB':act.type==='SCRAPE_URL'?'SCRAPE':'DIR';
   const path=document.createElement('span');
   path.className='action-path';
-  path.textContent=act.type==='RUN_CMD'?(act.cmd||''):(act.path||'');
+  path.textContent=act.type==='RUN_CMD'||act.type==='RUN_JS'?(act.cmd||''):act.type==='WEB_BROWSE'||act.type==='SCRAPE_URL'?(act.query||''):(act.path||'');
   inner.appendChild(badge);inner.appendChild(path);
   // Show inline diff for completed EDIT_FILE actions
   if(isEdit && act.diffs && act.diffs.length){
