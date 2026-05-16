@@ -259,39 +259,53 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .inp-hint kbd{background:#333;padding:1px 5px;border-radius:3px;font-size:10px;font-family:var(--mono);border:1px solid #444}
 
 /* Voice Mode Overlay */
-.voice-overlay{position:fixed;inset:0;z-index:2000;background:#04050a;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .3s ease;overflow:hidden}
+.voice-overlay{position:fixed;inset:0;z-index:2000;background:linear-gradient(165deg,#060a14 0%,#0a1628 40%,#0d1117 100%);display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .3s ease;overflow:hidden}
 .voice-overlay::before{content:'';position:absolute;inset:0;background:
-  radial-gradient(circle at 15% 20%,rgba(13,110,253,.08),transparent 38%),
-  radial-gradient(circle at 85% 25%,rgba(16,163,127,.07),transparent 35%),
-  radial-gradient(circle at 50% 50%,rgba(16,163,127,.06),transparent 45%);
+  radial-gradient(ellipse at 20% 0%,rgba(16,163,127,.12),transparent 50%),
+  radial-gradient(ellipse at 80% 0%,rgba(96,165,250,.1),transparent 50%),
+  radial-gradient(circle at 50% 60%,rgba(16,163,127,.05),transparent 50%);
   pointer-events:none}
 .voice-overlay.active{opacity:1;pointer-events:all}
-.vo-top-bar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;z-index:3;flex-shrink:0}
+.vo-top-bar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;z-index:3;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.04)}
 .vo-top-left{display:flex;align-items:center;gap:12px}
 .vo-top-title{font-size:13px;font-weight:700;color:#6fd6c1;letter-spacing:2px}
 .vo-top-time{font-size:12px;color:#7f93b2;font-weight:500;font-family:var(--mono)}
-.vo-close-btn{width:40px;height:40px;border-radius:50%;border:1px solid #1a2638;background:rgba(255,255,255,.03);color:#6f7f98;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.vo-close-btn:hover{background:rgba(255,255,255,.08);color:#d6e2f0;border-color:#335078}
+.vo-close-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#6f7f98;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.vo-close-btn:hover{background:rgba(255,255,255,.1);color:#d6e2f0;border-color:rgba(255,255,255,.15)}
 
-/* Main content — fills remaining space */
-.vo-main{flex:1;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:0 24px 24px;position:relative;z-index:2}
+/* 3-column body: left panels | center orb | right log */
+.vo-body{flex:1;display:flex;overflow:hidden;position:relative;z-index:2;min-height:0}
 
-/* Dashboard row */
-.vo-dash-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%;max-width:900px;margin:0 auto 16px}
-.vo-dash-cell{background:linear-gradient(145deg,rgba(12,18,30,.9),rgba(8,12,22,.8));border:1px solid rgba(92,133,184,.12);border-radius:10px;padding:10px 16px;min-width:90px;flex:1;text-align:center;backdrop-filter:blur(6px);transition:border-color .25s}
-.vo-dash-cell:hover{border-color:rgba(92,133,184,.3)}
-.vo-dash-k{font-size:8px;color:#4d6380;text-transform:uppercase;letter-spacing:1.4px;margin-bottom:4px}
-.vo-dash-v{font-size:14px;color:#d8e6f6;font-family:var(--mono);font-weight:600}
-.vo-dash-v.warn{color:#ef6b6b}
-.vo-dash-v.ok{color:#34d399}
+/* Side panels */
+.vo-side{width:280px;padding:20px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex-shrink:0;min-height:0}
+.vo-side::-webkit-scrollbar{width:3px}
+.vo-side::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
+.vo-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;flex-shrink:0;transition:border-color .25s}
+.vo-panel:hover{border-color:rgba(255,255,255,.12)}
+.vo-panel-fill{flex:1;display:flex;flex-direction:column;min-height:0}
+.vo-section-label{font-size:9px;color:#5a8bc0;letter-spacing:1.8px;margin-bottom:10px;text-transform:uppercase;font-weight:600}
 
-/* Center orb */
-.vo-center{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;min-height:0}
-.vo-status{font-size:12px;color:#78a6d1;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;min-height:18px;margin-bottom:12px}
-.vo-transcript{font-size:24px;color:#e5f0ff;max-width:720px;text-align:center;min-height:42px;line-height:1.45;padding:0 20px;word-break:break-word;font-weight:300;margin-bottom:20px}
+/* Metric rows */
+.vo-metrics{display:flex;flex-direction:column;gap:2px}
+.vo-m{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;transition:background .2s}
+.vo-m:hover{background:rgba(255,255,255,.03)}
+.vo-m-k{font-size:11px;color:#6b8399;font-weight:500}
+.vo-m-v{font-size:14px;color:#e8f0fe;font-family:var(--mono);font-weight:700}
+.vo-m-v.warn{color:#ef6b6b}
+.vo-m-v.ok{color:#34d399}
+
+/* Quick command buttons — stacked */
+.vo-cmd-col{display:flex;flex-direction:column;gap:6px}
+.vo-cmd-btn{padding:9px 14px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#8aa8c4;font-size:11px;cursor:pointer;font-family:var(--font);transition:all .2s;letter-spacing:.3px;font-weight:500;text-align:left}
+.vo-cmd-btn:hover{background:rgba(16,163,127,.12);border-color:rgba(16,163,127,.3);color:#6fd6c1}
+
+/* Center orb — fills middle, vertically centered */
+.vo-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:0 20px;overflow:hidden}
+.vo-status{font-size:11px;color:#5a9fd4;font-weight:600;letter-spacing:2px;text-transform:uppercase;min-height:18px;margin-bottom:14px}
+.vo-transcript{font-size:24px;color:#e5f0ff;max-width:100%;text-align:center;min-height:42px;line-height:1.45;padding:0 10px;word-break:break-word;font-weight:300;margin-bottom:16px;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
 .vo-transcript.interim{color:#7f92ad;font-style:italic;font-weight:300}
-.vo-orb-wrap{position:relative;width:240px;height:240px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:6px 0}
-.vo-orb{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#8cf7e4 0%,#16c5b4 34%,#0a7ccf 72%,#072a56 100%);box-shadow:0 0 80px rgba(41,188,226,.28),0 0 170px rgba(6,74,162,.2),inset 0 0 30px rgba(255,255,255,.2);transition:transform .3s,box-shadow .3s;display:flex;align-items:center;justify-content:center;border:1px solid rgba(150,232,255,.45)}
+.vo-orb-wrap{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0}
+.vo-orb{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#8cf7e4 0%,#16c5b4 34%,#0a7ccf 72%,#072a56 100%);box-shadow:0 0 80px rgba(41,188,226,.28),0 0 170px rgba(6,74,162,.2),inset 0 0 30px rgba(255,255,255,.2);transition:transform .3s,box-shadow .3s;display:flex;align-items:center;justify-content:center;border:1px solid rgba(150,232,255,.45)}
 .vo-orb-wrap:hover .vo-orb{transform:scale(1.05)}
 .vo-orb.listening{animation:orb-pulse 1.5s ease-in-out infinite}
 .vo-orb.speaking{animation:orb-speak .8s ease-in-out infinite;background:radial-gradient(circle at 50% 50%,#d4b0ff 0%,#8b5cf6 40%,#5b2bcf 100%)}
@@ -304,48 +318,39 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .vo-rings:nth-child(3){animation-delay:1.6s}
 @keyframes ring-expand{0%{transform:scale(.72);opacity:.55}100%{transform:scale(2.15);opacity:0}}
 .vo-orb-wrap:not(.is-listening) .vo-rings{display:none}
-.vo-reactor-mark{position:absolute;width:188px;height:188px;border-radius:50%;border:1px dashed rgba(116,193,255,.26);pointer-events:none}
+.vo-reactor-mark{position:absolute;width:175px;height:175px;border-radius:50%;border:1px dashed rgba(116,193,255,.2);pointer-events:none}
 
-.vo-bars{display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:8px 0 12px;opacity:0;transition:opacity .3s}
+.vo-bars{display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:8px 0 8px;opacity:0;transition:opacity .3s}
 .vo-bars.active{opacity:1}
 .vo-bar{width:4px;border-radius:2px;background:#4fd6de;height:8px;transition:height .1s ease;min-height:4px}
 .vo-bars.speaking .vo-bar{background:#b08dff}
-.vo-response{font-size:15px;color:#8ea3bf;max-width:680px;text-align:center;line-height:1.75;padding:0 22px;max-height:160px;overflow-y:auto;word-break:break-word;scroll-behavior:smooth}
+.vo-response{font-size:15px;color:#8ea3bf;max-width:100%;text-align:center;line-height:1.75;padding:0 10px;max-height:120px;overflow-y:auto;word-break:break-word;scroll-behavior:smooth;box-sizing:border-box}
 .vo-response::-webkit-scrollbar{width:3px}
 .vo-response::-webkit-scrollbar-thumb{background:#284769;border-radius:2px}
 .vo-response .cap-sentence{transition:color .3s,opacity .3s}
 .vo-response .cap-spoken{color:#667995;opacity:.55}
 .vo-response .cap-active{color:#eff6ff;font-weight:500;text-shadow:0 0 12px rgba(98,190,255,.38)}
 .vo-response .cap-upcoming{color:#4d607b}
-
-/* Bottom row — quick commands + log */
-.vo-bottom-row{display:flex;gap:12px;width:100%;max-width:900px;margin:0 auto;flex-shrink:0}
-.vo-bottom-panel{background:linear-gradient(145deg,rgba(12,18,30,.85),rgba(8,12,22,.75));border:1px solid rgba(92,133,184,.12);border-radius:12px;padding:12px 16px;flex:1;backdrop-filter:blur(6px)}
-.vo-log-panel{flex:1.5}
-.vo-section-label{font-size:9px;color:#5a8bc0;letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase}
-.vo-cmd-row{display:flex;flex-wrap:wrap;gap:6px}
-.vo-cmd-btn{padding:7px 14px;border-radius:8px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);color:#7a9ab8;font-size:11px;cursor:pointer;font-family:var(--font);transition:all .2s;letter-spacing:.3px}
-.vo-cmd-btn:hover{background:rgba(16,163,127,.08);border-color:rgba(16,163,127,.25);color:#a8d4c6}
-.vo-log{display:flex;flex-direction:column;gap:4px;max-height:100px;overflow-y:auto}
-.vo-log::-webkit-scrollbar{width:2px}
-.vo-log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
-.vo-log-item{font-size:10px;color:#4d6380;font-family:var(--mono);padding:4px 8px;border-radius:4px;background:rgba(255,255,255,.01);border-left:2px solid rgba(92,133,184,.15)}
-.vo-log-item .log-time{color:#3a526a;margin-right:6px}
-.vo-log-item.log-user{border-left-color:rgba(88,101,242,.3);color:#7088a8}
-.vo-log-item.log-ai{border-left-color:rgba(16,163,127,.3);color:#6b9e8e}
-
-/* End row */
-.vo-end-row{display:flex;justify-content:center;margin-top:12px;flex-shrink:0}
-.vo-btn{width:50px;height:50px;border-radius:50%;border:1px solid #2a2a2a;background:rgba(255,255,255,.04);color:#777;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:18px}
-.vo-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:#555}
-.vo-btn.end{width:56px;height:56px;background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.3);color:#e74c3c}
+.vo-end-row{display:flex;justify-content:center;margin-top:12px}
+.vo-btn{width:50px;height:50px;border-radius:50%;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.04);color:#777;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:18px}
+.vo-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.15)}
+.vo-btn.end{width:48px;height:48px;background:rgba(231,76,60,.12);border-color:rgba(231,76,60,.25);color:#e74c3c}
 .vo-btn.end:hover{background:#e74c3c;border-color:#e74c3c;color:#fff}
 
-/* Language toggle — moved to top bar */
+/* Conversation log — fills right panel */
+.vo-log{display:flex;flex-direction:column;gap:4px;flex:1;overflow-y:auto;min-height:0}
+.vo-log::-webkit-scrollbar{width:2px}
+.vo-log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+.vo-log-item{font-size:10px;color:#5a7a96;font-family:var(--mono);padding:5px 10px;border-radius:6px;background:rgba(255,255,255,.02);border-left:2px solid rgba(92,133,184,.2);flex-shrink:0}
+.vo-log-item .log-time{color:#4a6a86;margin-right:6px}
+.vo-log-item.log-user{border-left-color:rgba(96,165,250,.4);color:#7a9ec4}
+.vo-log-item.log-ai{border-left-color:rgba(16,163,127,.4);color:#6baa96}
+
+/* Language toggle */
 .vo-lang{display:flex;gap:6px}
-.vo-lang-btn{padding:5px 14px;border-radius:16px;border:1px solid #2a2a2a;background:rgba(255,255,255,.03);color:#555;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.8px;text-transform:uppercase}
-.vo-lang-btn.active{background:rgba(16,163,127,.15);border-color:rgba(16,163,127,.3);color:#10a37f}
-.vo-lang-btn:hover:not(.active){background:rgba(255,255,255,.08);color:#aaa}
+.vo-lang-btn{padding:5px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#5a7a96;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.8px;text-transform:uppercase}
+.vo-lang-btn.active{background:rgba(16,163,127,.18);border-color:rgba(16,163,127,.35);color:#34d399}
+.vo-lang-btn:hover:not(.active){background:rgba(255,255,255,.08);color:#aabbcc}
 
 /* Green mic indicator */
 .mic-indicator{display:none;align-items:center;gap:6px;padding:4px 10px;border-radius:16px;background:rgba(16,163,127,.15);font-size:12px;color:#10a37f;font-weight:600;letter-spacing:.3px}
@@ -372,19 +377,14 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .empty-s{font-size:12px}
   .chips{gap:6px}
   .chip{padding:6px 12px;font-size:11px}
-  .vo-dash-row{flex-wrap:wrap;gap:6px}
-  .vo-dash-cell{min-width:70px;padding:8px 10px}
-  .vo-dash-k{font-size:7px}
-  .vo-dash-v{font-size:12px}
-  .vo-center{width:92vw}
+  .vo-side{display:none}
+  .vo-center{width:100%;padding:0 16px}
   .vo-orb-wrap{width:170px;height:170px}
   .vo-orb{width:108px;height:108px}
   .vo-reactor-mark{width:138px;height:138px}
   .vo-transcript{font-size:18px;padding:0 16px}
   .vo-response{font-size:13px;padding:0 16px;max-height:140px}
   .vo-top-bar{padding:12px 16px}
-  .vo-bottom-row{flex-direction:column}
-  .vo-main{padding:0 12px 12px}
   .vo-bars{margin:4px 0 10px}
   .stop-btn{font-size:12px;padding:6px}
 }
@@ -568,20 +568,39 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
     <button class="vo-close-btn" onclick="endVoiceMode()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
 
-  <div class="vo-main">
-    <!-- Top dashboard row -->
-    <div class="vo-dash-row">
-      <div class="vo-dash-cell"><div class="vo-dash-k">BATTERY</div><div class="vo-dash-v" id="vo-bat-val">--%</div></div>
-      <div class="vo-dash-cell"><div class="vo-dash-k">CPU</div><div class="vo-dash-v" id="vo-cpu-val">--%</div></div>
-      <div class="vo-dash-cell"><div class="vo-dash-k">RAM</div><div class="vo-dash-v" id="vo-ram-val">--%</div></div>
-      <div class="vo-dash-cell"><div class="vo-dash-k">DISK</div><div class="vo-dash-v" id="vo-disk-val">--%</div></div>
-      <div class="vo-dash-cell"><div class="vo-dash-k">WI-FI</div><div class="vo-dash-v" id="vo-wifi-val">--</div></div>
-      <div class="vo-dash-cell"><div class="vo-dash-k">WEATHER</div><div class="vo-dash-v" id="vo-weather-val">--</div></div>
-      <div class="vo-dash-cell"><div class="vo-dash-k">UPTIME</div><div class="vo-dash-v" id="vo-uptime-val">--h</div></div>
-      <div class="vo-dash-cell"><div class="vo-dash-k">CLOCK</div><div class="vo-dash-v" id="vo-clock-val">--:--</div></div>
-    </div>
+  <div class="vo-body">
+    <!-- Left side: metrics + quick commands -->
+    <aside class="vo-side vo-left">
+      <div class="vo-panel">
+        <div class="vo-section-label">SYSTEM</div>
+        <div class="vo-metrics">
+          <div class="vo-m"><span class="vo-m-k">Battery</span><span class="vo-m-v" id="vo-bat-val">--%</span></div>
+          <div class="vo-m"><span class="vo-m-k">CPU</span><span class="vo-m-v" id="vo-cpu-val">--%</span></div>
+          <div class="vo-m"><span class="vo-m-k">RAM</span><span class="vo-m-v" id="vo-ram-val">--%</span></div>
+          <div class="vo-m"><span class="vo-m-k">Disk</span><span class="vo-m-v" id="vo-disk-val">--%</span></div>
+        </div>
+      </div>
+      <div class="vo-panel">
+        <div class="vo-section-label">INFO</div>
+        <div class="vo-metrics">
+          <div class="vo-m"><span class="vo-m-k">Wi-Fi</span><span class="vo-m-v" id="vo-wifi-val">--</span></div>
+          <div class="vo-m"><span class="vo-m-k">Weather</span><span class="vo-m-v" id="vo-weather-val">--</span></div>
+          <div class="vo-m"><span class="vo-m-k">Uptime</span><span class="vo-m-v" id="vo-uptime-val">--h</span></div>
+          <div class="vo-m"><span class="vo-m-k">Clock</span><span class="vo-m-v" id="vo-clock-val">--:--</span></div>
+        </div>
+      </div>
+      <div class="vo-panel">
+        <div class="vo-section-label">QUICK COMMANDS</div>
+        <div class="vo-cmd-col">
+          <button class="vo-cmd-btn" onclick="voiceQuickCmd('What time is it?')">Time</button>
+          <button class="vo-cmd-btn" onclick="voiceQuickCmd('How is the weather?')">Weather</button>
+          <button class="vo-cmd-btn" onclick="voiceQuickCmd('Give me a system status report')">System</button>
+          <button class="vo-cmd-btn" onclick="voiceQuickCmd('Tell me a motivational quote')">Motivate</button>
+        </div>
+      </div>
+    </aside>
 
-    <!-- Center orb area -->
+    <!-- Center: orb only -->
     <div class="vo-center">
       <div class="vo-status" id="vo-status">TAP TO START</div>
       <div class="vo-transcript" id="vo-transcript"></div>
@@ -592,31 +611,20 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
       </div>
       <div class="vo-bars" id="vo-bars"></div>
       <div class="vo-response" id="vo-response"></div>
+      <div class="vo-end-row">
+        <button class="vo-btn end" onclick="endVoiceMode()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
     </div>
 
-    <!-- Bottom section: quick commands + conversation log -->
-    <div class="vo-bottom-row">
-      <div class="vo-bottom-panel">
-        <div class="vo-section-label">QUICK COMMANDS</div>
-        <div class="vo-cmd-row">
-          <button class="vo-cmd-btn" onclick="voiceQuickCmd('What time is it?')">Time</button>
-          <button class="vo-cmd-btn" onclick="voiceQuickCmd('How is the weather?')">Weather</button>
-          <button class="vo-cmd-btn" onclick="voiceQuickCmd('Give me a system status report')">System</button>
-          <button class="vo-cmd-btn" onclick="voiceQuickCmd('Tell me a motivational quote')">Motivate</button>
-        </div>
-      </div>
-      <div class="vo-bottom-panel vo-log-panel">
+    <!-- Right side: conversation log -->
+    <aside class="vo-side vo-right">
+      <div class="vo-panel vo-panel-fill">
         <div class="vo-section-label">CONVERSATION LOG</div>
         <div class="vo-log" id="vo-log">
           <div class="vo-log-item log-ai"><span class="log-time">--:--</span>Jarvis ready</div>
         </div>
       </div>
-    </div>
-
-    <!-- End session -->
-    <div class="vo-end-row">
-      <button class="vo-btn end" onclick="endVoiceMode()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
+    </aside>
   </div>
 </div>
 
@@ -913,7 +921,7 @@ async function startVoiceMode(){
 }
 
 function endVoiceMode(){
-  voiceMode=false;speaking=false;
+  voiceMode=false;speaking=false;voiceAwaitingApproval=false;
   clearTimeout(silenceTimer);silenceTimer=null;
   speechQueue=[];
   if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
@@ -962,12 +970,72 @@ function setOrb(s){
   }
 }
 
+// Voice approval state
+let voiceAwaitingApproval=false;
+
+// Simple TTS speak for short confirmations (no streaming, no captions)
+function voiceSpeak(text){
+  if(!window.speechSynthesis)return;
+  try{speechSynthesis.cancel();}catch(_){}
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=1.05;u.pitch=1.0;u.volume=1.0;u.lang='en-IN';
+  const voices=speechSynthesis.getVoices();
+  const en=voices.filter(v=>v.lang&&v.lang.startsWith('en'));
+  if(en.length)u.voice=en[0];
+  $('vo-response').textContent=text;
+  $('vo-status').textContent='SPEAKING...';setOrb('speaking');
+  u.onend=()=>{if(voiceAwaitingApproval){$('vo-status').textContent='AWAITING CONFIRMATION...';setOrb('listening');}};
+  setTimeout(()=>{try{speechSynthesis.speak(u);}catch(_){}},60);
+}
+
 async function voiceSend(){
   if(!finalTxt||busy)return;
   const msg=finalTxt.trim();finalTxt='';interimTxt='';
   // Clear old recognizer — null FIRST so stale onend is ignored
   const oldRec=voiceRec;voiceRec=null;
   try{if(oldRec)oldRec.abort();}catch(_){}
+
+  const lo=msg.toLowerCase();
+
+  // ── Voice approval flow ──────────────────────────────────────────────
+  // Step 2: User confirms "yes/approve/confirm" after Jarvis asked
+  if(voiceAwaitingApproval){
+    voiceAwaitingApproval=false;
+    if(/\b(yes|yeah|yep|approve|confirm|do it|go ahead|haan|ha)\b/i.test(lo)){
+      $('vo-status').textContent='APPLYING...';setOrb('thinking');
+      $('vo-transcript').textContent=msg;$('vo-transcript').classList.remove('interim');
+      addVoiceLog('user',msg);
+      // Speak confirmation
+      voiceSpeak('Applying changes now, boss.');
+      addVoiceLog('ai','Applying changes now, boss.');
+      await approveActions();
+      setTimeout(()=>{$('vo-status').textContent='LISTENING...';setOrb('listening');voiceResume();},1500);
+      return;
+    } else {
+      $('vo-transcript').textContent=msg;$('vo-transcript').classList.remove('interim');
+      addVoiceLog('user',msg);
+      voiceSpeak('Changes cancelled, boss.');
+      addVoiceLog('ai','Changes cancelled, boss.');
+      rejectActions();
+      setTimeout(()=>{$('vo-status').textContent='LISTENING...';setOrb('listening');voiceResume();},1500);
+      return;
+    }
+  }
+
+  // Step 1: User says "approve" — ask for confirmation first
+  if(/\b(approve|apply changes|apply all)\b/i.test(lo) && pendingActionsData.length > 0){
+    $('vo-transcript').textContent=msg;$('vo-transcript').classList.remove('interim');
+    addVoiceLog('user',msg);
+    const count=pendingActionsData.length;
+    const confirmMsg=`I have ${count} pending change${count>1?'s':''}. Should I approve ${count>1?'them all':'it'}, boss?`;
+    voiceSpeak(confirmMsg);
+    addVoiceLog('ai',confirmMsg);
+    voiceAwaitingApproval=true;
+    $('vo-status').textContent='AWAITING CONFIRMATION...';setOrb('listening');
+    setTimeout(()=>voiceResume(),2000);
+    return;
+  }
+
   $('vo-status').textContent='THINKING...';setOrb('thinking');
   $('vo-transcript').textContent=msg;$('vo-transcript').classList.remove('interim');
   appendMsg('user',msg);
@@ -1340,8 +1408,8 @@ async function fetchSystemStatus(){
     $('vo-uptime-val').textContent=(d.uptime_hours!=null)?(d.uptime_hours+'h'):'N/A';
     if(d.time)$('vo-clock-val').textContent=d.time;
     // Color code high values
-    const cpuEl=$('vo-cpu-val');if(d.cpu>80)cpuEl.className='vo-dash-v warn';else if(d.cpu<50)cpuEl.className='vo-dash-v ok';else cpuEl.className='vo-dash-v';
-    const ramEl=$('vo-ram-val');if(d.ram>85)ramEl.className='vo-dash-v warn';else ramEl.className='vo-dash-v';
+    const cpuEl=$('vo-cpu-val');if(d.cpu>80)cpuEl.className='vo-m-v warn';else if(d.cpu<50)cpuEl.className='vo-m-v ok';else cpuEl.className='vo-m-v';
+    const ramEl=$('vo-ram-val');if(d.ram>85)ramEl.className='vo-m-v warn';else ramEl.className='vo-m-v';
     // Voice time
     if(d.time&&d.date)$('vo-top-time').textContent=d.date+' · '+d.time;
     // Update greeting
