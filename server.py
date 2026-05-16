@@ -1391,6 +1391,12 @@ async def system_status():
             except Exception:
                 continue
 
+    # Normalize noisy OS error strings
+    if isinstance(info.get("wifi"), str):
+        w = info["wifi"].strip()
+        if not w or "error" in w.lower() or "not available" in w.lower() or "not associated" in w.lower():
+            info["wifi"] = None
+
     # Weather (best-effort, no key) from wttr.in JSON endpoint
     try:
         req = urllib.request.Request(
