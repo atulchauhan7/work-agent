@@ -249,6 +249,84 @@ RULES:
 
 # ── History ────────────────────────────────────────────────────────────────────
 
+def _get_system_snapshot() -> str:
+    """Return a compact system-status string for injection into the LLM system prompt."""
+    import datetime
+    import psutil
+
+    parts: list[str] = []
+    now = datetime.datetime.now()
+    parts.append(f"Current date/time: {now.strftime('%A, %B %d %Y, %I:%M %p')}")
+
+    # Battery
+    try:
+        bat = psutil.sensors_battery()
+        if bat and bat.percent is not None:
+            pct = int(round(float(bat.percent)))
+            status = "charging" if bat.power_plugged else "on battery"
+            parts.append(f"Battery: {pct}% ({status})")
+    except Exception:
+        pass
+    # Battery fallback for macOS
+    if not any("Battery:" in p for p in parts):
+        try:
+            r = subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True, timeout=3)
+            m = re.search(r"(\d+)%", r.stdout or "")
+            if m:
+                charging = bool(re.search(r"charging|charged", r.stdout or "", re.I))
+                parts.append(f"Battery: {m.group(1)}% ({'charging' if charging else 'on battery'})")
+        except Exception:
+            pass
+
+    # CPU / RAM / Disk
+    try:
+        parts.append(f"CPU usage: {psutil.cpu_percent(interval=0.1)}%")
+        parts.append(f"RAM usage: {int(round(psutil.virtual_memory().percent))}%")
+        parts.append(f"Disk usage: {int(round(psutil.disk_usage('/').percent))}%")
+    except Exception:
+        pass
+
+    # Uptime
+    try:
+        uptime_h = int((now.timestamp() - psutil.boot_time()) // 3600)
+        parts.append(f"System uptime: {uptime_h} hours")
+    except Exception:
+        pass
+
+    # WiFi
+    try:
+        r = subprocess.run(
+            ["/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I"],
+            capture_output=True, text=True, timeout=3
+        )
+        for line in (r.stdout or "").splitlines():
+            if " SSID:" in line:
+                ssid = line.split("SSID:", 1)[1].strip()
+                if ssid and "error" not in ssid.lower():
+                    parts.append(f"WiFi: connected to {ssid}")
+                break
+    except Exception:
+        pass
+
+    # Weather
+    try:
+        req = urllib.request.Request("https://wttr.in/?format=j1", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=3) as resp:  # nosec B310
+            w = json.loads(resp.read().decode("utf-8", errors="replace"))
+        current = (w.get("current_condition") or [{}])[0]
+        temp_c = current.get("temp_C")
+        desc_list = current.get("weatherDesc") or []
+        desc = desc_list[0].get("value", "") if desc_list else ""
+        if temp_c:
+            parts.append(f"Weather: {temp_c}C {desc}".strip())
+    except Exception:
+        pass
+
+    if not parts:
+        return ""
+    return "\n\n[LIVE SYSTEM STATUS — Use this data to answer questions about battery, CPU, RAM, disk, weather, time, wifi, etc.]\n" + "\n".join(parts) + "\n"
+
+
 def load_history() -> list[dict]:
     if HISTORY_FILE.exists():
         try:
@@ -276,8 +354,10 @@ def load_history() -> list[dict]:
 def build_messages(h: list[dict]) -> list[dict]:
     """Build the message list for the LLM with identity seed + optional workspace context."""
     base_system = SYSTEM_PROMPT
+    # Inject live system status so LLM can answer questions about battery, CPU, etc.
+    base_system += _get_system_snapshot()
     if workdir:
-        base_system = SYSTEM_PROMPT + workspace_context_block(workdir)
+        base_system += workspace_context_block(workdir)
 
     if not h:
         return [{"role": "system", "content": base_system}] + IDENTITY_SEED
@@ -979,6 +1059,63 @@ async def chat(request: Request):
             yield f"data: {json.dumps({'type': 'token', 'content': jarvis_reply})}\n\n"
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
         return StreamingResponse(_identity_stream(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+    # ── Hardcoded live system-status intercept (prevents model hallucination) ──
+    _BATTERY_Q = re.compile(r"(?i)\b(battery|charge|charging|battery percentage|power)\b")
+    _SYS_Q = re.compile(r"(?i)\b(system status|cpu|ram|memory|disk|uptime|wifi|weather)\b")
+    if _BATTERY_Q.search(user_msg) or _SYS_Q.search(user_msg):
+        try:
+            status_resp = await system_status()
+            live = json.loads(status_resp.body.decode("utf-8"))
+        except Exception:
+            live = {}
+
+        bat = live.get("battery") or {}
+        bp = bat.get("percent") if isinstance(bat, dict) else None
+        charging = bat.get("charging") if isinstance(bat, dict) else None
+        cpu = live.get("cpu")
+        ram = live.get("ram")
+        disk = live.get("disk")
+        uptime = live.get("uptime_hours")
+        wifi = live.get("wifi")
+        weather = live.get("weather")
+
+        if _BATTERY_Q.search(user_msg):
+            if bp is None:
+                jarvis_reply = "Battery data is unavailable right now, boss. Want me to refresh status again?"
+            else:
+                state = "charging" if charging else "on battery"
+                jarvis_reply = f"Your local system battery is at {bp}% and currently {state}, boss. Anything else?"
+        else:
+            bits = []
+            if bp is not None:
+                bits.append(f"Battery {bp}%")
+            if cpu is not None:
+                bits.append(f"CPU {cpu}%")
+            if ram is not None:
+                bits.append(f"RAM {ram}%")
+            if disk is not None:
+                bits.append(f"Disk {disk}%")
+            if uptime is not None:
+                bits.append(f"Uptime {uptime}h")
+            if wifi:
+                bits.append(f"WiFi {wifi}")
+            if weather:
+                bits.append(f"Weather {weather}")
+            if bits:
+                jarvis_reply = "Live status: " + ", ".join(bits) + ". Anything else, boss?"
+            else:
+                jarvis_reply = "Live system status is unavailable right now, boss. Want me to retry?"
+
+        history.append({"role": "assistant", "content": jarvis_reply})
+        save_history(history)
+
+        async def _status_stream():
+            yield f"data: {json.dumps({'type': 'token', 'content': jarvis_reply})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        return StreamingResponse(_status_stream(), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     async def event_stream():
