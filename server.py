@@ -1063,8 +1063,10 @@ async def chat(request: Request):
 
     # ── Hardcoded live system-status intercept (prevents model hallucination) ──
     _BATTERY_Q = re.compile(r"(?i)\b(battery|charge|charging|battery percentage|power)\b")
-    _SYS_Q = re.compile(r"(?i)\b(system status|cpu|ram|memory|disk|uptime|wifi|weather)\b")
-    if _BATTERY_Q.search(user_msg) or _SYS_Q.search(user_msg):
+    _SYS_Q = re.compile(r"(?i)\b(system status|system report|cpu|ram|memory|disk|uptime|wifi|weather)\b")
+    _TIME_Q = re.compile(r"(?i)\b(what\s+time|current\s+time|time\s+(?:is\s+it|right\s+now|now)|what\s+(?:is\s+the\s+)?date|today.s\s+date|what\s+day)\b")
+    _WEATHER_Q = re.compile(r"(?i)\b(weather|temperature|how\s+(?:hot|cold|warm)|forecast)\b")
+    if _BATTERY_Q.search(user_msg) or _SYS_Q.search(user_msg) or _TIME_Q.search(user_msg) or _WEATHER_Q.search(user_msg):
         try:
             status_resp = await system_status()
             live = json.loads(status_resp.body.decode("utf-8"))
@@ -1080,8 +1082,24 @@ async def chat(request: Request):
         uptime = live.get("uptime_hours")
         wifi = live.get("wifi")
         weather = live.get("weather")
+        time_str = live.get("time")
+        date_str = live.get("date")
 
-        if _BATTERY_Q.search(user_msg):
+        if _TIME_Q.search(user_msg):
+            if time_str and date_str:
+                jarvis_reply = f"It's {time_str}, {date_str}, boss. What's next?"
+            elif time_str:
+                jarvis_reply = f"It's {time_str}, boss. What's next?"
+            else:
+                import datetime
+                now = datetime.datetime.now()
+                jarvis_reply = f"It's {now.strftime('%I:%M %p')}, {now.strftime('%A, %b %d')}, boss. What's next?"
+        elif _WEATHER_Q.search(user_msg):
+            if weather:
+                jarvis_reply = f"Current weather: {weather}, boss. Anything else?"
+            else:
+                jarvis_reply = "Weather data is unavailable right now, boss. Want me to retry?"
+        elif _BATTERY_Q.search(user_msg):
             if bp is None:
                 jarvis_reply = "Battery data is unavailable right now, boss. Want me to refresh status again?"
             else:
