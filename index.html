@@ -115,7 +115,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .stop-btn.visible{display:block}
 
 /* ── Agent tool-use cards ── */
-.action-card{max-width:780px;margin:4px auto;padding:0 20px}
+.action-card{max-width:780px;margin:4px auto;padding:0 20px;animation:actionSlide .3s ease-out}
+@keyframes actionSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .action-inner{background:rgba(255,255,255,.02);border:1px solid #1e1e1e;border-radius:10px;padding:8px 14px;font-size:12px;color:var(--dim);font-family:var(--mono);display:flex;align-items:center;gap:8px;overflow:hidden;backdrop-filter:blur(4px);transition:border-color .2s}
 .action-inner:hover{border-color:#333}
 .action-inner.write{border-color:rgba(16,163,127,.2);background:rgba(16,163,127,.04)}
@@ -129,7 +130,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .action-badge.edit{background:rgba(229,192,123,.12);color:#e5c07b}
 .action-path{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .action-inner.edit{border-color:rgba(229,192,123,.2);background:rgba(229,192,123,.04)}
-.action-step{font-size:11px;color:#444;padding:4px 20px;max-width:780px;margin:2px auto}
+.action-step{font-size:11px;color:#555;padding:6px 20px;max-width:780px;margin:2px auto;display:flex;align-items:center;gap:6px}
+.action-step::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 1.4s ease-in-out infinite}
 
 /* ── Pending actions approval ── */
 .pending-bar{max-width:780px;margin:8px auto 0;padding:0 20px}
@@ -1236,8 +1238,12 @@ async function voiceSend(){
           scrollDown();
         } else if(ev.type==='action'){
           appendActionCard(ev.action);
+          // Show thinking indicator so user knows AI is still working
+          bbl.querySelectorAll('.thinking').forEach(el=>el.remove());
+          txt.innerHTML='<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div> Processing…</div>';
           scrollDown();
         } else if(ev.type==='pending'){
+          bbl.querySelectorAll('.thinking').forEach(el=>el.remove());
           showPendingActions(ev.actions);
           // In voice mode, announce pending changes so user can approve by voice
           if(voiceMode){
@@ -2012,8 +2018,13 @@ async function send(){
         }
         else if(ev.type==='action'){
           appendActionCard(ev.action);
+          // Show thinking indicator after action so user knows AI is still working
+          bbl.querySelectorAll('.thinking').forEach(el=>el.remove());
+          txt.innerHTML='<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div> Processing…</div>';
+          scrollDown();
         }
         else if(ev.type==='pending'){
+          bbl.querySelectorAll('.thinking').forEach(el=>el.remove());
           showPendingActions(ev.actions);
         }
         else if(ev.type==='error'){

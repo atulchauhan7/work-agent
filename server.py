@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import re
 import json
+import ast
 import logging
 import asyncio
 import subprocess
@@ -18,6 +19,7 @@ import argparse
 import shutil
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from collections import Counter
 
@@ -259,6 +261,8 @@ RULES:
 8. CRITICAL: NEVER output raw code in markdown code blocks. ALWAYS use WRITE_FILE or EDIT_FILE tool tags to make changes to files.
    If the user asks you to update, optimize, fix, or create code — USE THE TOOL TAGS. Do not just show code.
 9. When user says "update this", "change this", "apply this" etc. and refers to previous messages, look at chat history for context.
+10. Respect the target file extension. Generate valid code/content for that file type (.html, .css, .js, .ts, .py, .json, etc.).
+11. Any response that would change a file MUST go through WRITE_FILE or EDIT_FILE so the approval step is shown before applying changes.
 """
 
 
@@ -437,21 +441,196 @@ def do_read(path: Path) -> str:
     return text[:MAX_FILE_READ] + "\n...[truncated]" if len(text) > MAX_FILE_READ else text
 
 
+def prepare_generated_content(path: Path, content: str) -> str:
+    """Normalize model-generated file content before preview/write."""
+    raw = content.replace("\r\n", "\n").strip()
+    if not raw:
+        return ""
+
+    fenced = re.findall(r'```([a-zA-Z0-9_+-]*)\s*\n(.*?)```', raw, re.DOTALL)
+    if fenced:
+        preferred = {
+            ".py": {"py", "python"},
+            ".js": {"js", "javascript"},
+            ".jsx": {"jsx", "javascript", "js"},
+            ".ts": {"ts", "typescript"},
+            ".tsx": {"tsx", "typescript", "ts"},
+            ".html": {"html"},
+            ".css": {"css"},
+            ".json": {"json"},
+            ".xml": {"xml"},
+            ".sh": {"bash", "shell", "sh", "zsh"},
+            ".md": {"md", "markdown"},
+        }.get(path.suffix.lower(), set())
+        picked = None
+        for lang, block in fenced:
+            if lang.lower() in preferred:
+                picked = block
+                break
+        if picked is None:
+            picked = max((block for _, block in fenced), key=len)
+        raw = picked.strip()
+
+    raw = re.sub(
+        r'^\s*(HTML|CSS|JavaScript|JS|TypeScript|TS|JSON|Python|Bash|Shell|XML|Markdown)\s+Copy\s*$',
+        '',
+        raw,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
+    raw = re.sub(
+        r'^\s*(HTML|CSS|JavaScript|JS|TypeScript|TS|JSON|Python|Bash|Shell|XML|Markdown)\s*$',
+        '',
+        raw,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
+    raw = re.sub(
+        r'^\s*(Sure!?|Done!?|Updated.*|Here(?: is|\'s).*|Let me know.*|We\'ll make.*)$',
+        '',
+        raw,
+        flags=re.IGNORECASE | re.MULTILINE,
+    ).strip()
+
+    ext = path.suffix.lower()
+    lower = raw.lower()
+
+    if ext in {".css"}:
+        style_match = re.search(r'(?is)<style[^>]*>(.*?)</style>', raw)
+        if style_match:
+            raw = style_match.group(1).strip()
+    elif ext in {".js", ".jsx", ".ts", ".tsx"}:
+        script_match = re.search(r'(?is)<script[^>]*>(.*?)</script>', raw)
+        if script_match:
+            raw = script_match.group(1).strip()
+    elif ext == ".json":
+        json_match = re.search(r'(?s)(\{.*\}|\[.*\])', raw)
+        if json_match:
+            raw = json_match.group(1).strip()
+    elif ext in {".html", ".htm"}:
+        if "<!doctype html" in lower or "<html" in lower:
+            start = lower.find("<!doctype html")
+            if start == -1:
+                start = lower.find("<html")
+            end = lower.rfind("</html>")
+            if start != -1:
+                raw = raw[start:end + len("</html>")] if end != -1 else raw[start:]
+        elif "<body" in lower:
+            body_match = re.search(r'(?is)<body[^>]*>.*?</body>', raw)
+            style_match = re.search(r'(?is)<style[^>]*>.*?</style>', raw)
+            title = path.stem.replace("_", " ").replace("-", " ").title() or "Document"
+            if path.exists():
+                existing = path.read_text(encoding="utf-8", errors="replace")
+                title_match = re.search(r'(?is)<title>(.*?)</title>', existing)
+                if title_match:
+                    title = title_match.group(1).strip() or title
+            if body_match:
+                parts = [
+                    "<!DOCTYPE html>",
+                    "<html lang=\"en\">",
+                    "<head>",
+                    "    <meta charset=\"UTF-8\">",
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">",
+                    f"    <title>{title}</title>",
+                ]
+                if style_match:
+                    parts.append(style_match.group(0).strip())
+                parts.extend([
+                    "</head>",
+                    body_match.group(0).strip(),
+                    "</html>",
+                ])
+                raw = "\n".join(parts)
+
+    return raw.rstrip() + "\n"
+
+
+def validate_generated_content(path: Path, content: str) -> str | None:
+    """Best-effort validation for common text formats before write."""
+    ext = path.suffix.lower()
+    if not content.strip():
+        return f"ERROR: Generated content for {path.name} is empty."
+    try:
+        if ext == ".py":
+            ast.parse(content)
+        elif ext == ".json":
+            json.loads(content)
+        elif ext in {".xml"}:
+            ET.fromstring(content)
+        elif ext in {".html", ".htm"}:
+            lower = content.lower()
+            if "<body" in lower and "<html" not in lower and "<!doctype html" not in lower:
+                return f"ERROR: Generated HTML for {path.name} is incomplete — expected a full HTML document."
+            if "<html" in lower and "</html>" not in lower:
+                return f"ERROR: Generated HTML for {path.name} is missing </html>."
+            if "<body" in lower and "</body>" not in lower:
+                return f"ERROR: Generated HTML for {path.name} is missing </body>."
+    except SyntaxError as e:
+        return f"ERROR: Invalid {ext or 'text'} syntax for {path.name}: {e.msg}"
+    except json.JSONDecodeError as e:
+        return f"ERROR: Invalid JSON for {path.name}: {e.msg}"
+    except ET.ParseError as e:
+        return f"ERROR: Invalid XML for {path.name}: {e}"
+    return None
+
+
 def do_write(path: Path, content: str) -> str:
-    # Clean content: strip markdown code fences the model may have wrapped inside WRITE_FILE
-    cleaned = content
-    # Remove leading ```lang and trailing ``` if present
-    cleaned = re.sub(r'^```\w*\s*\n', '', cleaned)
-    cleaned = re.sub(r'\n```\s*$', '', cleaned)
-    # Also handle if the entire content is wrapped: ```\ncontent\n```
-    if cleaned.startswith('```') and cleaned.rstrip().endswith('```'):
-        lines = cleaned.split('\n')
-        cleaned = '\n'.join(lines[1:-1]) if len(lines) > 2 else cleaned
-    # Strip trailing whitespace but preserve a final newline
-    cleaned = cleaned.rstrip() + '\n'
+    cleaned = prepare_generated_content(path, content)
+    error = validate_generated_content(path, cleaned)
+    if error:
+        return error
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(cleaned, encoding="utf-8")
     return f"Written {len(cleaned)} chars to {path.name}"
+
+
+def parse_search_replace_blocks(edit_content: str) -> list[tuple[str, str]]:
+    return re.findall(
+        r'<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n>>>>>>> REPLACE',
+        edit_content,
+        re.DOTALL,
+    )
+
+
+def looks_like_full_file(path: Path, content: str) -> bool:
+    ext = path.suffix.lower()
+    text = content.strip()
+    lower = text.lower()
+    if not text:
+        return False
+    if ext in {".html", ".htm"}:
+        return any(token in lower for token in ("<!doctype html", "<html", "<body", "<head", "<form", "<main", "<section", "<div"))
+    if ext == ".css":
+        return "{" in text and "}" in text and ":" in text
+    if ext in {".js", ".jsx", ".ts", ".tsx"}:
+        return any(token in text for token in ("import ", "export ", "function ", "const ", "let ", "class ", "=>"))
+    if ext == ".py":
+        try:
+            ast.parse(text)
+            return True
+        except SyntaxError:
+            return False
+    if ext == ".json":
+        try:
+            json.loads(text)
+            return True
+        except json.JSONDecodeError:
+            return False
+    if ext == ".xml":
+        try:
+            ET.fromstring(text)
+            return True
+        except ET.ParseError:
+            return False
+    return len(text) > 120 and text.count("\n") >= 3
+
+
+def extract_full_write_from_malformed_edit(path: Path, blocks: list[tuple[str, str]]) -> str | None:
+    if len(blocks) != 1:
+        return None
+    _, replace_str = blocks[0]
+    candidate = prepare_generated_content(path, replace_str)
+    if looks_like_full_file(path, candidate):
+        return candidate
+    return None
 
 
 def do_edit(path: Path, edit_content: str) -> tuple[str, list[dict]]:
@@ -461,10 +640,7 @@ def do_edit(path: Path, edit_content: str) -> tuple[str, list[dict]]:
     original = path.read_text(encoding="utf-8", errors="replace")
     modified = original
     # Parse SEARCH/REPLACE blocks
-    blocks = re.findall(
-        r'<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n>>>>>>> REPLACE',
-        edit_content, re.DOTALL
-    )
+    blocks = parse_search_replace_blocks(edit_content)
     if not blocks:
         return "ERROR: No valid SEARCH/REPLACE blocks found in EDIT_FILE", []
     diffs = []
@@ -857,8 +1033,7 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
                 results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
                 actions.append({"type": "WRITE_FILE", "path": str(path), "result": out, "blocked": True})
             else:
-                # Strip markdown code fences the model sometimes wraps inside tags
-                clean = re.sub(r'```\w*\n?', '', content.strip()).strip()
+                clean = prepare_generated_content(path, content)
                 pending.append({"type": "WRITE_FILE", "path": path_str, "content": clean, "resolved": str(path)})
 
     for path_str, edit_content in EDIT_RE.findall(text):
@@ -875,17 +1050,22 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
             else:
                 # Check if content has valid SEARCH/REPLACE blocks
                 clean_content = edit_content.strip()
-                # Strip markdown code fences the model sometimes wraps inside tags
-                clean_content = re.sub(r'```\w*\n?', '', clean_content).strip()
-                has_sr_blocks = bool(re.search(
-                    r'<<<<<<< SEARCH\n.*?\n=======\n.*?\n>>>>>>> REPLACE',
-                    clean_content, re.DOTALL
-                ))
-                if has_sr_blocks:
-                    pending.append({"type": "EDIT_FILE", "path": path_str, "content": clean_content, "resolved": str(path)})
+                blocks = parse_search_replace_blocks(clean_content)
+                if blocks:
+                    original = path.read_text(encoding="utf-8", errors="replace")
+                    if all(search_str in original for search_str, _ in blocks):
+                        pending.append({"type": "EDIT_FILE", "path": path_str, "content": clean_content, "resolved": str(path)})
+                    else:
+                        fallback_write = extract_full_write_from_malformed_edit(path, blocks)
+                        if fallback_write:
+                            pending.append({"type": "WRITE_FILE", "path": path_str, "content": fallback_write, "resolved": str(path)})
+                        else:
+                            out = "ERROR: Invalid EDIT_FILE — SEARCH block not found in current file"
+                            results.append(f"<RESULT action='EDIT_FILE'>\n{out}\n</RESULT>")
+                            actions.append({"type": "EDIT_FILE", "path": path_str, "result": out, "blocked": True})
                 elif len(clean_content) > 20:
                     # No SEARCH/REPLACE blocks but has content — treat as full file write
-                    pending.append({"type": "WRITE_FILE", "path": path_str, "content": clean_content, "resolved": str(path)})
+                    pending.append({"type": "WRITE_FILE", "path": path_str, "content": prepare_generated_content(path, clean_content), "resolved": str(path)})
                 else:
                     out = "ERROR: No valid SEARCH/REPLACE blocks found in EDIT_FILE"
                     results.append(f"<RESULT action='EDIT_FILE'>\n{out}\n</RESULT>")
@@ -991,7 +1171,7 @@ def execute_actions(text: str, ws: Path | None, user_msg: str = "", chat_history
                         results.append(f"<RESULT action='WRITE_FILE'>\n{out}\n</RESULT>")
                         actions.append({"type": "WRITE_FILE", "path": filename, "result": out, "blocked": True})
                     else:
-                        pending.append({"type": "WRITE_FILE", "path": filename, "content": code + "\n", "resolved": str(resolved_path)})
+                        pending.append({"type": "WRITE_FILE", "path": filename, "content": prepare_generated_content(resolved_path, code), "resolved": str(resolved_path)})
 
     return ("\n\n".join(results) if results else None), actions, pending
 
