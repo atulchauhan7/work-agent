@@ -1142,6 +1142,29 @@ async def chat(request: Request):
     _SYS_Q = re.compile(r"(?i)\b(system status|system report|cpu|ram|memory|disk|uptime|wifi|weather)\b")
     _TIME_Q = re.compile(r"(?i)\b(what\s+time|current\s+time|time\s+(?:is\s+it|right\s+now|now)|what\s+(?:is\s+the\s+)?date|today.s\s+date|what\s+day)\b")
     _WEATHER_Q = re.compile(r"(?i)\b(weather|temperature|how\s+(?:hot|cold|warm)|forecast)\b")
+    _FILECOUNT_Q = re.compile(r"(?i)\b(how\s+many\s+files|number\s+of\s+files|count\s+files|file\s+count)\b")
+
+    # ── Hardcoded workspace file-count intercept (prevents "no access" hallucination) ──
+    if _FILECOUNT_Q.search(user_msg):
+        if workdir is None:
+            jarvis_reply = "No project folder is active right now, boss. Use Open Project Folder first, then ask me again and I'll count the files for you."
+        else:
+            total_files = 0
+            for root, dirs, files in os.walk(workdir):
+                dirs[:] = [d for d in dirs if d not in TREE_IGNORE and not d.startswith('.')]
+                total_files += sum(1 for f in files if not f.startswith('.'))
+            jarvis_reply = f"Yes, boss. I can access the provided folder. I found {total_files} files in {workdir.name}."
+
+        history.append({"role": "assistant", "content": jarvis_reply})
+        save_history(history)
+
+        async def _filecount_stream():
+            yield f"data: {json.dumps({'type': 'token', 'content': jarvis_reply})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        return StreamingResponse(_filecount_stream(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
     if _BATTERY_Q.search(user_msg) or _SYS_Q.search(user_msg) or _TIME_Q.search(user_msg) or _WEATHER_Q.search(user_msg):
         try:
             status_resp = await system_status()
@@ -1443,7 +1466,15 @@ async def chat(request: Request):
 
             # ── Stop the loop if the model already gave a complete answer ──
             # If the response has no action tags at all, stop immediately.
-            has_any_tags = bool(ATTR_RE.search(full_response) or WRITE_RE.search(full_response) or EDIT_RE.search(full_response) or RUN_RE.search(full_response) or WEB_RE.search(full_response))
+            has_any_tags = bool(
+                ATTR_RE.search(full_response)
+                or WRITE_RE.search(full_response)
+                or EDIT_RE.search(full_response)
+                or RUN_RE.search(full_response)
+                or WEB_RE.search(full_response)
+                or JS_RE.search(full_response)
+                or SCRAPE_RE.search(full_response)
+            )
             if not has_any_tags and not exec_actions and not pending:
                 break
 

@@ -640,6 +640,28 @@ window.addEventListener('beforeunload',()=>{
 });
 window.addEventListener('pagehide',()=>{if(window.speechSynthesis)speechSynthesis.cancel();});
 
+// ── Tab/app switch resilience: auto-resume voice when page becomes visible ──
+document.addEventListener('visibilitychange',()=>{
+  if(!voiceMode)return;
+  if(document.hidden){
+    // Page going hidden — pause TTS to avoid background audio
+    if(window.speechSynthesis&&speechSynthesis.speaking)try{speechSynthesis.pause();}catch(_){}
+  } else {
+    // Page visible again — resume TTS and restart recognition if needed
+    if(window.speechSynthesis&&speechSynthesis.paused)try{speechSynthesis.resume();}catch(_){}
+    if(!busy&&!speaking&&voiceMode){
+      // Recognition likely died in background — restart it
+      setTimeout(()=>{
+        if(!voiceMode||busy||speaking)return;
+        const old=voiceRec;voiceRec=null;
+        try{if(old)old.abort();}catch(_){}
+        $('vo-status').textContent='LISTENING...';setOrb('listening');
+        startListening();
+      },300);
+    }
+  }
+});
+
 let busy=false,abortCtrl=null;
 
 // ── Voice ──────────────────────────────────────────────────────────────────
@@ -1165,6 +1187,31 @@ async function voiceSend(){
               if(sp>30){enqueueSentence(speechBuf.slice(0,sp));speechBuf=speechBuf.slice(sp+1);}
             }
           }
+        } else if(ev.type==='agent_step'){
+          // Agent iteration — finalize current bubble, start fresh
+          bbl.querySelectorAll('.thinking').forEach(el=>el.remove());
+          if(raw){txt.innerHTML=renderMd(raw);}
+          const stepLbl=document.createElement('div');
+          stepLbl.className='action-step';
+          stepLbl.textContent='Using tools… (step '+ev.step+')';
+          $('msgs').appendChild(stepLbl);
+          const next=appendMsg('agent','',true);
+          raw='';first=true;
+          txt=next.txt;bbl=next.bbl;
+          scrollDown();
+        } else if(ev.type==='action'){
+          appendActionCard(ev.action);
+          scrollDown();
+        } else if(ev.type==='pending'){
+          showPendingActions(ev.actions);
+          // In voice mode, announce pending changes so user can approve by voice
+          if(voiceMode){
+            const count=ev.actions.length;
+            const msg=count+' change'+(count>1?'s':'')+' pending approval. Say approve to apply.';
+            enqueueSentence(msg);
+            addVoiceLog('ai',msg);
+          }
+          scrollDown();
         } else if(ev.type==='error'){
           txt.innerHTML='<span style="color:var(--warn)">Error: '+esc(ev.content)+'</span>';
         } else if(ev.type==='done'){
