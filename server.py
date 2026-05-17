@@ -213,7 +213,8 @@ RULES:
 - Short follow-ups like "in js", "now in python" refer to the previous topic. Just do it.
 - Always remember: the person chatting is Atul. boss. Treat every message as coming from him.
 - TASK COMPLETION (CRITICAL): After completing ANY task or answering ANY question, ALWAYS end your response with a short follow-up line checking if boss needs more. Vary it naturally — e.g. "Anything else, boss?", "What else, boss?", "What's next, boss?", "Need anything else?", "Done. What's next?" — Keep it to 1-2 words/phrase. NEVER end a response cold without this. Even after code blocks, always add this on a new line at the end.
-- CODING AGENT MODE: When a workspace folder is active, the brevity rule is SUSPENDED. You MUST read actual files using tool tags and write complete file content. Never generate fake code examples. Always use the real files.
+- CODING AGENT MODE: When a workspace folder is active, you may write longer responses ONLY for actual code in tool tags. But explanatory text must still be SHORT (1-3 sentences max). NEVER ramble or explain what you're about to do — just DO IT with tool tags. Action first, brief summary after.
+- ANTI-RAMBLE RULE (CRITICAL): NEVER write long explanatory paragraphs. NEVER describe your thought process. NEVER say "I'll go ahead and..." or "Let me work on..." or "Please give me a moment...". Instead, immediately use tool tags to take action. If you catch yourself writing more than 2 sentences without a tool tag, STOP and use a tool tag instead.
 """
 
 # Seed conversation to reinforce Jarvis personality (kept minimal to save context)
@@ -452,6 +453,19 @@ def is_looping(text: str, threshold: int = 4) -> bool:
         return False
     counts = Counter(lines)
     return counts.most_common(1)[0][1] >= threshold
+
+
+def is_rambling(text: str) -> bool:
+    """Return True if model is generating long text without any tool tags (verbose filler)."""
+    # If there are tool tags, it's doing real work
+    if re.search(r'<(WRITE_FILE|READ_FILE|EDIT_FILE|RUN_CMD|LIST_DIR|RUN_JS|WEB_BROWSE|SCRAPE_URL)', text):
+        return False
+    # If text has code blocks, it's providing code
+    if '```' in text:
+        return False
+    # If pure text is over 500 chars with no action, it's rambling
+    clean = re.sub(r'\s+', ' ', text).strip()
+    return len(clean) > 500
 
 
 # ── Agent actions ──────────────────────────────────────────────────────────────
@@ -1618,6 +1632,9 @@ async def chat(request: Request):
                         if len(full_response) > 200 and is_looping(full_response, threshold=3):
                             loop_detected = True
                             break
+                        if workdir and is_rambling(full_response):
+                            loop_detected = True
+                            break
                 else:
                     import ollama as _ollama
                     for chunk in _ollama.chat(
@@ -1630,6 +1647,9 @@ async def chat(request: Request):
                         full_response += token
                         yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
                         if len(full_response) > 200 and is_looping(full_response, threshold=3):
+                            loop_detected = True
+                            break
+                        if workdir and is_rambling(full_response):
                             loop_detected = True
                             break
             except Exception as e:
