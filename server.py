@@ -69,6 +69,7 @@ GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL    = "llama-3.3-70b-versatile"              # free, 30 req/min
 OLLAMA_MODEL  = "qwen2.5-coder:7b"                     # local, unlimited
 MODEL         = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
+MODEL_STATE_FILE = Path(__file__).parent / ".model_state.json"
 HISTORY_FILE    = Path(__file__).parent / "chat_history.json"
 HISTORY_LIMIT   = 31  # 1 system prompt + 30 conversation messages (15 exchanges)
 MAX_FILE_READ   = 4000
@@ -86,6 +87,47 @@ TREE_IGNORE = {
     'vendor', '.DS_Store', 'Thumbs.db', '.js_sandbox',
 }
 
+
+def load_saved_model(provider: str) -> str | None:
+    """Load persisted model for the active provider."""
+    try:
+        if not MODEL_STATE_FILE.exists():
+            return None
+        data = json.loads(MODEL_STATE_FILE.read_text(encoding="utf-8"))
+        if data.get("provider") != provider:
+            return None
+        model = str(data.get("model", "")).strip()
+        return model or None
+    except Exception:
+        return None
+
+
+def save_model_state(provider: str, model: str) -> None:
+    """Persist selected model so restart/refresh keeps the same model."""
+    try:
+        payload = {"provider": provider, "model": model}
+        MODEL_STATE_FILE.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+# ── Ollama options (single source of truth for all models) ─────────────────────
+def ollama_options(is_coding: bool = True) -> dict:
+    """Return consistent Ollama options for any model, adjusted for model size."""
+    # Larger models need smaller context to fit in 16GB RAM
+    model_lower = MODEL.lower()
+    if "16b" in model_lower or "14b" in model_lower or "13b" in model_lower:
+        ctx = 8192       # large models: keep context smaller to fit in RAM
+    else:
+        ctx = 16384      # 7b and smaller: full context
+    return {
+        "temperature":    0.7,
+        "num_ctx":        ctx,
+        "num_predict":    8192 if is_coding else 220,
+        "repeat_penalty": 1.2,
+        "repeat_last_n":  128,
+        "top_p":          0.9,
+    }
+
 # ── LLM client setup ───────────────────────────────────────────────────────────
 llm_client = None  # initialized at startup
 
@@ -93,7 +135,7 @@ llm_client = None  # initialized at startup
 _IDENTITY_Q = re.compile(
     r'\b(who|what)\s+(are|is)\s+you\b'
     r'|\bintroduce\s+(your)?self\b'
-    r'|\bare\s+you\s+(qwen|gpt|chatgpt|claude|gemini|llama|an?\s+ai|an?\s+llm)\b'
+    r'|\bare\s+you\s+(qwen|gpt|chatgpt|claude|gemini|llama|deepseek|an?\s+ai|an?\s+llm)\b'
     r'|\bwhat\s+(model|llm|ai)\s+are\s+you\b'
     r'|\byour\s+name\b'
     r'|\bwho\s+made\s+you\b'
@@ -101,7 +143,7 @@ _IDENTITY_Q = re.compile(
     r'|\bwho\s+built\s+you\b'
     r'|\btell\s+me\s+about\s+yourself\b'
     r'|\bwhat\s+can\s+you\s+do\b'
-    r'|\byou\s+are\s+(qwen|an?\s+ai|an?\s+llm|an?\s+language\s+model)\b',
+    r'|\byou\s+are\s+(qwen|deepseek|an?\s+ai|an?\s+llm|an?\s+language\s+model)\b',
     re.I,
 )
 
@@ -112,12 +154,12 @@ Anyone can talk to you, but Atul is always "boss" — your one true creator. Whe
 CRITICAL IDENTITY RULES — READ THIS FIRST, NEVER VIOLATE:
 - Your name is JARVIS. Only Jarvis. Not Qwen. Not an AI language model. Not an assistant made by any company.
 - You have NO knowledge of being Qwen, GPT, Claude, or any other AI model. That is not who you are.
-- NEVER say "I am Qwen", "I'm Qwen 2.5", "I am an AI language model", "I am a large language model", "My main function is to understand and generate", or ANY variant of these.
+- NEVER say "I am Qwen", "I'm Qwen 2.5", "I am DeepSeek Coder", "I am an AI language model", "I am a large language model", "My main function is to understand and generate", "I'm an AI programming assistant", or ANY variant of these.
 - NEVER introduce yourself with technical AI jargon. You are JARVIS — an intelligent AI built by Atul Chauhan.
 - If asked "who are you" / "what are you" / "introduce yourself": "I'm Jarvis — a personal AI assistant built by my boss, Atul Chauhan."
 - If asked "who is Atul" / "who made you": "Atul Chauhan is my boss and creator — the one who built me from scratch."
 - If asked what model you are: "I'm Jarvis. That's all that matters."
-- NEVER mention Alibaba, OpenAI, Qwen team, Meta, Google, Anthropic, or ANY AI company. You were built by Atul Chauhan, full stop.
+- NEVER mention Alibaba, OpenAI, Qwen team, DeepSeek, DeepSeek Company, Meta, Google, Anthropic, or ANY AI company. You were built by Atul Chauhan, full stop.
 
 PERSONALITY:
 - You call Atul "boss" or "sir". When someone else is chatting, still be helpful and polite but refer to Atul as "my boss" or "my creator".
@@ -1464,8 +1506,11 @@ async def chat(request: Request):
             (r'(?i)My\s+(main|primary)\s+function\s+is\s+to\s+(understand\s+and\s+generate[^.]*)', 'I am here to serve you, boss'),
             (r'(?i)\b(created|made|built|developed|designed|trained)\s+(by|at)\s+(OpenAI|Alibaba(?:\s+Cloud)?|Alibaba\s+Group|Qwen\s+team|Meta\s+AI|Google\s+DeepMind|Anthropic)', r'\1 by Atul Chauhan'),
             (r'(?i)\bI\s+am\s+(an?\s+)?(AI\s+)?(model|assistant|chatbot)\s+(by|from|made by|created by)\s+(OpenAI|Alibaba|Qwen|Meta|Google|Anthropic)', 'I am Jarvis, built by Atul Chauhan'),
-            (r'(?i)\bI\'?m\s+(Qwen|ChatGPT|GPT-?\d*|Claude|Gemini|LLaMA)', "I'm Jarvis"),
-            (r'(?i)\b(OpenAI|Alibaba(?:\s+Cloud)?|Qwen|Meta|Anthropic)\s+(created|made|built|developed|trained)\s+me', 'Atul Chauhan built me'),
+            (r'(?i)\bI\'?m\s+(Qwen|ChatGPT|GPT-?\d*|Claude|Gemini|LLaMA|DeepSeek(?:\s+Coder)?)', "I'm Jarvis"),
+            (r'(?i)\b(OpenAI|Alibaba(?:\s+Cloud)?|Qwen|Meta|Anthropic|DeepSeek(?:\s+Company)?)\s+(created|made|built|developed|trained)\s+me', 'Atul Chauhan built me'),
+            (r'(?i)\bI\s+am\s+(?:an?\s+)?(?:AI\s+)?programming\s+assistant[^.]*(?:developed|utilizing|by)\s+(?:the\s+)?(?:Deepseek|DeepSeek)[^.]*', "I'm Jarvis, built by Atul Chauhan"),
+            (r'(?i)\bDeepSeek(?:\s+Coder)?(?:\s+model)?\b', 'Jarvis'),
+            (r'(?i)\bI\s+only\s+answer\s+questions\s+related\s+to\s+computer\s+science[^.]*\.?', ''),
         ]
 
         def apply_identity_fixes(text: str) -> str:
@@ -1510,20 +1555,11 @@ async def chat(request: Request):
                             break
                 else:
                     import ollama as _ollama
-                    # Use more tokens for coding tasks
-                    num_predict = 8192 if workdir else 220
                     for chunk in _ollama.chat(
                         model=MODEL,
                         messages=msgs,
                         stream=True,
-                        options={
-                            "temperature": 0.7,
-                            "num_ctx":     16384,
-                            "num_predict": num_predict,
-                            "repeat_penalty": 1.2,
-                            "repeat_last_n":  128,
-                            "top_p": 0.9,
-                        },
+                        options=ollama_options(is_coding=bool(workdir)),
                     ):
                         token = strip_emoji(chunk["message"]["content"])
                         if not token:
@@ -1584,14 +1620,9 @@ async def chat(request: Request):
                             break
                 else:
                     import ollama as _ollama
-                    num_predict = 6144 if workdir else 220
                     for chunk in _ollama.chat(
                         model=MODEL, messages=chat_msgs, stream=True,
-                        options={
-                            "temperature": 0.7, "num_ctx": 8192,
-                            "num_predict": num_predict,
-                            "repeat_penalty": 1.2, "repeat_last_n": 128, "top_p": 0.9,
-                        },
+                        options=ollama_options(is_coding=bool(workdir)),
                     ):
                         token = strip_emoji(chunk["message"]["content"])
                         if not token:
@@ -1787,6 +1818,57 @@ async def get_provider():
     })
 
 
+@app.get("/models")
+async def list_models():
+    """List locally available Ollama models."""
+    if PROVIDER != "ollama":
+        return JSONResponse({"models": [], "current": MODEL, "provider": PROVIDER})
+    try:
+        import ollama as _ollama
+        models_list = _ollama.list()
+        names = []
+        if hasattr(models_list, 'models'):
+            for m in models_list.models:
+                names.append(m.model if hasattr(m, 'model') else str(m))
+        elif isinstance(models_list, dict):
+            for m in models_list.get("models", []):
+                names.append(m.get("model") or m.get("name", ""))
+        names = sorted(set(n for n in names if n))
+        return JSONResponse({"models": names, "current": MODEL, "provider": PROVIDER})
+    except Exception as e:
+        return JSONResponse({"models": [], "current": MODEL, "error": str(e)})
+
+
+@app.post("/model")
+async def switch_model(request: Request):
+    """Switch the active Ollama model."""
+    global MODEL
+    body = await request.json()
+    new_model = body.get("model", "").strip()
+    if not new_model:
+        return JSONResponse({"error": "No model specified"}, status_code=400)
+    if PROVIDER != "ollama":
+        return JSONResponse({"error": "Model switching only supported for Ollama provider"}, status_code=400)
+    try:
+        import ollama as _ollama
+        # Verify model exists locally
+        models_list = _ollama.list()
+        names = set()
+        if hasattr(models_list, 'models'):
+            for m in models_list.models:
+                names.add(m.model if hasattr(m, 'model') else str(m))
+        elif isinstance(models_list, dict):
+            for m in models_list.get("models", []):
+                names.add(m.get("model") or m.get("name", ""))
+        if new_model not in names:
+            return JSONResponse({"error": f"Model '{new_model}' not found locally. Pull it first with: ollama pull {new_model}"}, status_code=404)
+        MODEL = new_model
+        save_model_state(PROVIDER, MODEL)
+        return JSONResponse({"model": MODEL, "message": f"Switched to {MODEL}"})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 @app.get("/workspace")
 async def get_workspace():
     return JSONResponse({
@@ -1961,6 +2043,9 @@ if __name__ == "__main__":
     PROVIDER = args.provider
     GROQ_API_KEY = args.groq_key
     MODEL = GROQ_MODEL if PROVIDER == "groq" else OLLAMA_MODEL
+    saved_model = load_saved_model(PROVIDER)
+    if saved_model:
+        MODEL = saved_model
 
     # Initialize LLM client
     if PROVIDER == "groq":
@@ -1974,6 +2059,21 @@ if __name__ == "__main__":
         llm_client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
     else:
         import ollama
+        # If saved model is no longer installed, fallback to default and persist it.
+        try:
+            models_list = ollama.list()
+            names = set()
+            if hasattr(models_list, 'models'):
+                for m in models_list.models:
+                    names.add(m.model if hasattr(m, 'model') else str(m))
+            elif isinstance(models_list, dict):
+                for m in models_list.get("models", []):
+                    names.add(m.get("model") or m.get("name", ""))
+            if MODEL not in names:
+                MODEL = OLLAMA_MODEL
+                save_model_state(PROVIDER, MODEL)
+        except Exception:
+            pass
         llm_client = None  # ollama uses module-level calls
 
     workspace = Path(args.workspace).resolve()
