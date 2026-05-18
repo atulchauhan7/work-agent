@@ -456,16 +456,36 @@ def is_looping(text: str, threshold: int = 4) -> bool:
 
 
 def is_rambling(text: str) -> bool:
-    """Return True if model is generating long text without any tool tags (verbose filler)."""
+    """Return True if model is generating verbose filler without doing real work.
+    Only triggers for clearly wasteful text — not for legitimate conversational replies."""
     # If there are tool tags, it's doing real work
     if re.search(r'<(WRITE_FILE|READ_FILE|EDIT_FILE|RUN_CMD|LIST_DIR|RUN_JS|WEB_BROWSE|SCRAPE_URL)', text):
         return False
     # If text has code blocks, it's providing code
     if '```' in text:
         return False
-    # If pure text is over 500 chars with no action, it's rambling
+    # Filler phrases that indicate rambling (model describing what it will do instead of doing it)
+    filler_phrases = [
+        r"(?i)I'll go ahead and",
+        r"(?i)please give me a moment",
+        r"(?i)let me work on",
+        r"(?i)I'll proceed to",
+        r"(?i)I will now create",
+        r"(?i)based on feedback loops",
+        r"(?i)pertaining to",
+        r"(?i)aforementioned",
+        r"(?i)in order to ensure that",
+        r"(?i)deemed ideal suited",
+    ]
+    filler_count = sum(1 for p in filler_phrases if re.search(p, text))
+    # Only flag as rambling if: very long AND contains filler language
     clean = re.sub(r'\s+', ' ', text).strip()
-    return len(clean) > 500
+    if len(clean) > 800 and filler_count >= 2:
+        return True
+    # Extremely long with no substance at all
+    if len(clean) > 1500:
+        return True
+    return False
 
 
 # ── Agent actions ──────────────────────────────────────────────────────────────
