@@ -69,7 +69,7 @@ export default function Navbar() {
         </div>
 
         {/* mobile toggle */}
-        <button onClick={() => setOpen(!open)} className="md:hidden text-white p-2 -mr-1 shrink-0" aria-label="Toggle menu">
+        <button onClick={() => setOpen(!open)} style={{ minHeight: 'unset', minWidth: 'unset' }} className="md:hidden text-white p-2 -mr-1 shrink-0" aria-label="Toggle menu">
           <div className="w-5 flex flex-col gap-[5px]">
             <motion.span animate={open ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }} className="h-[2px] w-full bg-white rounded-full block" />
             <motion.span animate={open ? { opacity: 0 } : { opacity: 1 }} className="h-[2px] w-full bg-white rounded-full block" />

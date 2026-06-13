@@ -69,10 +69,9 @@ body {
 }
 
 @media (max-width: 768px) {
-  /* Touch targets at least 48x48px on mobile */
-  a, button, input[type="button"], input[type="submit"] {
-    min-height: 48px;
-    min-width: 48px;
+  /* Touch targets at least 44px on mobile — only for standalone tap targets */
+  .touch-target {
+    min-height: 44px;
   }
 }
 

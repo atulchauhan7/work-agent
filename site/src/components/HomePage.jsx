@@ -460,7 +460,7 @@ export default function HomePage() {
           <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
           <div className="relative max-w-3xl mx-auto px-6 sm:px-12 py-16 sm:py-20 text-center text-white">
             <FadeUp><span className="inline-flex items-center gap-2 rounded-full bg-white/12 backdrop-blur border border-white/15 px-3.5 py-1.5 text-[12px] font-medium mb-7"><span className="w-1.5 h-1.5 rounded-full bg-[#10B981] pulse-ring text-[#10B981]" /> Only 1 spot remaining this quarter</span></FadeUp>
-            <Heading text="Your competitors are scaling. Are you?" className="font-display font-semibold text-[clamp(1.8rem,5vw,3.75rem)] tracking-[-0.03em] leading-tight mb-6 text-center" />
+            <FadeUp><h2 className="font-display font-semibold text-[clamp(1.6rem,4.5vw,3.5rem)] tracking-[-0.03em] leading-[1.1] mb-6 text-center text-white">Your competitors are scaling.<br className="hidden sm:block" /> Are you?</h2></FadeUp>
             <FadeUp delay={0.1}><p className="text-white/75 text-lg mb-9 max-w-xl mx-auto">Every week you wait is another week of budget spent without a system behind it. One conversation could change your next 90 days. We’ll come prepared — you just show up.</p></FadeUp>
             <FadeUp delay={0.15} className="flex flex-col sm:flex-row gap-3 justify-center">
               <a href="#contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#0C0C12] px-7 py-4 text-[15px] font-semibold hover:bg-white/90 transition-colors">
