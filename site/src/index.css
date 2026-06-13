@@ -39,6 +39,19 @@
 
   #root { overflow-x: clip; max-width: 100%; }
 
+  /* Prevent long words / URLs from blowing out mobile layouts */
+  p, li, h1, h2, h3, h4, h5, h6, span, a {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Inputs always stay within their container */
+  input, select, textarea {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
   ::selection { background: #2B50F6; color: #fff; }
 
   h1, h2, h3, h4, h5, h6 {

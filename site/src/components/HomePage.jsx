@@ -300,7 +300,7 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
             <div>
               <Eyebrow>What we do</Eyebrow>
-              <Heading text="Services" className="font-display font-semibold text-4xl sm:text-6xl tracking-[-0.03em] leading-tight" />
+              <Heading text="Services" className="font-display font-semibold text-[clamp(1.75rem,5vw,3.75rem)] tracking-[-0.03em] leading-tight" />
             </div>
             <p className="text-muted max-w-xs text-[15px] md:text-right">We lead with world-class website & tech builds, then make them perform with precision paid media.</p>
           </div>
@@ -372,7 +372,7 @@ export default function HomePage() {
                     <img src={c.logo} alt={c.brand} className="h-6 w-auto object-contain opacity-80" style={{ filter: 'brightness(0) invert(1)' }} loading="lazy" />
                     <span className="text-[11px] tracking-wide uppercase text-white/40">{c.tag}</span>
                   </div>
-                  <div className="font-display text-5xl font-semibold tracking-[-0.03em] text-accent mb-1">{c.metric}</div>
+                  <div className="font-display text-[clamp(2rem,8vw,3rem)] font-semibold tracking-[-0.03em] text-accent mb-1">{c.metric}</div>
                   <p className="text-[13px] text-white/50 mb-6">{c.metricLabel}</p>
                   <p className="text-white/70 text-[15px] leading-relaxed mb-7">{c.line}</p>
                   <a href="#contact" className="ul-grow inline-flex items-center gap-1.5 text-[14px] font-semibold text-white">
@@ -491,14 +491,14 @@ export default function HomePage() {
                   ].map(r => (
                     <div key={r.k} className="flex items-center justify-between border-b border-line pb-4 last:border-0">
                       <span className="text-[13px] font-medium text-muted">{r.k}</span>
-                      {r.href ? <a href={r.href} className="ul-grow text-[15px] font-medium text-accent hover:text-white transition-colors">{r.v}</a> : <span className="text-[15px] font-medium">{r.v}</span>}
+                      {r.href ? <a href={r.href} className="ul-grow text-[14px] font-medium text-accent hover:text-white transition-colors break-all">{r.v}</a> : <span className="text-[14px] font-medium">{r.v}</span>}
                     </div>
                   ))}
                 </div>
               </FadeUp>
             </div>
             <FadeUp delay={0.1} className="lg:col-span-7">
-              <div className="rounded-2xl border border-line bg-soft-2 p-6 sm:p-10">
+              <div className="rounded-2xl border border-line bg-soft-2 p-5 sm:p-8">
                 <form action="https://formsubmit.co/brandteam@zivonx.com" method="POST" className="space-y-5">
                   <input type="hidden" name="_captcha" value="false" />
                   <input type="hidden" name="_next" value="https://zivonx.com/#contact" />
@@ -547,7 +547,7 @@ export default function HomePage() {
 }
 
 /* ─────────── Subcomponents ─────────── */
-const inputCls = "w-full rounded-lg border border-line bg-bg px-4 py-3 text-[15px] text-ink placeholder:text-ink/30 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15 transition-all"
+const inputCls = "w-full min-w-0 rounded-lg border border-line bg-bg px-4 py-3 text-[15px] text-ink placeholder:text-ink/30 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15 transition-all"
 const Field = ({ label, children }) => (
   <label className="block">
     <span className="mb-2 block text-[12px] font-semibold text-muted">{label}</span>
@@ -617,7 +617,7 @@ const DashboardMock = memo(function DashboardMock() {
           <div className="flex items-end gap-4 mb-7">
             <div>
               <p className="text-[11px] uppercase tracking-[0.06em] text-muted mb-1.5">Blended ROAS</p>
-              <p className="font-display text-5xl font-semibold tracking-[-0.04em] grad-text">5.2×</p>
+              <p className="font-display text-[clamp(2rem,6vw,3rem)] font-semibold tracking-[-0.04em] grad-text">5.2×</p>
             </div>
             <span className="inline-flex items-center gap-1 rounded-full bg-[#10B981]/12 px-2.5 py-1 text-[12px] font-semibold text-[#10B981] mb-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 8-8M21 7v6h-6" /></svg>
