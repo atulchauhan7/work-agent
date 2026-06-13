@@ -1,5 +1,5 @@
 import { motion, useInView } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, memo } from 'react'
 import Navbar from './Navbar'
 import Footer from './Footer'
 
@@ -7,67 +7,66 @@ import Footer from './Footer'
 const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /* ─────────── Motion helpers ─────────── */
-const FadeUp = ({ children, delay = 0, y = 22, className = '' }) => {
+const FadeUp = memo(({ children, delay = 0, y = 16, className = '' }) => {
   const reduceMotion = prefersReducedMotion()
   return (
     <motion.div
       initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y }}
       whileInView={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
-      transition={reduceMotion ? { duration: 0 } : { duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
       style={{ willChange: 'transform, opacity' }}
       className={className}
     >
       {children}
     </motion.div>
   )
-}
+})
 
-const Reveal = ({ children, delay = 0, className = '' }) => {
+const Reveal = memo(({ children, delay = 0, className = '' }) => {
   const reduceMotion = prefersReducedMotion()
   return (
-    <span className="reveal-mask">
-      <motion.span
-        initial={reduceMotion ? { y: '0%' } : { y: '110%' }}
-        animate={reduceMotion ? { y: '0%' } : { y: 0 }}
-        transition={reduceMotion ? { duration: 0 } : { duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
-        style={{ willChange: 'transform' }}
-        className={`inline-block ${className}`}
-      >
-        {children}
-      </motion.span>
-    </span>
+    <motion.span
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
+      animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
+      style={{ willChange: 'opacity' }}
+      className={`inline-block ${className}`}
+    >
+      {children}
+    </motion.span>
   )
-}
+})
 
-const Heading = ({ text, className = '', accent = [] }) => {
+const Heading = memo(({ text, className = '', accent = [] }) => {
   const reduceMotion = prefersReducedMotion()
   return (
-    <h2 className={className}>
-      {text.split(' ').map((w, i) => (
-        <span key={i} className="reveal-mask mr-[0.24em] last:mr-0">
-          <motion.span
-            initial={reduceMotion ? { y: '0%' } : { y: '108%' }}
-            whileInView={reduceMotion ? { y: '0%' } : { y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.55, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
-            style={{ willChange: 'transform' }}
-            className={`inline-block ${accent.includes(w.replace(/[.,?]/g, '')) ? 'grad-text' : ''}`}
-          >
+    <motion.h2
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
+      whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      style={{ willChange: 'opacity' }}
+      className={className}
+    >
+      {text.split(' ').map((w, i) => {
+        const isAccent = accent.includes(w.replace(/[.,?]/g, ''))
+        return (
+          <span key={i} className={`mr-[0.24em] last:mr-0 ${isAccent ? 'grad-text' : ''}`}>
             {w}
-          </motion.span>
-        </span>
-      ))}
-    </h2>
+          </span>
+        )
+      })}
+    </motion.h2>
   )
-}
+})
 
-const Eyebrow = ({ children, dark = false }) => (
+const Eyebrow = memo(({ children, dark = false }) => (
   <FadeUp className={`inline-flex items-center gap-2 text-[12px] font-semibold tracking-[0.04em] uppercase mb-5 ${dark ? 'text-white/50' : 'text-accent'}`}>
     <span className="w-1.5 h-1.5 rounded-full bg-accent" />
     {children}
   </FadeUp>
-)
+))
 
 const Counter = ({ target, prefix = '', suffix = '', isStatic, staticVal, duration = 1600 }) => {
   const [c, setC] = useState(0)
@@ -162,11 +161,13 @@ export default function HomePage() {
             </motion.div>
 
             <h1 className="font-display font-semibold text-[clamp(2.2rem,4.5vw,4.2rem)] leading-[0.98] tracking-[-0.035em] mb-7">
-              <div><Reveal delay={0.1}>Your ads are spending.</Reveal></div>
-              <div className="flex flex-wrap items-baseline gap-x-[0.25em]">
-                <Reveal delay={0.22}>Your revenue should be</Reveal>
-                <Reveal delay={0.3} className="grad-text">scaling.</Reveal>
-              </div>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ willChange: 'opacity' }}>
+                Your ads are spending.
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ willChange: 'opacity' }} className="flex flex-wrap items-baseline gap-x-[0.25em]">
+                <span>Your revenue should be</span>
+                <span className="grad-text">scaling.</span>
+              </motion.div>
             </h1>
 
             <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }} style={{ willChange: 'transform, opacity' }} className="text-lg text-muted leading-relaxed mb-9">
@@ -584,7 +585,7 @@ function ServiceRow({ s, i, open, setOpen, color }) {
 }
 
 /* Hero dashboard mock — clean product UI */
-function DashboardMock() {
+const DashboardMock = memo(function DashboardMock() {
   const bars = [42, 55, 48, 67, 72, 63, 84, 78, 92, 88, 100, 95]
   const barColors = (i) => {
     if (i >= 10) return '#2B50F6'
@@ -630,7 +631,7 @@ function DashboardMock() {
                 initial={{ height: 0 }}
                 whileInView={{ height: `${h}%` }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.3 + i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.5, delay: 0.1 + i * 0.02, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-1 rounded-t-sm"
                 style={{ background: barColors(i) }}
               />
@@ -665,10 +666,10 @@ function DashboardMock() {
       </div>
     </div>
   )
-}
+})
 
 /* System diagram — central engine with connected nodes + animated flow */
-function SystemDiagram() {
+const SystemDiagram = memo(function SystemDiagram() {
   const nodes = [
     { label: 'Audience', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0' },
     { label: 'Creative', icon: 'M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42' },
@@ -681,7 +682,7 @@ function SystemDiagram() {
       <div className="relative grid sm:grid-cols-[1fr_auto_1fr] items-center gap-6 sm:gap-10">
         <div className="grid grid-cols-2 gap-3">
           {nodes.map((n, i) => (
-            <motion.div key={n.label} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }} className="group rounded-xl border border-line bg-soft-2 px-4 py-3.5 text-center hover:border-accent/30 hover:bg-accent/5 transition-all duration-200">
+            <motion.div key={n.label} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.05 }} className="group rounded-xl border border-line bg-soft-2 px-4 py-3.5 text-center hover:border-accent/30 hover:bg-accent/5 transition-all duration-200">
               <svg className="w-4 h-4 mx-auto mb-1.5 text-muted group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d={n.icon} /></svg>
               <span className="text-[12px] font-medium">{n.label}</span>
             </motion.div>
@@ -691,7 +692,7 @@ function SystemDiagram() {
           <svg width="80" height="40" viewBox="0 0 80 40" className="text-accent/40"><line x1="0" y1="20" x2="80" y2="20" stroke="currentColor" strokeWidth="2" className="flow-line" /></svg>
           <span className="text-[10px] text-muted uppercase tracking-[0.06em]">Feeds into</span>
         </div>
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.15 }} style={{ willChange: 'transform, opacity' }} className="rounded-2xl text-white text-center shadow-card relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a2d8f 0%, #2B50F6 50%, #7C3AED 100%)' }}>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.1 }} style={{ willChange: 'transform, opacity' }} className="rounded-2xl text-white text-center shadow-card relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a2d8f 0%, #2B50F6 50%, #7C3AED 100%)' }}>
           <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />
           <div className="relative px-6 py-8">
             <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur mx-auto mb-3 flex items-center justify-center">
@@ -704,4 +705,4 @@ function SystemDiagram() {
       </div>
     </div>
   )
-}
+})
