@@ -1,5 +1,5 @@
-import { motion, useInView } from 'framer-motion'
-import { useEffect, useRef, useState, memo } from 'react'
+import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef, useState, memo, useCallback } from 'react'
 import Navbar from './Navbar'
 import Footer from './Footer'
 
@@ -504,39 +504,7 @@ export default function HomePage() {
               </FadeUp>
             </div>
             <FadeUp delay={0.1} className="lg:col-span-7">
-              <div className="rounded-2xl border border-line bg-soft-2 p-5 sm:p-8">
-                <form action="https://formsubmit.co/brandteam@zivonx.com" method="POST" className="space-y-5">
-                  <input type="hidden" name="_captcha" value="false" />
-                  <input type="hidden" name="_next" value="https://zivonx.com/#contact" />
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <Field label="Full name"><input name="name" required placeholder="Your name" autoComplete="name" className={inputCls} /></Field>
-                    <Field label="Email"><input name="email" type="email" required placeholder="you@company.com" autoComplete="email" className={inputCls} /></Field>
-                    <Field label="WhatsApp"><input name="whatsapp" type="tel" placeholder="+91 00000 00000" autoComplete="tel" className={inputCls} /></Field>
-                    <Field label="Monthly ad spend"><input name="spend" placeholder="e.g. ₹5L–₹20L" className={inputCls} /></Field>
-                    <Field label="Preferred date"><input name="date" type="date" required className={inputCls} /></Field>
-                    <Field label="Preferred time">
-                      <select name="time" required className={inputCls}>
-                        <option value="">Choose a time</option>
-                        <option>10:00 AM</option><option>11:00 AM</option><option>12:00 PM</option>
-                        <option>2:00 PM</option><option>3:00 PM</option><option>4:00 PM</option>
-                        <option>5:00 PM</option><option>6:00 PM</option><option>7:00 PM</option>
-                      </select>
-                    </Field>
-                  </div>
-                  <button type="submit" className="btn-accent w-full rounded-lg bg-accent text-white py-4 text-[15px] font-semibold hover:bg-accent-ink flex items-center justify-center gap-2">
-                    Book My Free Audit
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                  </button>
-                  <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 pt-1">
-                    {['Free. No strings.', 'We prep before you show up', 'Specific to your brand', 'Reply within 4 hours'].map(t => (
-                      <span key={t} className="inline-flex items-center gap-1.5 text-[12px] text-muted">
-                        <svg className="w-3 h-3 text-[#10B981] shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </form>
-              </div>
+              <ContactForm />
             </FadeUp>
           </div>
         </div>
@@ -560,6 +528,129 @@ const Field = ({ label, children }) => (
     {children}
   </label>
 )
+
+function Toast({ type, msg, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 6000)
+    return () => clearTimeout(t)
+  }, [onClose])
+  const ok = type === 'success'
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 10, scale: 0.96 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-start gap-3 rounded-2xl border px-5 py-4 shadow-card w-[min(420px,calc(100vw-2rem))] ${
+        ok ? 'bg-[#060F06] border-[#10B981]/35' : 'bg-[#0F0606] border-red-500/35'
+      }`}
+    >
+      {/* icon */}
+      <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+        ok ? 'bg-[#10B981]/15' : 'bg-red-500/15'
+      }`}>
+        {ok
+          ? <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+          : <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+        }
+      </div>
+      {/* text */}
+      <div className="flex-1 min-w-0">
+        <p className={`text-[14px] font-semibold mb-1 ${ ok ? 'text-[#10B981]' : 'text-red-400' }`}>
+          {ok ? "You're booked in! 🎉" : 'Submission failed'}
+        </p>
+        <p className="text-[13px] text-muted leading-snug">{msg}</p>
+      </div>
+      {/* close */}
+      <button onClick={onClose} className="text-muted hover:text-ink shrink-0 mt-0.5" aria-label="Close notification">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+      </button>
+    </motion.div>
+  )
+}
+
+function ContactForm() {
+  const [submitting, setSubmitting] = useState(false)
+  const [toast, setToast] = useState(null)
+  const formRef = useRef(null)
+  const closeToast = useCallback(() => setToast(null), [])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+    const data = Object.fromEntries(new FormData(e.target))
+    try {
+      const res = await fetch('https://formsubmit.co/ajax/brandteam@zivonx.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ ...data, _captcha: 'false' }),
+      })
+      const json = await res.json()
+      if (json.success === 'true' || json.success === true) {
+        setToast({ type: 'success', msg: "We've received your details and will confirm your audit slot within 4 hours. Check your email — and WhatsApp too." })
+        formRef.current?.reset()
+      } else {
+        setToast({ type: 'error', msg: 'Something went wrong on our end. Please WhatsApp us at +91 73783 80250 or email brandteam@zivonx.com directly.' })
+      }
+    } catch {
+      setToast({ type: 'error', msg: 'Network error. Please WhatsApp us at +91 73783 80250 or email brandteam@zivonx.com directly.' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="rounded-2xl border border-line bg-soft-2 p-5 sm:p-8">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Full name"><input name="name" required placeholder="Your name" autoComplete="name" className={inputCls} /></Field>
+            <Field label="Email"><input name="email" type="email" required placeholder="you@company.com" autoComplete="email" className={inputCls} /></Field>
+            <Field label="WhatsApp"><input name="whatsapp" type="tel" placeholder="+91 00000 00000" autoComplete="tel" className={inputCls} /></Field>
+            <Field label="Monthly ad spend"><input name="spend" placeholder="e.g. ₹5L–₹20L" className={inputCls} /></Field>
+            <Field label="Preferred date"><input name="date" type="date" required className={inputCls} /></Field>
+            <Field label="Preferred time">
+              <select name="time" required className={inputCls}>
+                <option value="">Choose a time</option>
+                <option>10:00 AM</option><option>11:00 AM</option><option>12:00 PM</option>
+                <option>2:00 PM</option><option>3:00 PM</option><option>4:00 PM</option>
+                <option>5:00 PM</option><option>6:00 PM</option><option>7:00 PM</option>
+              </select>
+            </Field>
+          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-accent w-full rounded-lg bg-accent text-white py-4 text-[15px] font-semibold hover:bg-accent-ink flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {submitting ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" /></svg>
+                Sending...
+              </>
+            ) : (
+              <>
+                Book My Free Audit
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+              </>
+            )}
+          </button>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 pt-1">
+            {['Free. No strings.', 'We prep before you show up', 'Specific to your brand', 'Reply within 4 hours'].map(t => (
+              <span key={t} className="inline-flex items-center gap-1.5 text-[12px] text-muted">
+                <svg className="w-3 h-3 text-[#10B981] shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                {t}
+              </span>
+            ))}
+          </div>
+        </form>
+      </div>
+      <AnimatePresence>
+        {toast && <Toast key="toast" type={toast.type} msg={toast.msg} onClose={closeToast} />}
+      </AnimatePresence>
+    </>
+  )
+}
 
 function ServiceRow({ s, i, open, setOpen, color }) {
   const isOpen = open === i
