@@ -17,7 +17,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-16">
           {/* brand */}
           <div className="col-span-2 lg:col-span-5">
-            <a href="#home" className="font-display text-2xl font-semibold tracking-tight">Zivonx<span className="text-accent">.</span></a>
+            <a href="#home" className="font-display text-2xl font-semibold tracking-tight">ZivonX</a>
             <p className="text-white/55 text-[15px] leading-relaxed max-w-xs mt-4 mb-6">A performance-driven growth partner for D2C brands scaling through ads, creatives and strategy.</p>
             <a href="mailto:brandteam@zivonx.com" className="ul-grow text-white text-[15px] font-medium">brandteam@zivonx.com</a>
             <div className="flex gap-2.5 mt-6">

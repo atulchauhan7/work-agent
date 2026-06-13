@@ -47,7 +47,7 @@ export default function Navbar() {
 
         {/* logo */}
         <a href="/#home" className="logo-hover font-display text-[18px] font-semibold tracking-tight shrink-0">
-          Zivon<span className="logo-x text-accent">X</span><span className="text-accent">.</span>
+          Zivon<span className="logo-x">X</span>
         </a>
 
         {/* center: nav links — desktop only */}
