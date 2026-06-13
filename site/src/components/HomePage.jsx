@@ -439,7 +439,7 @@ export default function HomePage() {
       </section>
 
       {/* ───── CTA ───── */}
-      <section className="px-3 sm:px-5 py-5 sm:py-8">
+      <section className="px-3 sm:px-5 py-12 sm:py-20">
         <div className="grad-surface relative max-w-7xl mx-auto rounded-3xl overflow-hidden">
           <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
           <div className="relative max-w-3xl mx-auto px-6 sm:px-12 py-16 sm:py-20 text-center text-white">
@@ -459,7 +459,7 @@ export default function HomePage() {
       </section>
 
       {/* ───── CONTACT ───── */}
-      <section id="contact" className="scroll-mt-24 border-t border-line">
+      <section id="contact" className="scroll-mt-24 border-t border-line bg-bg">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-14 sm:py-20">
           <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
             <div className="lg:col-span-5">
