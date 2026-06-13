@@ -213,7 +213,7 @@ export default function HomePage() {
           <div className="flex marquee-track items-center" style={{ animation: 'marquee 14s linear infinite' }}>
             {logos.map((c, i) => (
               <div key={i} className="shrink-0 px-8 sm:px-12">
-                <img src={c.logo} alt={c.name} className="h-6 w-auto object-contain opacity-45 hover:opacity-90 transition-opacity" />
+                <img src={c.logo} alt={c.name} className="h-6 w-auto object-contain opacity-45 hover:opacity-90 transition-opacity" loading="lazy" />
               </div>
             ))}
           </div>
@@ -255,7 +255,7 @@ export default function HomePage() {
           <FadeUp delay={0.05}><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] mb-10 max-w-2xl">Built different. For a reason.</h2></FadeUp>
           <div className="grid md:grid-cols-3 gap-4">
             {BELIEFS.map((b, i) => (
-              <FadeUp key={i} delay={i * 0.1} className="group relative shimmer-on-hover bg-soft-2 rounded-2xl border border-line p-7 sm:p-8 overflow-hidden hover:border-white/15 hover:shadow-soft transition-all duration-300">
+              <FadeUp key={i} delay={i * 0.05} className="group relative shimmer-on-hover bg-soft-2 rounded-2xl border border-line p-7 sm:p-8 overflow-hidden hover:border-white/15 hover:shadow-soft transition-all duration-300">
                 <span className="absolute top-0 left-0 h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${b.c}, transparent)` }} />
                 <div className="absolute -bottom-6 -right-4 font-display text-[7rem] font-bold leading-none select-none pointer-events-none" style={{ color: b.c, opacity: 0.04 }}>{b.n}</div>
                 <div className="absolute -right-12 -top-12 w-32 h-32 rounded-full blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: b.c + '40' }} />
@@ -276,7 +276,7 @@ export default function HomePage() {
           <FadeUp delay={0.1}><p className="text-muted leading-relaxed text-lg">One connected engine across the full funnel — so every rupee of ad spend compounds into predictable, repeatable revenue. No guessing. No lucky months.</p></FadeUp>
         </div>
 
-        <FadeUp delay={0.1} className="mb-8"><SystemDiagram /></FadeUp>
+        <FadeUp delay={0.05} className="mb-8"><SystemDiagram /></FadeUp>
 
         <div className="grid md:grid-cols-3 gap-4">
           {SYSTEM.map((s, i) => (
@@ -308,7 +308,7 @@ export default function HomePage() {
           {/* ── Top 2 featured services — always visible ── */}
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             {SERVICES.slice(0, 2).map((s, i) => (
-              <FadeUp key={i} delay={i * 0.1} className="group shimmer-on-hover relative rounded-2xl border border-[rgba(245,158,11,0.25)] bg-bg p-7 overflow-hidden hover:border-[rgba(245,158,11,0.45)] transition-all duration-300">
+              <FadeUp key={i} delay={i * 0.05} className="group shimmer-on-hover relative rounded-2xl border border-[rgba(245,158,11,0.25)] bg-bg p-7 overflow-hidden hover:border-[rgba(245,158,11,0.45)] transition-all duration-300">
                 <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${SERVICE_COLORS[i]}, transparent)` }} />
                 <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity duration-500" style={{ background: SERVICE_COLORS[i] }} />
                 <div className="relative">
@@ -364,12 +364,12 @@ export default function HomePage() {
           <FadeUp delay={0.05}><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] mb-10 max-w-2xl">These brands were exactly where you are now.</h2></FadeUp>
           <div className="grid md:grid-cols-3 gap-4">
             {CASES.map((c, i) => (
-              <FadeUp key={i} delay={i * 0.1} className="group relative rounded-2xl border border-white/10 bg-dark-2 p-7 overflow-hidden hover:border-white/25 transition-all duration-300 hover:-translate-y-1">
+              <FadeUp key={i} delay={i * 0.05} className="group relative rounded-2xl border border-white/10 bg-dark-2 p-7 overflow-hidden hover:border-white/25 transition-all duration-300 hover:-translate-y-1">
                 <div className="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-accent/15 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${['#2B50F6','#7C3AED','#10B981'][i]}, transparent)` }} />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-8">
-                    <img src={c.logo} alt={c.brand} className="h-6 w-auto object-contain opacity-80" style={{ filter: 'brightness(0) invert(1)' }} />
+                    <img src={c.logo} alt={c.brand} className="h-6 w-auto object-contain opacity-80" style={{ filter: 'brightness(0) invert(1)' }} loading="lazy" />
                     <span className="text-[11px] tracking-wide uppercase text-white/40">{c.tag}</span>
                   </div>
                   <div className="font-display text-5xl font-semibold tracking-[-0.03em] text-accent mb-1">{c.metric}</div>
