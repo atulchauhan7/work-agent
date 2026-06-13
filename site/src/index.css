@@ -50,6 +50,32 @@
 html { scroll-behavior: smooth; scroll-padding-top: 6rem; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; scroll-padding-top: 5rem; }
+  * { animation: none !important; transition: none !important; }
+  .pulse-ring::after { animation: none !important; }
+  .float { animation: none !important; }
+  .animate-fade-in-up { animation: none !important; }
+  .typing-dot { animation: none !important; }
+  .shimmer-on-hover::after { animation: none !important; }
+}
+
+/* ── GPU acceleration for smooth animations ── */
+* {
+  -webkit-font-smoothing: antialiased;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  body {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  
+  /* Ensure touch targets are at least 48x48px on mobile */
+  a, button, input[type="button"], input[type="submit"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
 }
 
 /* ── Scrollbar ── */
@@ -69,6 +95,9 @@ html { scroll-behavior: smooth; scroll-padding-top: 6rem; }
 /* ── Marquee ── */
 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 .marquee-track { will-change: transform; backface-visibility: hidden; display: flex; }
+@media (max-width: 768px) {
+  .marquee-track { animation: marquee 20s linear infinite !important; }
+}
 .mask-fade-x {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
@@ -77,6 +106,9 @@ html { scroll-behavior: smooth; scroll-padding-top: 6rem; }
 /* ── Float animation (subtle hover levitate) ── */
 @keyframes float-y { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .float { animation: float-y 4s ease-in-out infinite; }
+@media (max-width: 768px) {
+  .float { animation: none; }
+}
 
 /* ── Shimmer sweep (card highlight) ── */
 @keyframes shimmer { from { transform: translateX(-100%) skewX(-12deg); } to { transform: translateX(200%) skewX(-12deg); } }

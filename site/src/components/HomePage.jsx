@@ -3,49 +3,64 @@ import { useEffect, useRef, useState } from 'react'
 import Navbar from './Navbar'
 import Footer from './Footer'
 
-/* ─────────── Motion helpers ─────────── */
-const FadeUp = ({ children, delay = 0, y = 22, className = '' }) => (
-  <motion.div
-    initial={{ opacity: 0, y }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-60px' }}
-    transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
-    className={className}
-  >
-    {children}
-  </motion.div>
-)
+// Detect reduced motion preference only (preserve animations on mobile)
+const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-const Reveal = ({ children, delay = 0, className = '' }) => (
-  <span className="reveal-mask">
-    <motion.span
-      initial={{ y: '110%' }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
-      className={`inline-block ${className}`}
+/* ─────────── Motion helpers ─────────── */
+const FadeUp = ({ children, delay = 0, y = 22, className = '' }) => {
+  const reduceMotion = prefersReducedMotion()
+  return (
+    <motion.div
+      initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y }}
+      whileInView={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
+      style={{ willChange: 'transform, opacity' }}
+      className={className}
     >
       {children}
-    </motion.span>
-  </span>
-)
+    </motion.div>
+  )
+}
 
-const Heading = ({ text, className = '', accent = [] }) => (
-  <h2 className={className}>
-    {text.split(' ').map((w, i) => (
-      <span key={i} className="reveal-mask mr-[0.24em] last:mr-0">
-        <motion.span
-          initial={{ y: '108%' }}
-          whileInView={{ y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.65, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-          className={`inline-block ${accent.includes(w.replace(/[.,?]/g, '')) ? 'grad-text' : ''}`}
-        >
-          {w}
-        </motion.span>
-      </span>
-    ))}
-  </h2>
-)
+const Reveal = ({ children, delay = 0, className = '' }) => {
+  const reduceMotion = prefersReducedMotion()
+  return (
+    <span className="reveal-mask">
+      <motion.span
+        initial={reduceMotion ? { y: '0%' } : { y: '110%' }}
+        animate={reduceMotion ? { y: '0%' } : { y: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+        style={{ willChange: 'transform' }}
+        className={`inline-block ${className}`}
+      >
+        {children}
+      </motion.span>
+    </span>
+  )
+}
+
+const Heading = ({ text, className = '', accent = [] }) => {
+  const reduceMotion = prefersReducedMotion()
+  return (
+    <h2 className={className}>
+      {text.split(' ').map((w, i) => (
+        <span key={i} className="reveal-mask mr-[0.24em] last:mr-0">
+          <motion.span
+            initial={reduceMotion ? { y: '0%' } : { y: '108%' }}
+            whileInView={reduceMotion ? { y: '0%' } : { y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.55, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+            style={{ willChange: 'transform' }}
+            className={`inline-block ${accent.includes(w.replace(/[.,?]/g, '')) ? 'grad-text' : ''}`}
+          >
+            {w}
+          </motion.span>
+        </span>
+      ))}
+    </h2>
+  )
+}
 
 const Eyebrow = ({ children, dark = false }) => (
   <FadeUp className={`inline-flex items-center gap-2 text-[12px] font-semibold tracking-[0.04em] uppercase mb-5 ${dark ? 'text-white/50' : 'text-accent'}`}>
@@ -141,7 +156,7 @@ export default function HomePage() {
 
             {/* ── LEFT: copy ── */}
             <div>
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur px-3 py-1.5 mb-7 shadow-soft">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ willChange: 'transform, opacity' }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur px-3 py-1.5 mb-7 shadow-soft">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] pulse-ring text-[#10B981]" />
               <span className="text-[12px] font-medium text-ink/70">Accepting 1 new brand this quarter · Bangalore, India</span>
             </motion.div>
@@ -154,11 +169,11 @@ export default function HomePage() {
               </div>
             </h1>
 
-            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.5 }} className="text-lg text-muted leading-relaxed mb-9">
+            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }} style={{ willChange: 'transform, opacity' }} className="text-lg text-muted leading-relaxed mb-9">
               We audit your full funnel, fix what’s bleeding budget, and build a paid media engine that delivers consistent 3–5× returns — run by a team that reports in plain numbers, not vanity decks. Most brands see a measurable breakthrough within 30 days.
             </motion.p>
 
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }} className="flex flex-col sm:flex-row gap-3">
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }} style={{ willChange: 'transform, opacity' }} className="flex flex-col sm:flex-row gap-3">
               <a href="#contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#0C0C12] px-6 py-3.5 text-[15px] font-semibold hover:bg-accent hover:text-white transition-all">
                 Get your free funnel audit
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
@@ -167,7 +182,7 @@ export default function HomePage() {
             </motion.div>
 
             {/* social proof pills */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.85 }} className="flex flex-wrap gap-2.5 mt-7">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.65 }} style={{ willChange: 'opacity' }} className="flex flex-wrap gap-2.5 mt-7">
               {[
                 { val: '₹3Cr+', label: 'Revenue generated for brands' },
                 { val: '3–5×', label: 'ROAS we consistently maintain' },
@@ -182,7 +197,7 @@ export default function HomePage() {
             </div>
 
             {/* ── RIGHT: dashboard visual ── */}
-            <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }} className="w-full">
+            <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity' }} className="w-full hidden lg:block">
               <DashboardMock />
             </motion.div>
 
@@ -556,7 +571,7 @@ function ServiceRow({ s, i, open, setOpen, color }) {
         </span>
         <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.3 }} className="text-2xl shrink-0" style={{ color: isOpen ? color : 'rgba(255,255,255,0.2)' }}>+</motion.span>
       </button>
-      <motion.div initial={false} animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
+      <motion.div initial={false} animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'height, opacity' }} className="overflow-hidden">
         <div className="px-6 sm:px-9 pb-7 sm:pl-[4.7rem] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
           <p className="text-muted text-[15px] leading-relaxed max-w-lg">{s.desc}</p>
           <div className="flex flex-wrap gap-2">
@@ -676,7 +691,7 @@ function SystemDiagram() {
           <svg width="80" height="40" viewBox="0 0 80 40" className="text-accent/40"><line x1="0" y1="20" x2="80" y2="20" stroke="currentColor" strokeWidth="2" className="flow-line" /></svg>
           <span className="text-[10px] text-muted uppercase tracking-[0.06em]">Feeds into</span>
         </div>
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="rounded-2xl text-white text-center shadow-card relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a2d8f 0%, #2B50F6 50%, #7C3AED 100%)' }}>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.15 }} style={{ willChange: 'transform, opacity' }} className="rounded-2xl text-white text-center shadow-card relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a2d8f 0%, #2B50F6 50%, #7C3AED 100%)' }}>
           <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />
           <div className="relative px-6 py-8">
             <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur mx-auto mb-3 flex items-center justify-center">
