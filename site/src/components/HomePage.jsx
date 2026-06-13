@@ -144,6 +144,9 @@ export default function HomePage() {
       <section id="home" className="relative pt-28 sm:pt-36 pb-10 sm:pb-14 overflow-hidden">
         {/* soft gradient mesh */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+          {/* Mobile: pure CSS radial-gradient — zero blur, zero GPU cost */}
+          <div className="sm:hidden absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 10% 0%, rgba(43,80,246,0.18) 0%, transparent 70%), radial-gradient(ellipse 70% 40% at 90% 0%, rgba(124,58,237,0.14) 0%, transparent 70%)' }} />
+          {/* Desktop: full blur blobs */}
           <div className="blob blob-a hidden sm:block absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full bg-accent/30 blur-[130px]" />
           <div className="blob blob-b hidden sm:block absolute -top-20 right-0 w-[560px] h-[560px] rounded-full bg-[#7C3AED]/25 blur-[140px]" />
           <div className="blob blob-c hidden sm:block absolute top-40 left-1/3 w-[480px] h-[480px] rounded-full bg-[#06B6D4]/20 blur-[140px]" />
