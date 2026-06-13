@@ -22,7 +22,11 @@
 }
 
 @layer base {
-  html { overflow-x: clip; -webkit-text-size-adjust: 100%; }
+  html { 
+    overflow-x: clip; 
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
 
   body {
     @apply bg-bg text-ink font-body;
@@ -59,19 +63,13 @@ html { scroll-behavior: smooth; scroll-padding-top: 6rem; }
 }
 
 /* ── GPU acceleration for smooth animations ── */
-* {
+body {
   -webkit-font-smoothing: antialiased;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @media (max-width: 768px) {
-  body {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-  
-  /* Ensure touch targets are at least 48x48px on mobile */
+  /* Touch targets at least 48x48px on mobile */
   a, button, input[type="button"], input[type="submit"] {
     min-height: 48px;
     min-width: 48px;
