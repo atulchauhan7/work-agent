@@ -13,11 +13,15 @@ export default function Footer() {
   const year = new Date().getFullYear()
   return (
     <footer className="bg-dark text-white">
+      {/* Gradient accent line at footer top */}
+      <div className="h-[1px] w-full" style={{ background: 'linear-gradient(90deg, transparent 0%, #2B50F6 25%, #7C3AED 55%, #06B6D4 80%, transparent 100%)', opacity: 0.5 }} />
       <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 pt-20 sm:pt-24 pb-10">
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-16">
           {/* brand */}
           <div className="col-span-2 lg:col-span-5">
-            <a href="#home" className="font-display text-2xl font-semibold tracking-tight">ZivonX</a>
+            <a href="#home" className="logo-hover font-display text-2xl font-semibold tracking-tight">
+              Zivon<span className="logo-x">X</span>
+            </a>
             <p className="text-white/55 text-[15px] leading-relaxed max-w-xs mt-4 mb-6">A performance-driven growth partner for D2C brands scaling through ads, creatives and strategy.</p>
             <a href="mailto:brandteam@zivonx.com" className="ul-grow text-white text-[15px] font-medium">brandteam@zivonx.com</a>
             <div className="flex gap-2.5 mt-6">
@@ -58,7 +62,7 @@ export default function Footer() {
 
         <div className="h-px bg-white/10" />
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-7">
-          <p className="text-white/40 text-[13px]">© {year} Zivonx. All rights reserved.</p>
+          <p className="text-white/40 text-[13px]">© {year} ZivonX. All rights reserved.</p>
           <p className="text-white/40 text-[13px]">We build brands that print revenue.</p>
         </div>
       </div>

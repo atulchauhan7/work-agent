@@ -125,6 +125,8 @@ const PILLARS = [
   { t: 'Partnerships where our income depends on your growth', d: 'We don’t do 3-month retainers to pad an invoice. We build long-term relationships where both sides win only if the revenue grows — which is exactly how it should work.', icon: 'M3 12h18M3 6h18M3 18h18', c: '#10B981' },
 ]
 
+const PAIN_COLORS = ['#EF4444', '#F59E0B', '#8B5CF6']
+
 const BRANDS = [
   { name: 'Gulaab Gali', logo: '/gulaab-gali.png' },
   { name: 'Dhirai', logo: '/dhirai.avif' },
@@ -178,11 +180,11 @@ export default function HomePage() {
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }} style={{ willChange: 'transform, opacity' }} className="flex flex-col sm:flex-row gap-3">
-              <a href="#contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#0C0C12] px-6 py-3.5 text-[15px] font-semibold hover:bg-accent hover:text-white transition-all">
+              <a href="#contact" className="btn-hero inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#0C0C12] px-6 py-3.5 text-[15px] font-semibold hover:bg-accent hover:text-white">
                 Get your free funnel audit
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
               </a>
-              <a href="#work" className="inline-flex items-center justify-center rounded-lg border border-white/15 text-ink px-6 py-3.5 text-[15px] font-medium hover:bg-white/5 transition-colors">See client results</a>
+              <a href="#work" className="btn-ghost inline-flex items-center justify-center rounded-lg border border-white/15 text-ink px-6 py-3.5 text-[15px] font-medium hover:bg-white/5">See client results</a>
             </motion.div>
 
             {/* social proof pills */}
@@ -192,7 +194,7 @@ export default function HomePage() {
                 { val: '3–5×', label: 'ROAS we consistently maintain' },
                 { val: '30 days', label: 'To first measurable result' },
               ].map(p => (
-                <span key={p.label} className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-3.5 py-1.5 text-[13px]">
+                <span key={p.label} className="proof-pill inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-3.5 py-1.5 text-[13px]">
                   <span className="font-semibold grad-text">{p.val}</span>
                   <span className="text-muted">{p.label}</span>
                 </span>
@@ -239,7 +241,8 @@ export default function HomePage() {
             { icon: '📊', problem: '"We spend ₹20L a month with no clarity"', detail: 'Beautiful dashboards. Impressive slide decks. But zero answer to one simple question: which rupee of spend actually caused a sale? You’re flying blind and paying premium for it.' },
             { icon: '🔄', problem: '"Revenue plateaus. Nothing moves the needle."', detail: 'You’ve tested new creatives, switched targeting, hired new freelancers. Same result every month. That’s not a budget problem — it’s a system problem. Tactics without a system don’t compound.' },
           ].map((p, i) => (
-            <FadeUp key={i} delay={i * 0.1} className="shimmer-on-hover rounded-2xl border border-line bg-soft p-6 hover:border-white/15 transition-all duration-300">
+            <FadeUp key={i} delay={i * 0.1} className="pain-card shimmer-on-hover rounded-2xl border border-line bg-soft p-6 hover:border-white/15">
+              <span className="absolute top-0 left-0 w-[3px] h-full pointer-events-none" style={{ background: `linear-gradient(180deg, ${PAIN_COLORS[i]}, transparent 80%)` }} />
               <div className="text-3xl mb-4">{p.icon}</div>
               <h3 className="font-display text-lg font-semibold mb-3 tracking-[-0.02em]">{p.problem}</h3>
               <p className="text-muted text-[15px] leading-relaxed">{p.detail}</p>
@@ -350,7 +353,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 gap-px rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(43,80,246,0.3), rgba(124,58,237,0.3), rgba(6,182,212,0.3))' }}>
             {STATS.map((s, i) => (
-              <FadeUp key={i} delay={i * 0.08} className="bg-soft p-6 sm:p-8">
+              <FadeUp key={i} delay={i * 0.08} className="stat-cell bg-soft p-6 sm:p-8">
                 <div className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.03em] mb-2 grad-text">
                   <Counter target={s.value} prefix={s.prefix} suffix={s.suffix} isStatic={!!s.static} staticVal={s.static} />
                 </div>
@@ -375,7 +378,7 @@ export default function HomePage() {
                     <img src={c.logo} alt={c.brand} className="h-6 w-auto object-contain opacity-80" style={{ filter: 'brightness(0) invert(1)' }} loading="lazy" />
                     <span className="text-[11px] tracking-wide uppercase text-white/40">{c.tag}</span>
                   </div>
-                  <div className="font-display text-[clamp(2rem,8vw,3rem)] font-semibold tracking-[-0.03em] text-accent mb-1">{c.metric}</div>
+                  <div className="font-display text-[clamp(2rem,8vw,3rem)] font-semibold tracking-[-0.03em] grad-text mb-1">{c.metric}</div>
                   <p className="text-[13px] text-white/50 mb-6">{c.metricLabel}</p>
                   <p className="text-white/70 text-[15px] leading-relaxed mb-7">{c.line}</p>
                   <a href="#contact" className="ul-grow inline-flex items-center gap-1.5 text-[14px] font-semibold text-white">

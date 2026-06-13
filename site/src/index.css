@@ -283,6 +283,53 @@ input:focus, select:focus, textarea:focus { transition: border-color 0.2s ease, 
     #1E2A78;
 }
 
+/* ── Hero primary button (white bg lift + accent glow) ── */
+.btn-hero {
+  transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.btn-hero:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(43,80,246,0.3), 0 2px 6px rgba(0,0,0,0.25);
+}
+.btn-hero:active { transform: translateY(0) scale(0.97); }
+
+/* ── Ghost / outline button lift ── */
+.btn-ghost {
+  transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), background-color 0.2s ease, border-color 0.2s ease;
+}
+.btn-ghost:hover { transform: translateY(-2px); }
+.btn-ghost:active { transform: translateY(0) scale(0.97); }
+
+/* ── Stat cell interactive lift ── */
+.stat-cell {
+  transition: background-color 0.25s ease, transform 0.25s cubic-bezier(0.22,1,0.36,1);
+  cursor: default;
+}
+.stat-cell:hover {
+  background-color: var(--color-soft-2);
+  transform: translateY(-3px);
+}
+
+/* ── Pain card lift on hover ── */
+.pain-card {
+  transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.pain-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07);
+}
+
+/* ── Proof pill subtle hover ── */
+.proof-pill {
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  cursor: default;
+}
+.proof-pill:hover {
+  border-color: rgba(43,80,246,0.35);
+  background-color: rgba(43,80,246,0.05);
+  transform: translateY(-1px);
+}
+
 /* soft animated mesh blobs (hero) */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes blob-a { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(30px,-40px,0) scale(1.12); } }
