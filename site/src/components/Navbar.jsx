@@ -39,7 +39,7 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={`relative mx-auto grid grid-cols-3 items-center rounded-2xl bg-dark text-white ring-1 ring-white/10 transition-all duration-300 overflow-hidden ${
-          scrolled ? 'max-w-5xl mt-2 px-3 sm:px-4 py-3 sm:py-3.5 shadow-card' : 'max-w-6xl mt-3 sm:mt-4 px-4 sm:px-5 py-3.5 sm:py-4 shadow-soft'
+          scrolled ? 'max-w-5xl mt-2 px-3 sm:px-4 py-2 sm:py-2.5 shadow-card' : 'max-w-6xl mt-3 sm:mt-4 px-4 sm:px-5 py-2.5 sm:py-3 shadow-soft'
         }`}
       >
         {/* progress line */}

@@ -144,11 +144,11 @@ export default function HomePage() {
       <section id="home" className="relative pt-28 sm:pt-36 pb-10 sm:pb-14 overflow-hidden">
         {/* soft gradient mesh */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <div className="blob blob-a absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full bg-accent/30 blur-[130px]" />
-          <div className="blob blob-b absolute -top-20 right-0 w-[560px] h-[560px] rounded-full bg-[#7C3AED]/25 blur-[140px]" />
-          <div className="blob blob-c absolute top-40 left-1/3 w-[480px] h-[480px] rounded-full bg-[#06B6D4]/20 blur-[140px]" />
+          <div className="blob blob-a hidden sm:block absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full bg-accent/30 blur-[130px]" />
+          <div className="blob blob-b hidden sm:block absolute -top-20 right-0 w-[560px] h-[560px] rounded-full bg-[#7C3AED]/25 blur-[140px]" />
+          <div className="blob blob-c hidden sm:block absolute top-40 left-1/3 w-[480px] h-[480px] rounded-full bg-[#06B6D4]/20 blur-[140px]" />
           <div className="absolute inset-0 bg-gradient-to-b from-bg/30 via-bg/60 to-bg" />
-          <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+          <div className="hidden sm:block absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
         </div>
         <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 relative">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
