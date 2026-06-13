@@ -150,19 +150,27 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="shrink-0 border-t border-line bg-bg/90 backdrop-blur-xl relative z-10">
-        <form onSubmit={e => { e.preventDefault(); send() }} className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex gap-2 sm:gap-3">
+        <form onSubmit={e => { e.preventDefault(); send() }} className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex gap-2 items-center">
           <input
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder="Ask about Zivonx..."
-            className="flex-1 px-4 py-3.5 bg-soft border border-line rounded-lg text-ink placeholder-ink/35 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
+            className="flex-1 px-4 py-3 bg-soft border border-line rounded-xl text-ink placeholder-muted transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
             style={{ fontSize: '16px' }}
             disabled={loading}
           />
-          <button type="submit" disabled={loading || !input.trim()} className="px-5 sm:px-7 py-3.5 bg-ink text-white font-medium rounded-lg hover:bg-accent disabled:opacity-25 transition-colors cursor-pointer text-sm shrink-0">
-            <span className="hidden sm:inline">Send</span>
-            <svg className="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            aria-label="Send"
+            className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center bg-accent text-white hover:bg-accent-ink disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
+          >
+            {loading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+            ) : (
+              <svg className="w-4 h-4 -rotate-45" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            )}
           </button>
         </form>
         <p className="text-center text-[11px] text-muted pb-3">Powered by Zivonx AI</p>
