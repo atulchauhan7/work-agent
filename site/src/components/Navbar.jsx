@@ -38,8 +38,8 @@ export default function Navbar() {
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className={`relative mx-auto flex items-center justify-between rounded-2xl bg-dark text-white ring-1 ring-white/10 transition-all duration-300 overflow-hidden ${
-          scrolled ? 'max-w-5xl mt-2 px-3 sm:px-4 py-2 sm:py-2.5 shadow-card' : 'max-w-6xl mt-3 sm:mt-4 px-4 sm:px-5 py-2.5 sm:py-3 shadow-soft'
+        className={`relative mx-auto flex items-center justify-between rounded-2xl bg-dark text-white border border-white/10 transition-all duration-300 overflow-hidden ${
+          scrolled ? 'max-w-5xl mt-2 px-3 sm:px-4 py-2 sm:py-2.5 shadow-card border-white/20' : 'max-w-6xl mt-3 sm:mt-4 px-4 sm:px-5 py-2.5 sm:py-3 shadow-soft border-white/10'
         }`}
       >
         {/* progress line */}
