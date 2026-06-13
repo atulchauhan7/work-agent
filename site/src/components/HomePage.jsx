@@ -258,7 +258,7 @@ export default function HomePage() {
           <FadeUp delay={0.05}><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] mb-10 max-w-2xl">Built different. For a reason.</h2></FadeUp>
           <div className="grid md:grid-cols-3 gap-4">
             {BELIEFS.map((b, i) => (
-              <FadeUp key={i} delay={i * 0.05} className="group relative shimmer-on-hover bg-soft-2 rounded-2xl border border-line p-7 sm:p-8 overflow-hidden hover:border-white/15 hover:shadow-soft transition-all duration-300">
+              <FadeUp key={i} delay={i * 0.05} className="card-hover group relative shimmer-on-hover bg-soft-2 rounded-2xl border border-line p-7 sm:p-8 overflow-hidden hover:border-white/15">
                 <span className="absolute top-0 left-0 h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${b.c}, transparent)` }} />
                 <div className="absolute -bottom-6 -right-4 font-display text-[7rem] font-bold leading-none select-none pointer-events-none" style={{ color: b.c, opacity: 0.04 }}>{b.n}</div>
                 <div className="absolute -right-12 -top-12 w-32 h-32 rounded-full blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: b.c + '40' }} />
@@ -367,7 +367,7 @@ export default function HomePage() {
           <FadeUp delay={0.05}><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] mb-10 max-w-2xl">These brands were exactly where you are now.</h2></FadeUp>
           <div className="grid md:grid-cols-3 gap-4">
             {CASES.map((c, i) => (
-              <FadeUp key={i} delay={i * 0.05} className="group relative rounded-2xl border border-white/10 bg-dark-2 p-7 overflow-hidden hover:border-white/25 transition-all duration-300 hover:-translate-y-1">
+              <FadeUp key={i} delay={i * 0.05} className="card-hover group relative rounded-2xl border border-white/10 bg-dark-2 p-7 overflow-hidden hover:border-white/25">
                 <div className="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-accent/15 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${['#2B50F6','#7C3AED','#10B981'][i]}, transparent)` }} />
                 <div className="relative">
@@ -466,7 +466,7 @@ export default function HomePage() {
             <FadeUp><h2 className="font-display font-semibold text-[clamp(1.6rem,4.5vw,3.5rem)] tracking-[-0.03em] leading-[1.1] mb-6 text-center text-white">Your competitors are scaling.<br className="hidden sm:block" /> Are you?</h2></FadeUp>
             <FadeUp delay={0.1}><p className="text-white/75 text-lg mb-9 max-w-xl mx-auto">Every week you wait is another week of budget spent without a system behind it. One conversation could change your next 90 days. We’ll come prepared — you just show up.</p></FadeUp>
             <FadeUp delay={0.15} className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="#contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#0C0C12] px-7 py-4 text-[15px] font-semibold hover:bg-white/90 transition-colors">
+              <a href="#contact" className="btn-press inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#0C0C12] px-7 py-4 text-[15px] font-semibold hover:bg-white/90 transition-colors">
                 Book your free audit
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
               </a>
@@ -520,7 +520,7 @@ export default function HomePage() {
                       </select>
                     </Field>
                   </div>
-                  <button type="submit" className="w-full rounded-lg bg-accent text-white py-4 text-[15px] font-semibold hover:bg-accent-ink transition-colors flex items-center justify-center gap-2">
+                  <button type="submit" className="btn-accent w-full rounded-lg bg-accent text-white py-4 text-[15px] font-semibold hover:bg-accent-ink flex items-center justify-center gap-2">
                     Book My Free Audit
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                   </button>

@@ -179,12 +179,100 @@ input:focus, select:focus, textarea:focus { transition: border-color 0.2s ease, 
 /* ── Color system ── */
 .grad-text {
   background: linear-gradient(100deg, #2B50F6 0%, #7C3AED 48%, #06B6D4 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: grad-sweep 4s linear infinite;
 }
 .grad-text-warm {
   background: linear-gradient(100deg, #F59E0B 0%, #EC4899 100%);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
+
+/* ── Animated gradient text sweep ── */
+@keyframes grad-sweep {
+  0% { background-position: 0% center; }
+  50% { background-position: 200% center; }
+  100% { background-position: 0% center; }
+}
+
+/* ── Card interactive hover — lift + glow ── */
+.card-hover {
+  transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s cubic-bezier(0.22,1,0.36,1), border-color 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 40px rgba(43,80,246,0.18), 0 2px 8px rgba(0,0,0,0.5), 0 0 0 1px rgba(43,80,246,0.2);
+}
+
+/* ── Button press scale ── */
+.btn-press {
+  transition: transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s ease;
+}
+.btn-press:hover { transform: translateY(-1px); }
+.btn-press:active { transform: scale(0.97) translateY(0); }
+
+/* ── Accent CTA button glow pulse ── */
+@keyframes btn-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(43,80,246,0); }
+  50% { box-shadow: 0 0 0 8px rgba(43,80,246,0); }
+}
+.btn-accent {
+  position: relative;
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+.btn-accent:hover { transform: translateY(-1px); }
+.btn-accent:active { transform: scale(0.97); }
+.btn-accent::after {
+  content: '';
+  position: absolute; inset: -3px; border-radius: inherit;
+  background: transparent;
+  border: 1.5px solid rgba(43,80,246,0.5);
+  opacity: 0;
+  transition: opacity 0.2s ease, inset 0.2s ease;
+}
+.btn-accent:hover::after { opacity: 1; inset: -5px; }
+
+/* ── Stat number count-up shimmer ── */
+@keyframes num-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.stat-num { animation: num-in 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ── Tag pill pop-in ── */
+@keyframes tag-pop { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+.tag-pop { animation: tag-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* ── Staggered children (apply to parent) ── */
+.stagger > * { opacity: 0; animation: fade-in-up 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger > *:nth-child(4) { animation-delay: 0.2s; }
+
+/* ── Navbar logo X animation ── */
+@keyframes x-pulse {
+  0%, 100% { opacity: 1; text-shadow: 0 0 0px rgba(43,80,246,0); }
+  50% { opacity: 0.7; text-shadow: 0 0 12px rgba(43,80,246,0.9), 0 0 24px rgba(124,58,237,0.5); }
+}
+.logo-x {
+  display: inline-block;
+  animation: x-pulse 2.4s ease-in-out infinite;
+  will-change: opacity;
+}
+
+/* ── Navbar logo hover ── */
+.logo-hover { transition: opacity 0.2s ease, transform 0.2s ease; }
+.logo-hover:hover { opacity: 0.85; transform: scale(1.04); }
+
+/* ── Underline slide for nav links ── */
+.nav-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+.nav-link::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; right: 50%;
+  height: 1.5px; background: #2B50F6;
+  transition: left 0.3s cubic-bezier(0.22,1,0.36,1), right 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.nav-link:hover::after { left: 8px; right: 8px; }
 
 /* vibrant gradient surface (CTA) */
 .grad-surface {
