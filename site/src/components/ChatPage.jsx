@@ -18,8 +18,6 @@ export default function ChatPage() {
   const endRef = useRef(null)
   const inputRef = useRef(null)
 
-  // No JS viewport hacks needed — position:fixed inset-0 handles keyboard correctly
-
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   async function send(text) {
@@ -87,61 +85,34 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col bg-dark-bg text-white grain" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
+    <div className="flex flex-col bg-bg text-ink" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
       <Navbar />
 
-      {/* Sub-header — pt-20 clears fixed navbar at full height (~76px) */}
-      <div className="pt-20 shrink-0">
-        <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-white/[0.03] bg-dark-bg/50 backdrop-blur-xl">
+      {/* Sub-header */}
+      <div className="pt-20 shrink-0 relative z-10">
+        <div className="flex items-center justify-between max-w-3xl mx-auto px-5 sm:px-6 py-3 border-b border-line">
           <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 bg-green-400 rounded-full pulse-ring text-green-400" />
-            <span className="text-xs text-gray-500 tracking-[0.1em] font-medium font-body">Zivonx AI</span>
+            <div className="w-2 h-2 bg-accent rounded-full pulse-ring text-accent" />
+            <span className="text-[13px] text-muted font-medium">Zivonx AI</span>
           </div>
           {messages.length > 0 && (
-            <button onClick={clearChat} className="text-[11px] text-gray-600 hover:text-gold transition-all duration-300 cursor-pointer tracking-[0.1em] uppercase hover:tracking-[0.15em] font-body">
-              Clear chat
-            </button>
+            <button onClick={clearChat} className="text-[12px] text-muted hover:text-accent transition-colors cursor-pointer font-medium">Clear chat</button>
           )}
         </div>
       </div>
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative z-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
           <AnimatePresence mode="wait">
             {messages.length === 0 && (
-              <motion.div
-                key="welcome"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.5 }}
-                className="text-center pt-12 sm:pt-20"
-              >
-                {/* Animated logo */}
-                <div className="relative inline-block mb-8">
-                  <div className="text-5xl sm:text-6xl font-display font-bold">
-                    Zivon<span className="gold-shimmer">X</span>
-                  </div>
-                  <div className="text-[11px] text-gray-600 mt-2 tracking-[0.3em] uppercase font-semibold font-body">AI Assistant</div>
-                </div>
-
-                <p className="text-gray-400 text-sm sm:text-base max-w-sm mx-auto mb-12 leading-relaxed font-body">
-                  Ask me anything about D2C growth, performance marketing, ad strategy, or working with Zivonx.
-                </p>
-
+              <motion.div key="welcome" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.5 }} className="text-center pt-10 sm:pt-16">
+                <div className="font-display text-4xl sm:text-6xl font-semibold tracking-[-0.03em] mb-3">Zivonx<span className="text-accent"> AI</span></div>
+                <p className="text-muted text-base max-w-sm mx-auto mb-12 leading-relaxed">Ask me anything about D2C growth, performance marketing, ad strategy, or working with Zivonx.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
                   {quickCards.map((c, i) => (
-                    <motion.button
-                      key={c.msg}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.1 }}
-                      onClick={() => send(c.msg)}
-                      className="px-4 py-3.5 bg-dark-card border border-white/[0.04] hover:border-gold/20 rounded-sm text-[13px] text-gray-300 text-left hover:text-gold cursor-pointer transition-all duration-500 hover:bg-gold/[0.02] group font-body"
-                    >
-                      <span className="text-gold/30 mr-2 group-hover:text-gold/60 transition-colors duration-500">→</span>
-                      {c.label}
+                    <motion.button key={c.msg} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.08 }} onClick={() => send(c.msg)} className="group px-4 py-4 bg-soft border border-line hover:border-accent rounded-xl text-[14px] text-muted text-left hover:text-ink transition-all duration-200">
+                      <span className="text-accent mr-2 inline-block group-hover:translate-x-0.5 transition-transform">→</span>{c.label}
                     </motion.button>
                   ))}
                 </div>
@@ -152,23 +123,21 @@ export default function ChatPage() {
           {messages.map((m, i) => (
             <div key={i} className={`chat-bubble mb-5 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
-                <div className="w-7 h-7 rounded-sm bg-gold/10 border border-gold/10 flex items-center justify-center shrink-0 mr-3 mt-1">
-                  <span className="text-[11px] font-bold text-gold">Z</span>
+                <div className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center shrink-0 mr-3 mt-0.5">
+                  <span className="text-[12px] font-semibold font-display">Z</span>
                 </div>
               )}
-              <div className={`max-w-[85%] sm:max-w-[75%] px-4 py-3.5 rounded-sm text-[14px] leading-relaxed font-body ${
-                m.role === 'user'
-                  ? 'bg-gradient-to-br from-gold/12 to-gold/[0.03] text-gold-light border border-gold/12 shadow-[0_2px_12px_rgba(245,158,11,0.06)]'
-                  : 'bg-dark-card border border-white/[0.03] text-gray-200'
+              <div className={`max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl text-[14px] leading-relaxed ${
+                m.role === 'user' ? 'bg-accent text-white' : 'bg-soft border border-line text-ink/90'
               }`}>
                 {m.content ? (
                   <span className="whitespace-pre-wrap">{m.content}</span>
                 ) : (
                   loading && (
                     <span className="inline-flex gap-1.5 py-1">
-                      <span className="typing-dot w-1.5 h-1.5 bg-gold/50 rounded-full" />
-                      <span className="typing-dot w-1.5 h-1.5 bg-gold/50 rounded-full" />
-                      <span className="typing-dot w-1.5 h-1.5 bg-gold/50 rounded-full" />
+                      <span className="typing-dot w-1.5 h-1.5 bg-ink/40 rounded-full" />
+                      <span className="typing-dot w-1.5 h-1.5 bg-ink/40 rounded-full" />
+                      <span className="typing-dot w-1.5 h-1.5 bg-ink/40 rounded-full" />
                     </span>
                   )
                 )}
@@ -179,33 +148,24 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input bar */}
-      <div className="shrink-0 border-t border-white/[0.03] bg-dark-bg/90 backdrop-blur-2xl">
-        <form
-          onSubmit={e => { e.preventDefault(); send() }}
-          className="max-w-2xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex gap-2 sm:gap-3"
-        >
-          <div className="flex-1 relative">
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Ask about Zivonx..."
-              className="w-full px-4 py-3 sm:py-3.5 bg-dark-card border border-white/[0.05] rounded-sm text-white placeholder-gray-600 transition-all duration-300 focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/20 focus:bg-dark-card/80 pr-12 font-body"
-              style={{ fontSize: '16px' }}
-              disabled={loading}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="px-4 sm:px-6 py-3 sm:py-3.5 bg-gold text-black font-semibold rounded-sm hover:bg-gold-light disabled:opacity-20 transition-all duration-300 cursor-pointer text-sm shrink-0 border border-gold-dark/20 hover:shadow-[0_0_16px_rgba(245,158,11,0.2)] font-body"
-          >
+      {/* Input */}
+      <div className="shrink-0 border-t border-line bg-bg/90 backdrop-blur-xl relative z-10">
+        <form onSubmit={e => { e.preventDefault(); send() }} className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex gap-2 sm:gap-3">
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Ask about Zivonx..."
+            className="flex-1 px-4 py-3.5 bg-soft border border-line rounded-lg text-ink placeholder-ink/35 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
+            style={{ fontSize: '16px' }}
+            disabled={loading}
+          />
+          <button type="submit" disabled={loading || !input.trim()} className="px-5 sm:px-7 py-3.5 bg-ink text-white font-medium rounded-lg hover:bg-accent disabled:opacity-25 transition-colors cursor-pointer text-sm shrink-0">
             <span className="hidden sm:inline">Send</span>
             <svg className="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
           </button>
         </form>
-        <p className="text-center text-[10px] text-gray-700 pb-3 tracking-[0.1em] font-body">Powered by Zivonx AI</p>
+        <p className="text-center text-[11px] text-muted pb-3">Powered by Zivonx AI</p>
       </div>
     </div>
   )
