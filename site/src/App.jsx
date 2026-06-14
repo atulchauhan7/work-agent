@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import HomePage from './components/HomePage'
 import ChatPage from './components/ChatPage'
+import PrivacyPage from './components/PrivacyPage'
 
 // Intercept all hash-link clicks and use JS smooth scroll.
 // Fixes: /#section hrefs that bypass CSS scroll-behavior, and iOS Safari which
@@ -34,6 +35,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/chat" element={<ChatPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
     </Routes>
   )
 }
