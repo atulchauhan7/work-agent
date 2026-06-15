@@ -135,7 +135,6 @@ const BRANDS = [
 
 /* ─────────── Page ─────────── */
 export default function HomePage() {
-  const [openService, setOpenService] = useState(0)
   const logos = [...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS]
 
   return (
@@ -335,11 +334,7 @@ export default function HomePage() {
           </div>
 
           {/* ── Remaining services as accordion ── */}
-          <div className="rounded-2xl border border-line bg-bg overflow-hidden">
-            {SERVICES.slice(2).map((s, j) => (
-              <ServiceRow key={j} s={s} i={j + 2} open={openService} setOpen={setOpenService} color={SERVICE_COLORS[(j + 2) % SERVICE_COLORS.length]} />
-            ))}
-          </div>
+          <ServicesAccordion />
         </div>
       </section>
 
@@ -652,14 +647,43 @@ function ContactForm() {
   )
 }
 
-function ServiceRow({ s, i, open, setOpen, color }) {
-  const isOpen = open === i
+/* Self-contained accordion — holds its own open state so toggling a row
+   re-renders only these 3 rows, NOT the entire HomePage (the prior root
+   cause of the laggy expand). */
+const ServicesAccordion = memo(function ServicesAccordion() {
+  const [open, setOpen] = useState(-1)
   return (
-    <div className="border-b border-line last:border-0 relative transition-colors duration-300" style={isOpen ? { background: color + '08' } : undefined}>
-      <span className="absolute left-0 top-0 bottom-0 w-1 transition-transform duration-300 origin-top" style={{ background: color, transform: isOpen ? 'scaleY(1)' : 'scaleY(0)' }} />
+    <div className="rounded-2xl border border-line bg-bg overflow-hidden">
+      {SERVICES.slice(2).map((s, j) => (
+        <ServiceRow key={j} s={s} i={j + 2} open={open} setOpen={setOpen} color={SERVICE_COLORS[(j + 2) % SERVICE_COLORS.length]} />
+      ))}
+    </div>
+  )
+})
+
+const ServiceRow = memo(function ServiceRow({ s, i, open, setOpen, color }) {
+  const isOpen = open === i
+  const innerRef = useRef(null)
+  const [h, setH] = useState(0)
+
+  // Measure natural content height (kept accurate across viewport changes).
+  // Animating an explicit pixel height is smoother than grid-template-rows.
+  useEffect(() => {
+    const el = innerRef.current
+    if (!el) return
+    const update = () => setH(el.scrollHeight)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div className="border-b border-line last:border-0 relative transition-colors duration-200" style={isOpen ? { background: color + '08' } : undefined}>
+      <span className="absolute left-0 top-0 bottom-0 w-1 origin-top transition-transform duration-200 ease-out" style={{ background: color, transform: isOpen ? 'scaleY(1)' : 'scaleY(0)' }} />
       <button onClick={() => setOpen(isOpen ? -1 : i)} aria-expanded={isOpen} className="w-full flex items-center gap-5 sm:gap-8 px-6 sm:px-9 py-6 sm:py-7 text-left">
         <span className="font-display text-[13px] font-semibold w-7 shrink-0" style={{ color }}>{s.n}</span>
-        <span className="flex-1 font-display text-xl sm:text-3xl font-semibold tracking-[-0.02em] flex items-center gap-3 flex-wrap transition-colors duration-300" style={isOpen ? { color } : undefined}>
+        <span className="flex-1 font-display text-xl sm:text-3xl font-semibold tracking-[-0.02em] flex items-center gap-3 flex-wrap transition-colors duration-200" style={isOpen ? { color } : undefined}>
           {s.title}
           {s.badge && (
             s.badge === 'Top Service'
@@ -667,22 +691,19 @@ function ServiceRow({ s, i, open, setOpen, color }) {
               : <span className="text-[10px] tracking-wide uppercase font-semibold text-white px-2 py-0.5 rounded-full" style={{ background: color }}>{s.badge}</span>
           )}
         </span>
-        <span className="text-2xl shrink-0 transition-transform duration-300 ease-out" style={{ color: isOpen ? color : 'rgba(255,255,255,0.25)', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>+</span>
+        <span className="text-2xl shrink-0 transition-transform duration-200 ease-out" style={{ color: isOpen ? color : 'rgba(255,255,255,0.25)', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>+</span>
       </button>
-      {/* grid-rows 0fr→1fr: GPU-friendly height animation, smooth on mobile */}
-      <div className="grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}>
-        <div className="overflow-hidden">
-          <div className={`px-6 sm:px-9 pb-7 sm:pl-[4.7rem] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
-            <p className="text-muted text-[15px] leading-relaxed max-w-lg">{s.desc}</p>
-            <div className="flex flex-wrap gap-2">
-              {s.tags.map(t => <span key={t} className="text-[12px] font-medium rounded-full px-3 py-1" style={{ color, background: color + '12' }}>{t}</span>)}
-            </div>
+      <div className="overflow-hidden" style={{ height: isOpen ? h : 0, transition: 'height 0.26s cubic-bezier(0.4,0,0.2,1)' }}>
+        <div ref={innerRef} className="px-6 sm:px-9 pb-7 sm:pl-[4.7rem] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+          <p className="text-muted text-[15px] leading-relaxed max-w-lg">{s.desc}</p>
+          <div className="flex flex-wrap gap-2">
+            {s.tags.map(t => <span key={t} className="text-[12px] font-medium rounded-full px-3 py-1" style={{ color, background: color + '12' }}>{t}</span>)}
           </div>
         </div>
       </div>
     </div>
   )
-}
+})
 
 /* Hero dashboard mock — clean product UI */
 const DashboardMock = memo(function DashboardMock() {
