@@ -6,6 +6,15 @@ import Footer from './Footer'
 // Detect reduced motion preference only (preserve animations on mobile)
 const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+// Deterministic "brands accepting" count: same value for a whole 24h (UTC day),
+// changes once per day, pseudo-random in the 1–6 range (not an increment).
+function brandsThisQuarter() {
+  const dayIndex = Math.floor(Date.now() / 86_400_000) // whole days since epoch
+  const x = Math.sin(dayIndex * 9301 + 49297) * 233280 // seeded pseudo-random
+  const frac = x - Math.floor(x)
+  return Math.floor(frac * 6) + 1 // 1..6
+}
+
 /* ─────────── Motion helpers ─────────── */
 const FadeUp = memo(({ children, delay = 0, y = 16, className = '' }) => {
   const reduceMotion = prefersReducedMotion()
@@ -136,6 +145,7 @@ const BRANDS = [
 /* ─────────── Page ─────────── */
 export default function HomePage() {
   const logos = [...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS]
+  const brandCount = brandsThisQuarter()
 
   return (
     <div className="min-h-screen bg-bg text-ink font-body antialiased">
@@ -161,7 +171,7 @@ export default function HomePage() {
             <div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ willChange: 'transform, opacity' }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur px-3 py-1.5 mb-7 shadow-soft">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] pulse-ring text-[#10B981]" />
-              <span className="text-[12px] font-medium text-ink/70">Accepting 1 new brand this quarter · Bangalore, India</span>
+              <span className="text-[12px] font-medium text-ink/70">Accepting {brandCount} new brand{brandCount > 1 ? 's' : ''} this quarter · Bangalore, India</span>
             </motion.div>
 
             <h1 className="font-display font-semibold text-[clamp(2.2rem,4.5vw,4.2rem)] leading-[0.98] tracking-[-0.035em] mb-7">
