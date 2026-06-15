@@ -40,9 +40,12 @@
   #root { overflow-x: clip; max-width: 100%; }
 
   /* Prevent long words / URLs from blowing out mobile layouts */
-  p, li, h1, h2, h3, h4, h5, h6, span, a {
+  p, li, a {
     overflow-wrap: break-word;
     word-break: break-word;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
   }
 
   /* Inputs always stay within their container */
@@ -57,7 +60,7 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display text-ink;
     letter-spacing: -0.025em;
-    text-wrap: balance;
+    text-wrap: pretty;
   }
 
   a, button { @apply transition-colors duration-200; }

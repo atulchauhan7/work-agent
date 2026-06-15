@@ -52,7 +52,7 @@ const Heading = memo(({ text, className = '', accent = [] }) => {
       {text.split(' ').map((w, i) => {
         const isAccent = accent.includes(w.replace(/[.,?]/g, ''))
         return (
-          <span key={i} className={`mr-[0.24em] last:mr-0 ${isAccent ? 'grad-text' : ''}`}>
+          <span key={i} className={`mr-[0.24em] last:mr-0 ${isAccent ? 'grad-text' : ''}`} style={{ wordBreak: 'normal', overflowWrap: 'normal' }}>
             {w}
           </span>
         )
@@ -226,7 +226,7 @@ export default function HomePage() {
       </section>
 
       {/* ───── PAIN SECTION ───── */}
-      <section className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-12 sm:py-16">
+      <section className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-14">
         <FadeUp className="text-center max-w-2xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/[0.06] px-3.5 py-1.5 text-[12px] font-semibold tracking-[0.04em] uppercase text-red-400 mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
@@ -256,9 +256,9 @@ export default function HomePage() {
 
       {/* ───── BELIEFS 01/02/03 ───── */}
       <section id="about" className="scroll-mt-24 border-y border-line bg-soft">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-14 sm:py-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-16">
           <Eyebrow>Why we’re different</Eyebrow>
-          <FadeUp delay={0.05}><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] mb-10 max-w-2xl">Built different. For a reason.</h2></FadeUp>
+          <FadeUp delay={0.05}><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] mb-7 max-w-2xl">Built different. For a reason.</h2></FadeUp>
           <div className="grid md:grid-cols-3 gap-4">
             {BELIEFS.map((b, i) => (
               <FadeUp key={i} delay={i * 0.05} className="card-hover group relative shimmer-on-hover bg-soft-2 rounded-2xl border border-line p-7 sm:p-8 overflow-hidden hover:border-white/15">
@@ -275,8 +275,8 @@ export default function HomePage() {
       </section>
 
       {/* ───── SYSTEM + DIAGRAM ───── */}
-      <section id="approach" className="scroll-mt-24 max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-14 sm:py-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+      <section id="approach" className="scroll-mt-24 max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-16">
+        <div className="text-center max-w-2xl mx-auto mb-8">
           <Eyebrow>The approach</Eyebrow>
           <Heading text="Growth without a system is just luck." className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] leading-tight mb-5 text-center" />
           <FadeUp delay={0.1}><p className="text-muted leading-relaxed text-lg">One connected engine across the full funnel — so every rupee of ad spend compounds into predictable, repeatable revenue. No guessing. No lucky months.</p></FadeUp>
@@ -302,7 +302,7 @@ export default function HomePage() {
 
       {/* ───── SERVICES ───── */}
       <section id="services" className="scroll-mt-24 border-y border-line bg-soft">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-14 sm:py-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-16">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
             <div>
               <Eyebrow>What we do</Eyebrow>
@@ -344,7 +344,7 @@ export default function HomePage() {
       </section>
 
       {/* ───── STATS ───── */}
-      <section className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-14 sm:py-20">
+      <section className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-16">
         <div className="grid lg:grid-cols-[0.85fr_1.15fr] gap-12 lg:gap-20 items-center">
           <div>
             <Eyebrow>By the numbers</Eyebrow>
@@ -366,7 +366,7 @@ export default function HomePage() {
 
       {/* ───── CASE STUDIES (dark) ───── */}
       <section id="work" className="scroll-mt-24 bg-dark text-white">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-14 sm:py-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-16">
           <FadeUp delay={0.05}><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] mb-10 max-w-2xl">These brands were exactly where you are now.</h2></FadeUp>
           <div className="grid md:grid-cols-3 gap-4">
             {CASES.map((c, i) => (
@@ -393,11 +393,11 @@ export default function HomePage() {
       </section>
 
       {/* ───── PROCESS / HOW IT WORKS ───── */}
-      <section className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-12 sm:py-20">
+      <section className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-14">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-start">
           <div>
             <Eyebrow>How we work</Eyebrow>
-            <Heading text="From first call to case study. In 90 days." className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] leading-tight mb-6" />
+            <FadeUp><h2 className="font-display font-semibold text-3xl sm:text-5xl tracking-[-0.03em] leading-tight mb-6">From first call to case study.{' '}<span className="whitespace-nowrap">In 90 days.</span></h2></FadeUp>
             <FadeUp delay={0.1}>
               <p className="text-muted text-[15px] leading-relaxed mb-8 max-w-md">Other agencies spend the first 3 months on “strategy.” We spend it on results. By the time most agencies have finished their onboarding deck, we’ve already run 30+ creative tests and found what works for your brand.</p>
               <a href="#contact" className="inline-flex items-center gap-2 rounded-lg bg-accent text-white px-6 py-3.5 text-[15px] font-semibold hover:bg-accent-ink transition-colors">
@@ -433,7 +433,7 @@ export default function HomePage() {
 
       {/* ───── BUILT FOR IMPACT (pillars, no names) ───── */}
       <section className="border-y border-line bg-soft">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-12 sm:py-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-14">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           <div>
             <Eyebrow>How we operate</Eyebrow>
@@ -461,7 +461,7 @@ export default function HomePage() {
       </section>
 
       {/* ───── CTA ───── */}
-      <section className="px-3 sm:px-5 py-12 sm:py-20">
+      <section className="px-3 sm:px-5 py-8 sm:py-14">
         <div className="grad-surface relative max-w-7xl mx-auto rounded-3xl overflow-hidden">
           <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
           <div className="relative max-w-3xl mx-auto px-6 sm:px-12 py-16 sm:py-20 text-center text-white">
@@ -482,7 +482,7 @@ export default function HomePage() {
 
       {/* ───── CONTACT ───── */}
       <section id="contact" className="scroll-mt-24 border-t border-line bg-bg">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-14 sm:py-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 py-10 sm:py-16">
           <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
             <div className="lg:col-span-5">
               <Eyebrow>Book your free audit</Eyebrow>
@@ -655,11 +655,11 @@ function ContactForm() {
 function ServiceRow({ s, i, open, setOpen, color }) {
   const isOpen = open === i
   return (
-    <div className="border-b border-line last:border-0 relative" style={isOpen ? { background: color + '08' } : undefined}>
-      {isOpen && <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: color }} />}
-      <button onClick={() => setOpen(isOpen ? -1 : i)} onMouseEnter={() => setOpen(i)} className="w-full flex items-center gap-5 sm:gap-8 px-6 sm:px-9 py-6 sm:py-7 text-left">
+    <div className="border-b border-line last:border-0 relative transition-colors duration-300" style={isOpen ? { background: color + '08' } : undefined}>
+      <span className="absolute left-0 top-0 bottom-0 w-1 transition-transform duration-300 origin-top" style={{ background: color, transform: isOpen ? 'scaleY(1)' : 'scaleY(0)' }} />
+      <button onClick={() => setOpen(isOpen ? -1 : i)} aria-expanded={isOpen} className="w-full flex items-center gap-5 sm:gap-8 px-6 sm:px-9 py-6 sm:py-7 text-left">
         <span className="font-display text-[13px] font-semibold w-7 shrink-0" style={{ color }}>{s.n}</span>
-        <span className="flex-1 font-display text-xl sm:text-3xl font-semibold tracking-[-0.02em] flex items-center gap-3 flex-wrap transition-colors" style={isOpen ? { color } : undefined}>
+        <span className="flex-1 font-display text-xl sm:text-3xl font-semibold tracking-[-0.02em] flex items-center gap-3 flex-wrap transition-colors duration-300" style={isOpen ? { color } : undefined}>
           {s.title}
           {s.badge && (
             s.badge === 'Top Service'
@@ -667,16 +667,19 @@ function ServiceRow({ s, i, open, setOpen, color }) {
               : <span className="text-[10px] tracking-wide uppercase font-semibold text-white px-2 py-0.5 rounded-full" style={{ background: color }}>{s.badge}</span>
           )}
         </span>
-        <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.3 }} className="text-2xl shrink-0" style={{ color: isOpen ? color : 'rgba(255,255,255,0.2)' }}>+</motion.span>
+        <span className="text-2xl shrink-0 transition-transform duration-300 ease-out" style={{ color: isOpen ? color : 'rgba(255,255,255,0.25)', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>+</span>
       </button>
-      <motion.div initial={false} animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'height, opacity' }} className="overflow-hidden">
-        <div className="px-6 sm:px-9 pb-7 sm:pl-[4.7rem] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-          <p className="text-muted text-[15px] leading-relaxed max-w-lg">{s.desc}</p>
-          <div className="flex flex-wrap gap-2">
-            {s.tags.map(t => <span key={t} className="text-[12px] font-medium rounded-full px-3 py-1" style={{ color, background: color + '12' }}>{t}</span>)}
+      {/* grid-rows 0fr→1fr: GPU-friendly height animation, smooth on mobile */}
+      <div className="grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}>
+        <div className="overflow-hidden">
+          <div className={`px-6 sm:px-9 pb-7 sm:pl-[4.7rem] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+            <p className="text-muted text-[15px] leading-relaxed max-w-lg">{s.desc}</p>
+            <div className="flex flex-wrap gap-2">
+              {s.tags.map(t => <span key={t} className="text-[12px] font-medium rounded-full px-3 py-1" style={{ color, background: color + '12' }}>{t}</span>)}
+            </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
