@@ -52,7 +52,7 @@ const Heading = memo(({ text, className = '', accent = [] }) => {
       {text.split(' ').map((w, i) => {
         const isAccent = accent.includes(w.replace(/[.,?]/g, ''))
         return (
-          <span key={i} className={`mr-[0.24em] last:mr-0 ${isAccent ? 'grad-text' : ''}`} style={{ wordBreak: 'normal', overflowWrap: 'normal' }}>
+          <span key={i} className={`inline-block mr-[0.24em] last:mr-0 ${isAccent ? 'grad-text' : ''}`}>
             {w}
           </span>
         )
@@ -497,7 +497,7 @@ export default function HomePage() {
                   ].map(r => (
                     <div key={r.k} className="flex items-center justify-between border-b border-line pb-4 last:border-0">
                       <span className="text-[13px] font-medium text-muted">{r.k}</span>
-                      {r.href ? <a href={r.href} className="ul-grow text-[14px] font-medium text-accent hover:text-white transition-colors break-all">{r.v}</a> : <span className="text-[14px] font-medium">{r.v}</span>}
+                      {r.href ? <a href={r.href} className="ul-grow text-[14px] font-medium text-accent hover:text-white transition-colors text-right">{r.v}</a> : <span className="text-[14px] font-medium">{r.v}</span>}
                     </div>
                   ))}
                 </div>

@@ -39,13 +39,13 @@
 
   #root { overflow-x: clip; max-width: 100%; }
 
-  /* Prevent long words / URLs from blowing out mobile layouts */
-  p, li, a {
+  /* Wrap whole words to the next line; only break a word if it is
+     genuinely wider than its container (long URLs/emails). Never break
+     a normal word mid-character ("Ne|ver"). */
+  p, li, a, h1, h2, h3, h4, h5, h6, span {
     overflow-wrap: break-word;
-    word-break: break-word;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
   }
 
   /* Inputs always stay within their container */
