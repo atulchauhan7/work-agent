@@ -703,7 +703,7 @@ const ServiceRow = memo(function ServiceRow({ s, i, open, setOpen, color }) {
         </span>
         <span className="text-2xl shrink-0 transition-transform duration-200 ease-out" style={{ color: isOpen ? color : 'rgba(255,255,255,0.25)', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>+</span>
       </button>
-      <div className="overflow-hidden" style={{ height: isOpen ? h : 0, transition: 'height 0.26s cubic-bezier(0.4,0,0.2,1)' }}>
+      <div className="overflow-hidden" style={{ height: isOpen ? h : 0, transition: 'height 0.2s cubic-bezier(0.22,1,0.36,1)' }}>
         <div ref={innerRef} className="px-6 sm:px-9 pb-7 sm:pl-[4.7rem] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
           <p className="text-muted text-[15px] leading-relaxed max-w-lg">{s.desc}</p>
           <div className="flex flex-wrap gap-2">
